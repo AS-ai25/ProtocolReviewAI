@@ -60,13 +60,18 @@ def render_admin_report(state: ReviewState) -> str:
     md = _header(state, "Administrative Review Report")
     md += f"**Administrative decision:** {'ACCEPTED for scientific review' if rep.get('accepted') else 'RETURNED - incomplete submission'}\n\n"
     md += f"**Summary:** {rep.get('summary', '')}\n\n"
+    crit = state.get("admin_critic_report") or {}
+    if crit.get("summary"):
+        md += f"**Administrative critic:** {crit['summary']}\n\n"
     if rep.get("checklist"):
         md += "## Checklist\n\n| Code | Satisfied | Note |\n|---|---|---|\n"
         for c in rep["checklist"]:
             md += f"| {c['code']} | {'yes' if c['satisfied'] else 'NO'} | {c.get('note', '')} |\n"
         md += "\n"
     fs = rep.get("findings") or []
-    md += "## Findings\n\n" + _findings_table(fs) + "\n## Details\n\n" + _findings_detail(fs)
+    md += "## Findings (after critic)\n\n" + _findings_table(fs) + "\n## Details\n\n" + _findings_detail(fs)
+    if crit.get("missed_issues"):
+        md += "## Issues raised by the administrative critic\n\n" + "\n".join(f"- {m}" for m in crit["missed_issues"]) + "\n"
     return md
 
 

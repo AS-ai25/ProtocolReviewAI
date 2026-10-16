@@ -5,7 +5,7 @@ import json
 import logging
 
 from .. import memory
-from ..knowledge_base import kb_text, rule_codes
+from ..knowledge_base import kb_text
 from ..llm import LLMError
 from ..state import AdminReport, Domain, FindingStatus, ReviewState, Severity, trace_event
 from . import base
@@ -15,60 +15,58 @@ log = logging.getLogger(__name__)
 AGENT = "administrative"
 
 
-def _user_prompt(state: ReviewState, rule_findings: list[dict]) -> str:
+def _user_prompt(state: ReviewState, rule_findings: list[dict], previous: list[dict]) -> str:
     meta = state.get("protocol_meta") or {}
     mem = memory.memories_block(AGENT, {"sponsor": meta.get("sponsor", ""), "submitter": state.get("submitter", "")})
-    return "\n\n".join(filter(None, [
+    parts = [
         "# Administrative checklist (knowledge base)\n" + kb_text("administrative"),
         mem,
         "# Metadata extracted from the PDF\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
-        "# Protocol text (with page markers)\n" + base.protocol_text(state),
-        "Return the AdminReport JSON now.",
-    ]))
+    ]
+    if state.get("admin_revise_rounds", 0) > 0:
+        parts.append("# REVISION ROUND - administrative critic feedback you must address\n"
+                     + "\n".join(f"- {r}" for r in state.get("admin_revise_requests") or []))
+        parts.append("# Your previous findings (revise, correct or withdraw; re-emit the full list)\n" + base.findings_json(previous))
+    parts += ["# Protocol text (with page markers)\n" + base.protocol_text(state), "Return the AdminReport JSON now."]
+    return "\n\n".join(p for p in parts if p)
 
 
 def administrative_node(state: ReviewState, llm) -> dict:
     run_id = state.get("run_id", "")
-    pages = state.get("pages") or []
+    rounds = state.get("admin_revise_rounds", 0)
     rule_findings = [f for f in state.get("rule_findings") or [] if f["domain"] == Domain.ADMINISTRATIVE.value]
     for f in rule_findings:
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check (code), verified by construction."
+    previous_llm = [f for f in state.get("findings") or [] if f["domain"] == Domain.ADMINISTRATIVE.value and f["source"] == "llm"]
 
-    trace = trace_event(state, AGENT, "start", f"{len(rule_findings)} rule findings")
+    trace = trace_event(state, AGENT, "start", f"round={rounds}, {len(rule_findings)} rule findings")
     errors = list(state.get("errors") or [])
     report: AdminReport | None = None
     try:
-        report = llm.structured(agent=AGENT, system=ADMIN_SYSTEM, user=_user_prompt(state, rule_findings), schema=AdminReport)
+        report = llm.structured(agent=AGENT, system=ADMIN_SYSTEM, user=_user_prompt(state, rule_findings, previous_llm), schema=AdminReport)
     except LLMError as exc:
         log.error("administrative agent LLM failure: %s", exc)
         errors.append(f"administrative: {exc}")
         trace = trace_event({"trace": trace}, AGENT, "llm_error", str(exc))
 
+    # LLM findings start as PROPOSED; the Administrative Critic (next node) decides their status.
     llm_findings: list[dict] = []
     if report is not None:
-        codes = rule_codes()
         for f in base.renumber([x.model_dump(mode="json") for x in report.findings], "ADM"):
             f["domain"] = Domain.ADMINISTRATIVE.value
             f["source"] = "llm"
-            v = base.verify_evidence(f, pages, codes)
-            auto = base.auto_status_from_verification(v)
-            if auto:
-                f["status"] = auto.value
-                f["critic_notes"] = "Evidence quote(s) located in the protocol and guideline code valid (automatic check)."
-            elif v["absence_claim"] and v["guideline_ref_valid"]:
-                f["status"] = FindingStatus.UNVERIFIED.value
-                f["critic_notes"] = "Absence claim with valid guideline code - confirm by hand."
-            else:
-                f["status"] = FindingStatus.UNVERIFIED.value
-                f["critic_notes"] = "Evidence quote not located in the protocol or guideline code invalid."
+            f["status"] = FindingStatus.PROPOSED.value
+            f["critic_notes"] = ""
             llm_findings.append(f)
+    elif previous_llm:
+        llm_findings = previous_llm  # keep last round's findings if the revision call failed
 
     admin_findings = rule_findings + llm_findings
-    blocking = [f for f in admin_findings if f["severity"] == Severity.CRITICAL.value
-                and f["status"] in (FindingStatus.VERIFIED.value,)]
-    accepted_by_llm = report.accepted if report is not None else True
+    accepted_by_llm = report.accepted if report is not None else (state.get("admin_report") or {}).get("accepted_by_agent", True)
+    # Provisional decision: only rule findings are verified at this point; the critic recomputes it.
+    blocking = [f for f in admin_findings if f["severity"] == Severity.CRITICAL.value and f["status"] == FindingStatus.VERIFIED.value]
     admin_ok = accepted_by_llm and not blocking
 
     report_dict = {
@@ -79,7 +77,8 @@ def administrative_node(state: ReviewState, llm) -> dict:
         "findings": admin_findings,
         "blocking_findings": [f["id"] for f in blocking],
     }
-    memory.post_message(run_id, AGENT, f"Administrative review done. accepted={admin_ok}. "
-                        f"{len(admin_findings)} findings ({len(blocking)} blocking). {report_dict['summary'][:800]}")
+    memory.post_message(run_id, AGENT, f"Administrative review round {rounds} done. accepted={admin_ok}. "
+                        f"{len(admin_findings)} findings ({len(llm_findings)} proposed by the agent, {len(blocking)} blocking). "
+                        f"{report_dict['summary'][:800]}")
     trace = trace_event({"trace": trace}, AGENT, "done", f"accepted={admin_ok}, findings={len(admin_findings)}, blocking={len(blocking)}")
     return {"admin_report": report_dict, "admin_ok": admin_ok, "findings": admin_findings, "trace": trace, "errors": errors}

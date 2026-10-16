@@ -6,7 +6,7 @@ import json
 import re
 
 from ..knowledge_base import rule_codes
-from ..state import FindingStatus, ReviewState
+from ..state import ReviewState
 
 MAX_PROTOCOL_CHARS = 400_000  # ~100k tokens; protocols are normally far smaller
 
@@ -78,12 +78,3 @@ def verify_evidence(finding: dict, pages: list[dict], codes: set[str] | None = N
         "guideline_ref_valid": ref_ok,
         "absence_claim": absence_claim,  # finding says something is missing -> no quote expected
     }
-
-
-def auto_status_from_verification(v: dict) -> FindingStatus | None:
-    """Rule findings are verified by construction; LLM findings whose quotes all
-    check out AND cite a valid KB code may be auto-verified at the admin stage
-    (no admin critic in this architecture)."""
-    if v["guideline_ref_valid"] and v["evidence_checked"] and v["evidence_found"] == v["evidence_checked"]:
-        return FindingStatus.VERIFIED
-    return None
