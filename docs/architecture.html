@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multi-Agent Clinical Trial Protocol Review System - architecture</title>
+<style>
+  :root { --ink:#1b2430; --muted:#55637a; --line:#c9d2de;
+          --blue:#dbe8fb; --blueb:#3b6fd1; --green:#dcf3e6; --greenb:#2e9a62; --amber:#fdf1d3; --amberb:#d9a21b;
+          --purple:#e9e2f8; --purpleb:#7c5cc4; --red:#fbe1e1; --redb:#d14b4b; --grey:#eef2f7; --greyb:#8793a6; --teal:#d9f1ef; --tealb:#1f8a80; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #ffffff; }
+  body { width: 1600px; height: 1060px; position: relative; font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); overflow: hidden; }
+  .title { position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 30px; font-weight: 700; color: #1e3a6e; letter-spacing: .2px; }
+  .subtitle { position: absolute; left: 0; right: 0; top: 48px; text-align: center; font-size: 13px; color: var(--muted); }
+  .box { position: absolute; border: 2px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+  .box .hd { padding: 8px 12px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .box .hd .n { width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .box .bd { padding: 6px 10px 8px; font-size: 12px; line-height: 1.35; }
+  .box .bd ul { margin: 0; padding-left: 16px; }
+  .box .bd li { margin: 3px 0; }
+  .box .out { margin: 6px 10px 10px; padding: 6px 8px; border-radius: 8px; font-size: 11.5px; font-weight: 600; }
+  .blue  { border-color: var(--blueb); }  .blue .hd { background: var(--blue); }  .blue .n { background: var(--blueb); }  .blue .out { background: var(--blue); }
+  .green { border-color: var(--greenb); } .green .hd { background: var(--green); } .green .n { background: var(--greenb); } .green .out { background: var(--green); }
+  .amber { border-color: var(--amberb); } .amber .hd { background: var(--amber); } .amber .n { background: var(--amberb); } .amber .out { background: var(--amber); }
+  .purple{ border-color: var(--purpleb);} .purple .hd{ background: var(--purple);} .purple .n{ background: var(--purpleb);} .purple .out{ background: var(--purple); }
+  .red   { border-color: var(--redb); }   .red .hd { background: var(--red); }    .red .n { background: var(--redb); }    .red .out { background: var(--red); }
+  .teal  { border-color: var(--tealb); }  .teal .hd { background: var(--teal); }  .teal .n { background: var(--tealb); }  .teal .out { background: var(--teal); }
+  .grey  { border-color: var(--greyb); border-style: dashed; background: #fafbfd; } .grey .hd { background: var(--grey); }
+  .kb { background: #fffbea; border-color: #e2c56a; }
+  .kb .hd { background: #fdf1c7; font-size: 14px; }
+  .json { position: absolute; border: 1.5px dashed #9fb0c7; border-radius: 10px; background: #f7f9fc; padding: 6px 9px; font-family: Consolas, "Courier New", monospace; font-size: 9.8px; line-height: 1.28; white-space: pre; color: #223; overflow: hidden; }
+  .json b { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; color: #1e3a6e; }
+  .lab { position: absolute; font-size: 11.5px; font-weight: 700; }
+  .lab.sm { font-weight: 600; font-size: 10.5px; color: var(--muted); }
+  .outcome { position: absolute; border-radius: 12px; border: 2px solid; padding: 10px 14px; font-size: 12px; line-height: 1.35; }
+  .outcome b { display: block; font-size: 15px; margin-bottom: 2px; }
+  svg.wires { position: absolute; left: 0; top: 0; width: 1600px; height: 1060px; pointer-events: none; }
+  .strip { position: absolute; border: 2px dashed var(--greyb); border-radius: 12px; background: #f6f8fb; padding: 8px 14px; font-size: 12px; line-height: 1.4; }
+  .strip b { color: #1e3a6e; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 6px; background: #e8edf5; font-family: Consolas, monospace; font-size: 10.5px; }
+</style>
+</head>
+<body>
+
+<div class="title">Multi-Agent Clinical Trial Protocol Review System</div>
+<div class="subtitle">4 agents on LangGraph · shared Blackboard · every finding = page quote + guideline code + verification status · reports and email to the committee coordinator</div>
+
+<!-- Intake automation strip -->
+<div class="strip" style="left:25px; top:76px; width:555px; height:100px;">
+  <b>Automatic intake.</b> Google Drive folder (Make.com / n8n: Watch Files → Download → HTTP POST) or email inbox (IMAP poller) →
+  <span class="tag">POST /webhook/protocol</span> (FastAPI, header <span class="tag">X-Webhook-Secret</span>) → returns <span class="tag">run_id</span>, the review runs in the background.
+</div>
+
+<!-- Knowledge bases -->
+<div class="box kb" style="left:900px; top:72px; width:225px; height:160px;">
+  <div class="hd">Administrative Knowledge Base</div>
+  <div class="bd"><ul>
+    <li>Checklist <span class="tag">ADMIN-CHK-01..15</span></li>
+    <li>Title, version, date, NCT id, PI, sponsor</li>
+    <li><b>Blocking:</b> consent form, insurance, readable PDF</li>
+    <li>Required sections, appendices</li>
+  </ul></div>
+</div>
+<div class="box kb" style="left:1140px; top:72px; width:205px; height:160px;">
+  <div class="hd">Scientific Knowledge Base</div>
+  <div class="bd"><ul>
+    <li>SPIRIT checklist <span class="tag">SPIRIT-01..33</span></li>
+    <li>ICH-GCP E6(R3) <span class="tag">GCP-01..12</span></li>
+    <li>ClinicalTrials.gov record by NCT id (API v2)</li>
+    <li>Human-approved lessons (long memory)</li>
+  </ul></div>
+</div>
+
+<!-- Input -->
+<div class="box grey" style="left:25px; top:250px; width:175px; height:310px;">
+  <div class="hd">Input</div>
+  <div class="bd">
+    <div style="text-align:center; font-size:40px; margin:6px 0 2px;">📄</div>
+    <div style="text-align:center; font-weight:700;">Protocol PDF</div>
+    <div style="text-align:center; color:var(--muted); font-size:11px;">clinical trial protocol</div>
+    <div style="text-align:center; font-size:22px; margin:6px 0;">+</div>
+    <div style="font-size:11.5px;"><b>Optional metadata</b><br>NCT id · submitter · source (drive / email / webhook)</div>
+  </div>
+</div>
+
+<!-- Agents -->
+<div class="box blue" style="left:225px; top:250px; width:215px; height:310px;">
+  <div class="hd"><span class="n">1</span>Coordinator Agent · intake</div>
+  <div class="bd"><ul>
+    <li>Text extraction per page (PyMuPDF)</li>
+    <li>Metadata by regex: NCT, version, date, PI, sponsor, phase</li>
+    <li><b>31 deterministic rule checks</b> (code, no LLM) = Rule-Based Baseline</li>
+    <li>Opens the run on the Blackboard, routes to agent 2</li>
+  </ul></div>
+  <div class="out">Output: ReviewState + rule findings (verified by construction)</div>
+</div>
+
+<div class="box amber" style="left:465px; top:250px; width:215px; height:310px;">
+  <div class="hd"><span class="n">2</span>Administrative Review Agent</div>
+  <div class="bd"><ul>
+    <li>Format and completeness vs administrative checklist</li>
+    <li>Adds context findings the rules cannot see (version mismatch, missing appendix, wrong consent language)</li>
+    <li>Evidence auto-verified in code (quote located? code valid?)</li>
+    <li><b>accepted = no blocking item fails</b></li>
+  </ul></div>
+  <div class="out">Output: AdminReport JSON (accepted, checklist, findings)</div>
+</div>
+
+<div class="box green" style="left:705px; top:250px; width:215px; height:310px;">
+  <div class="hd"><span class="n">3</span>Scientific Review Agent</div>
+  <div class="bd"><ul>
+    <li>Fetches ClinicalTrials.gov record, compares enrollment, phase, outcomes, sponsor</li>
+    <li>SPIRIT / ICH-GCP review: omissions, unjustified sample size, randomisation, safety</li>
+    <li>Internal contradictions between sections (quotes both places)</li>
+    <li>On REVISE: answers each critic request, re-emits findings</li>
+  </ul></div>
+  <div class="out">Output: ScientificReport JSON (findings, registry comparison, open questions)</div>
+</div>
+
+<div class="box purple" style="left:945px; top:250px; width:215px; height:310px;">
+  <div class="hd"><span class="n">4</span>Scientific Critic Agent</div>
+  <div class="bd"><ul>
+    <li>Code first: is each quote really on that page? is the guideline code real?</li>
+    <li>One verdict per finding: <b>verified / revise / unverified / rejected</b>, may change severity</li>
+    <li>Lists issues the reviewer missed</li>
+    <li>Proposes reusable lessons → human approval (HITL memory)</li>
+  </ul></div>
+  <div class="out">Output: CriticReport JSON (verdicts, missed issues, proposed memory)</div>
+</div>
+
+<div class="box red" style="left:1360px; top:250px; width:215px; height:310px;">
+  <div class="hd"><span class="n">1</span>Coordinator Agent · final</div>
+  <div class="bd"><ul>
+    <li>Anything still open → UNVERIFIED (human)</li>
+    <li><b>Decision</b>: PASS / NEEDS_HUMAN_REVIEW / MAJOR_CONCERNS / RETURNED_ADMIN</li>
+    <li>Executive summary for the committee coordinator</li>
+    <li>Writes 3 Markdown reports + findings.json + state.json</li>
+    <li>📧 Email to the boss with the reports attached (also on administrative rejection)</li>
+  </ul></div>
+  <div class="out">Output: FinalSummary + reports + email</div>
+</div>
+
+<!-- Blackboard strip -->
+<div class="strip" style="left:225px; top:610px; width:1350px; height:52px; padding-top:7px;">
+  <b>Shared State / Blackboard</b> (LangGraph <span class="tag">ReviewState</span>): findings · evidence (page + quote) · status · critic notes · revise requests · full trace &nbsp;|&nbsp;
+  <b>3-layer memory</b> (SQLite): short = run messages · long = lessons proposed by agents, approved by a human · historical = every LLM call with tokens and cost
+</div>
+
+<!-- JSON snippets -->
+<div class="json" style="left:225px; top:680px; width:215px; height:225px;"><b>Rule finding (code)</b>
+{
+  "id": "ADM-R001",
+  "domain": "administrative",
+  "category": "MISSING_CONSENT_FORM",
+  "severity": "critical",
+  "guideline_ref": "ADMIN-CHK-06",
+  "evidence": [],
+  "source": "rule",
+  "status": "verified"
+}</div>
+
+<div class="json" style="left:465px; top:680px; width:215px; height:225px;"><b>AdminReport</b>
+{
+  "accepted": false,
+  "summary": "...",
+  "checklist": [
+    {"code": "ADMIN-CHK-06",
+     "satisfied": false}, ...],
+  "findings": [
+    {"id": "ADM-L001",
+     "category": "MISSING_DOCUMENT",
+     "evidence": [{"page": 2,
+       "quote": "Appendix A ..."}],
+     "status": "verified"}],
+  "blocking_findings": ["ADM-R001"]
+}</div>
+
+<div class="json" style="left:705px; top:680px; width:215px; height:225px;"><b>ScientificReport</b>
+{
+  "findings": [
+    {"id": "SCI-L001",
+     "category": "REGISTRY_MISMATCH",
+     "severity": "critical",
+     "guideline_ref": "SPIRIT-02",
+     "evidence": [{"page": 1,
+       "quote": "NCT04470427"}],
+     "status": "proposed"}, ...],
+  "registry_comparison": [
+    {"field": "enrollment",
+     "protocol_value": "30,415",
+     "registry_value": "30415",
+     "match": true}],
+  "open_questions": ["..."]
+}</div>
+
+<div class="json" style="left:945px; top:680px; width:215px; height:225px;"><b>CriticReport</b>
+{
+  "verdicts": [
+    {"finding_id": "SCI-L001",
+     "verdict": "verified",
+     "notes": "quote located p.1"},
+    {"finding_id": "SCI-L002",
+     "verdict": "revise",
+     "notes": "add the page ..."},
+    {"finding_id": "SCI-L003",
+     "verdict": "rejected"}],
+  "missed_issues": ["DSMB charter"],
+  "proposed_memory":
+    ["Check stopping rules"]
+}</div>
+
+<div class="json" style="left:1360px; top:680px; width:215px; height:225px;"><b>Final state (state.json)</b>
+{
+  "decision": "MAJOR_CONCERNS",
+  "findings": [ ... 31 items ... ],
+  "report_paths": {
+    "final_report": ".../final_report.md",
+    "administrative_report": "...",
+    "scientific_report": "..."},
+  "notifications":
+    ["sent to coordinator@..."],
+  "cost": {"llm_calls": 6,
+           "input_tokens": 78341,
+           "output_tokens": 33223},
+}</div>
+
+<!-- Outcomes -->
+<div class="lab" style="left:25px; top:935px; font-size:16px; color:#1e3a6e;">Final decision<br><span style="font-weight:400; font-size:11.5px; color:var(--muted);">(all four end with the report<br>+ email to the committee coordinator)</span></div>
+
+<div class="outcome" style="left:245px; top:925px; width:300px; height:88px; border-color:var(--greenb); background:var(--green);">
+  <b>✅ PASS</b>No verified critical / major finding and nothing left unverified. Report circulated to the committee.
+</div>
+<div class="outcome" style="left:565px; top:925px; width:300px; height:88px; border-color:var(--amberb); background:var(--amber);">
+  <b>🔎 NEEDS_HUMAN_REVIEW</b>Unverified findings remain (critic could not confirm, or revision rounds exhausted). A committee member checks them first.
+</div>
+<div class="outcome" style="left:885px; top:925px; width:300px; height:88px; border-color:var(--redb); background:var(--red);">
+  <b>❗ MAJOR_CONCERNS</b>At least one <i>verified</i> critical or major scientific finding. Investigators must address it before the meeting.
+</div>
+<div class="outcome" style="left:1205px; top:925px; width:370px; height:88px; border-color:var(--greyb); background:var(--grey);">
+  <b>↩ RETURNED_ADMIN</b>A blocking administrative item failed. Scientific agents never ran (only the free deterministic scientific checks are reported). Submitter revises and resubmits.
+</div>
+
+<!-- Wires -->
+<svg class="wires" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#4b5a73"/></marker>
+    <marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2e9a62"/></marker>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#d14b4b"/></marker>
+    <marker id="ap" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#7c5cc4"/></marker>
+    <marker id="ak" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#d9a21b"/></marker>
+  </defs>
+  <!-- intake strip -> input -->
+  <path d="M112,176 L112,246" stroke="#8793a6" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <!-- input -> coordinator -->
+  <path d="M200,405 L221,405" stroke="#4b5a73" stroke-width="2.2" fill="none" marker-end="url(#a)"/>
+  <!-- coordinator -> admin -->
+  <path d="M440,405 L461,405" stroke="#4b5a73" stroke-width="2.2" fill="none" marker-end="url(#a)"/>
+  <!-- admin PASS -> scientific reviewer -->
+  <path d="M680,405 L701,405" stroke="#2e9a62" stroke-width="2.4" fill="none" marker-end="url(#ag)"/>
+  <!-- reviewer -> critic -->
+  <path d="M920,405 L941,405" stroke="#4b5a73" stroke-width="2.2" fill="none" marker-end="url(#a)"/>
+  <!-- critic done -> final -->
+  <path d="M1160,405 L1356,405" stroke="#4b5a73" stroke-width="2.2" fill="none" marker-end="url(#a)"/>
+  <!-- REVISE loop (below boxes) -->
+  <path d="M1052,560 L1052,588 L812,588 L812,564" stroke="#7c5cc4" stroke-width="2.2" fill="none" stroke-dasharray="7 4" marker-end="url(#ap)"/>
+  <!-- admin FAIL -> final (over the top) -->
+  <path d="M572,250 L572,66 L1467,66 L1467,246" stroke="#d14b4b" stroke-width="2.4" fill="none" marker-end="url(#ar)"/>
+  <!-- KB dashed links -->
+  <path d="M960,232 L960,240 L600,240 L600,246" stroke="#d9a21b" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ak)"/>
+  <path d="M1240,232 L1240,244 L840,244 L840,246" stroke="#7c5cc4" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ap)"/>
+  <path d="M1080,244 L1080,246" stroke="#7c5cc4" stroke-width="1.6" fill="none" marker-end="url(#ap)"/>
+  <!-- agents -> blackboard (thin) -->
+  <g stroke="#9fb0c7" stroke-width="1.4" fill="none" stroke-dasharray="3 3">
+    <path d="M332,560 L332,610"/><path d="M700,560 L700,610" transform="translate(-128,0)"/><path d="M900,560 L900,610" transform="translate(-88,0)"/><path d="M1140,560 L1140,610" transform="translate(-88,0)"/><path d="M1467,560 L1467,610"/>
+  </g>
+  <!-- blackboard -> json row -->
+  <g stroke="#9fb0c7" stroke-width="1.4" fill="none">
+    <path d="M332,662 L332,678" marker-end="url(#a)"/><path d="M572,662 L572,678" marker-end="url(#a)"/><path d="M812,662 L812,678" marker-end="url(#a)"/><path d="M1052,662 L1052,678" marker-end="url(#a)"/><path d="M1467,662 L1467,678" marker-end="url(#a)"/>
+  </g>
+  <!-- final json -> outcomes -->
+  <path d="M1467,905 L1467,912 L395,912 L395,921" stroke="#4b5a73" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M715,912 L715,921" stroke="#4b5a73" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M1035,912 L1035,921" stroke="#4b5a73" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <path d="M1390,912 L1390,921" stroke="#4b5a73" stroke-width="2" fill="none" marker-end="url(#a)"/>
+</svg>
+
+<!-- wire labels -->
+<div class="lab" style="left:592px; top:74px; width:296px; color:#d14b4b; line-height:1.3;">BLOCKING ITEM FAILS → RETURNED_ADMIN<br><span style="font-weight:600; font-size:10.5px;">(consent form · insurance · unreadable PDF)<br>scientific stage skipped, boss emailed at once</span></div>
+<div class="lab" style="left:655px; top:383px; color:#2e9a62;">PASS</div>
+<div class="lab" style="left:1190px; top:383px; color:#4b5a73;">done</div>
+<div class="lab" style="left:860px; top:590px; color:#7c5cc4;">REVISE → focused re-check (max 1 round)</div>
+</body>
+</html>

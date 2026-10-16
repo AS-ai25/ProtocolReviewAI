@@ -11,6 +11,10 @@ but does not replace,** professional committee review.
 
 ## 1. Architecture
 
+![Architecture](docs/architecture.png)
+
+*Source: `docs/architecture.html` (render with headless Edge/Chrome, `--window-size=1600,1060 --screenshot`).*
+
 ```mermaid
 flowchart TD
     IN[Protocol PDF arrives<br/>Google Drive / email / upload] -->|webhook| C0[Coordinator Agent<br/>parse PDF + deterministic rule checks]
