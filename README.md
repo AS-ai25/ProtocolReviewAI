@@ -202,6 +202,16 @@ Baseline on the synthetic cases (live ClinicalTrials.gov): flawed F1 = 1.00 (10/
 deficiencies found), good 0 false positives. These are development numbers, not the project's
 evaluation results; the real evaluation uses public protocols labeled by the team (Checkpoint 2).
 
+## 6b. Derived score (display only)
+
+Next to the decision every run reports a score computed **from the verified findings**
+(`scoring.py`): start at 100, subtract 25 per critical, 10 per major, 3 per minor finding,
+floor at 0. Unverified findings are not counted but are shown as "pending human review";
+rejected ones are ignored. Every deduction is listed with its finding id, so each point is
+explainable. The score never drives the decision: a protocol with one blocking administrative
+item is RETURNED_ADMIN whatever its score, and the score then covers the administrative part only
+(`scope: administrative_only`). Weights live in `scoring.WEIGHTS`.
+
 ## 7. Guardrails and failure handling
 
 - Structured outputs validate every agent response; invalid JSON is retried once with the error.

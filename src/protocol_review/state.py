@@ -167,6 +167,7 @@ class ReviewState(TypedDict, total=False):
     revise_rounds: int
     revise_requests: list[str]  # critic questions for the next reviewer pass
     decision: str
+    score: dict                 # derived, display-only (see scoring.py)
     final_summary: str
     report_paths: dict
     notifications: list[str]

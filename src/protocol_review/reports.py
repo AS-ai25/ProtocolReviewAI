@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import settings
+from .scoring import score_line
 from .state import Domain, ReviewState
 
 STATUS_ICON = {"verified": "VERIFIED", "unverified": "UNVERIFIED", "revise": "REVISE", "rejected": "REJECTED", "proposed": "PROPOSED"}
@@ -92,7 +93,11 @@ def render_scientific_report(state: ReviewState) -> str:
 def render_final_report(state: ReviewState) -> str:
     fs = state.get("findings") or []
     md = _header(state, "Protocol Review - Final Report")
-    md += f"## Decision: **{state.get('decision')}**\n\n{state.get('final_summary', '')}\n\n"
+    md += f"## Decision: **{state.get('decision')}**\n\n"
+    if state.get("score"):
+        md += (f"**{score_line(state['score'])}**  \n_Derived from the verified findings, display only: "
+               f"the decision above is taken from the findings, not from the score._\n\n")
+    md += f"{state.get('final_summary', '')}\n\n"
     md += "## All findings\n\n" + _findings_table(fs)
     md += "\n## Review trace\n\n| Time (UTC) | Agent | Event | Detail |\n|---|---|---|---|\n"
     for t in state.get("trace") or []:

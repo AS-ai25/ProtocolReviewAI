@@ -19,6 +19,8 @@ def test_flawed_protocol_is_returned_at_admin_stage(flawed_pdf, registry_fetch):
     res = run_review(flawed_pdf, source="test", submitter="pytest", llm=llm, registry_fetch=registry_fetch)
     assert res["decision"] == "RETURNED_ADMIN"
     assert res["admin_ok"] is False
+    assert res["score"]["scope"] == "administrative_only" and res["score"]["score"] < 100
+    assert "Score:" in Path(res["report_paths"]["final_report"]).read_text(encoding="utf-8")
     assert res.get("scientific_report") is None       # scientific agents never ran
     sci_rule = [f for f in res["findings"] if f["domain"] == "scientific"]
     assert sci_rule and all(f["source"] == "rule" and f["status"] == "verified" for f in sci_rule)  # free checks still reported

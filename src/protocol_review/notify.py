@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .config import settings
 from .reports import run_dir
+from .scoring import score_line
 from .state import Decision, ReviewState
 
 log = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def notify_boss(state: ReviewState) -> list[str]:
     paths = state.get("report_paths") or {}
     attachments = [Path(paths[k]) for k in ("final_report", "administrative_report", "scientific_report") if k in paths]
     body = (f"Protocol review completed (run {state.get('run_id')}).\n"
-            f"Decision: {decision}\n\n{state.get('final_summary', '')}\n\n"
+            f"Decision: {decision}\n{score_line(state.get('score'))}\n\n{state.get('final_summary', '')}\n\n"
             f"Reports attached: {', '.join(p.name for p in attachments)}\n")
     if state.get("errors"):
         body += "\nWarnings during the run:\n" + "\n".join(f"- {e}" for e in state["errors"]) + "\n"

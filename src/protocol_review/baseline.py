@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .pdf_parser import parse_pdf
 from .reports import run_dir
+from .scoring import compute_score
 from .state import Decision, FindingStatus, Severity
 from .tools import checks, clinicaltrials
 
@@ -42,6 +43,7 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
         "registry": registry,
         "findings": findings,
         "decision": decision.value,
+        "score": compute_score(findings, admin_ok=not blocking),
         "final_summary": f"Rule-based baseline: {len(findings)} findings, decision {decision.value}.",
     }
     if write:

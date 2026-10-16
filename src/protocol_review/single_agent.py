@@ -33,6 +33,7 @@ from .knowledge_base import kb_text, rule_codes
 from .llm import LLMError, make_llm
 from .pdf_parser import parse_pdf
 from .reports import run_dir
+from .scoring import compute_score
 from .state import Domain, FindingStatus, Severity, SingleAgentReport
 from .tools import checks, clinicaltrials
 
@@ -164,6 +165,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
         "registry_comparison": [r.model_dump(mode="json") for r in report.registry_comparison] if report else [],
         "open_questions": report.open_questions if report else [],
         "decision": decision.value,
+        "score": compute_score(findings, admin_ok=admin_ok),
         "final_summary": final_summary,
         "errors": errors,
         "cost": memory.run_cost_summary(run_id),

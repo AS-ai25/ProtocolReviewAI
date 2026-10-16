@@ -8,6 +8,7 @@ from .. import memory
 from ..config import settings
 from ..llm import LLMError
 from ..pdf_parser import parse_pdf
+from ..scoring import compute_score, score_line
 from ..state import Decision, Domain, FinalSummary, FindingStatus, ReviewState, Severity, trace_event
 from ..tools import checks
 from . import base
@@ -105,7 +106,8 @@ def finalize_node(state: ReviewState, llm) -> dict:
                 findings.append(f)
     state = {**state, "findings": findings}
     decision = decide(state)
-    trace = trace_event(state, AGENT, "decision", decision.value)
+    score = compute_score(findings, admin_ok=bool(state.get("admin_ok")))
+    trace = trace_event(state, AGENT, "decision", f"{decision.value}; {score_line(score)}")
     errors = list(state.get("errors") or [])
 
     summary = None
@@ -113,6 +115,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
         try:
             payload = {
                 "decision": decision.value,
+                "score": score_line(score),
                 "protocol_meta": state.get("protocol_meta"),
                 "admin_summary": (state.get("admin_report") or {}).get("summary"),
                 "scientific_summary": (state.get("scientific_report") or {}).get("summary"),
@@ -133,7 +136,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
     text = summary.executive_summary + "\n\nKey findings:\n" + "\n".join(f"- {k}" for k in summary.key_findings) \
         + f"\n\nRecommendation: {summary.recommendation}"
     memory.post_message(run_id, AGENT, f"Final decision {decision.value}. Sending summary and reports to the coordinator.")
-    return {"findings": findings, "decision": decision.value, "final_summary": text, "trace": trace, "errors": errors}
+    return {"findings": findings, "decision": decision.value, "score": score, "final_summary": text, "trace": trace, "errors": errors}
 
 
 def domain_counts(findings: list[dict]) -> dict:
