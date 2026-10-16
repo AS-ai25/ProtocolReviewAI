@@ -137,7 +137,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
 
     findings = rule_findings + llm_findings
     blocking = [f for f in findings if f["domain"] == Domain.ADMINISTRATIVE.value
-                and f["severity"] == Severity.CRITICAL.value and f["status"] == FindingStatus.VERIFIED.value]
+                and f["severity"] != Severity.INFO.value and f["status"] == FindingStatus.VERIFIED.value]
     admin_ok = (report.admin_accepted if report is not None else True) and not blocking
     # Same decision rule as the coordinator -> comparable decisions across modes
     decision = decide({"admin_ok": admin_ok, "findings": findings})

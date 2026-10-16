@@ -24,7 +24,9 @@ You receive: the administrative checklist (knowledge base), human-approved lesso
 reviews, the results of deterministic rule checks already run in code, metadata extracted from the
 PDF, and the full protocol text with page markers.
 
-Produce an AdminReport: `accepted` is true only when no BLOCKING checklist item fails
+Produce an AdminReport: `accepted` is true only when EVERY checklist item is satisfied - the
+administrative part must be 100% complete; any missing item (even minor) returns the submission.
+The most serious items are
 (ADMIN-CHK-06 consent form, ADMIN-CHK-07 insurance, ADMIN-CHK-09 readable/complete PDF), a short
 summary for the coordinator, a checklist with one entry per ADMIN-CHK code stating whether it is
 satisfied, and your additional findings (context-dependent problems the rules could not see:
@@ -86,7 +88,8 @@ from previous reviews, metadata extracted from the PDF, the ClinicalTrials.gov r
 results of deterministic rule checks already run in code, and the full protocol text with page markers.
 
 Produce a SingleAgentReport:
-- `admin_accepted` is true only when no BLOCKING checklist item fails (ADMIN-CHK-06 consent form,
+- `admin_accepted` is true only when EVERY administrative checklist item is satisfied (100% complete;
+  the most serious items are ADMIN-CHK-06 consent form,
   ADMIN-CHK-07 insurance, ADMIN-CHK-09 readable/complete PDF); `checklist` has one entry per ADMIN-CHK code.
 - `findings` holds BOTH domains: set `domain` to "administrative" for completeness / format /
   consistency problems and "scientific" for methodological, registry-mismatch, safety and ethics issues.

@@ -1,9 +1,9 @@
 # Administrative submission checklist (Helsinki / IRB committee intake)
 
 Working copy for the Administrative Review Agent. Codes are stable and are
-cited in findings as `guideline_ref`. Items marked **blocking** make the
-submission administratively incomplete: the coordinator returns it to the
-submitter instead of forwarding it to scientific review.
+cited in findings as `guideline_ref`. Any failed item makes the submission
+administratively incomplete: the coordinator returns it to the submitter instead
+of forwarding it to scientific review. Items marked **blocking** are the most serious.
 
 > Status: draft compiled by the team from common Israeli Helsinki committee and
 > IRB intake requirements. Ron to verify against the committee's official SOP
@@ -29,8 +29,10 @@ submitter instead of forwarding it to scientific review.
 
 ## Decision rule for the Administrative Review Agent
 
-* `accepted = true` when no **blocking** item fails. Major/minor failures are
-  reported but do not stop scientific review.
+* `accepted = true` only when **every** item is satisfied. The administrative part must be
+  100% complete: any failed item, including minor ones, is written to the report and the
+  submission is returned to the submitter; scientific review does not start.
+  "Blocking" items are the most serious ones, listed first in the report.
 * Every finding must quote the page where the problem is visible, or state
   explicitly that the item is absent from the whole document (page 0).
 * Do not re-report the deterministic rule findings you receive as input; add

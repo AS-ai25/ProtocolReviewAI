@@ -27,7 +27,7 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check."
 
-    blocking = [f for f in findings if f["domain"] == "administrative" and f["severity"] == Severity.CRITICAL.value]
+    blocking = [f for f in findings if f["domain"] == "administrative" and f["severity"] != Severity.INFO.value]
     if blocking:
         decision = Decision.RETURNED_ADMIN
     elif any(f["severity"] in (Severity.CRITICAL.value, Severity.MAJOR.value) for f in findings):

@@ -20,7 +20,7 @@ flowchart TD
     IN[Protocol PDF arrives<br/>Google Drive / email / upload] -->|webhook| C0[Coordinator Agent<br/>parse PDF + deterministic rule checks]
     C0 --> A[Administrative Review Agent<br/>checklist KB: ADMIN-CHK-xx]
     A -->|submission complete| S[Scientific Review Agent<br/>SPIRIT / ICH-GCP KB + ClinicalTrials.gov]
-    A -->|blocking issues| F[Coordinator: decision + executive summary]
+    A -->|any administrative finding| F[Coordinator: decision + executive summary]
     S --> K[Scientific Critic Agent<br/>evidence check, verdict per finding]
     K -->|REVISE, round left| S
     K -->|done| F
@@ -45,8 +45,9 @@ flowchart TD
    NCT id, PI, sponsor, phase) and runs the **deterministic rule checks** (shared with the baseline).
 3. **Administrative Review Agent.** Receives the administrative checklist (knowledge base), approved
    lessons from memory, the rule findings and the full protocol text. Returns a structured
-   `AdminReport` (accepted?, checklist, extra findings). Blocking failures (no consent form,
-   no insurance, unreadable PDF) stop the pipeline: the coordinator emails the boss the administrative
+   `AdminReport` (accepted?, checklist, extra findings). The administrative part must be 100% complete:
+   any verified administrative finding (the most serious being no consent form,
+   no insurance, unreadable PDF) stops the pipeline: the coordinator emails the boss the administrative
    report and the submission is **RETURNED_ADMIN**.
 4. **Scientific Review Agent.** Fetches the ClinicalTrials.gov record by NCT id (API v2), compares it
    with the protocol, and reviews against SPIRIT / ICH-GCP. Returns a `ScientificReport` with findings,
@@ -208,7 +209,7 @@ Next to the decision every run reports a score computed **from the verified find
 (`scoring.py`): start at 100, subtract 25 per critical, 10 per major, 3 per minor finding,
 floor at 0. Unverified findings are not counted but are shown as "pending human review";
 rejected ones are ignored. Every deduction is listed with its finding id, so each point is
-explainable. The score never drives the decision: a protocol with one blocking administrative
+explainable. The score never drives the decision: a protocol with one verified administrative
 item is RETURNED_ADMIN whatever its score, and the score then covers the administrative part only
 (`scope: administrative_only`). Weights live in `scoring.WEIGHTS`.
 

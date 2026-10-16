@@ -56,7 +56,7 @@ def test_evidence_verification_without_a_critic(good_pdf, registry_fetch):
         _finding(1, "scientific", "Real quote", 1, "two intramuscular injections of VX-101 100 micrograms or saline placebo"),
         _finding(2, "scientific", "Hallucinated quote", 1, "this sentence does not exist anywhere in the protocol text"),
         _finding(3, "scientific", "Unknown guideline code", 1, "two intramuscular injections of VX-101 100 micrograms or saline placebo", ref="SPIRIT-99"),
-        _finding(4, "administrative", "Absence claim", 0, "", ref="ADMIN-CHK-04", severity="minor", category="MISSING_SECTION"),
+        _finding(4, "administrative", "Absence claim", 0, "", ref="ADMIN-CHK-04", severity="info", category="MISSING_SECTION"),  # info: does not return the submission
     ])})
     res = run_single_agent(good_pdf, registry_fetch=registry_fetch, llm=llm, write=False)
 

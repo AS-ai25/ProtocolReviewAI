@@ -57,7 +57,7 @@
   <div class="bd"><ul>
     <li>Checklist <span class="tag">ADMIN-CHK-01..15</span></li>
     <li>Title, version, date, NCT id, PI, sponsor</li>
-    <li><b>Blocking:</b> consent form, insurance, readable PDF</li>
+    <li><b>Most serious:</b> consent form, insurance, readable PDF</li>
     <li>Required sections, appendices</li>
   </ul></div>
 </div>
@@ -101,7 +101,7 @@
     <li>Format and completeness vs administrative checklist</li>
     <li>Adds context findings the rules cannot see (version mismatch, missing appendix, wrong consent language)</li>
     <li>Evidence auto-verified in code (quote located? code valid?)</li>
-    <li><b>accepted = no blocking item fails</b></li>
+    <li><b>accepted = 100% complete</b> (any verified finding returns it)</li>
   </ul></div>
   <div class="out">Output: AdminReport JSON (accepted, checklist, findings)</div>
 </div>
@@ -237,7 +237,7 @@
   <b>❗ MAJOR_CONCERNS</b>At least one <i>verified</i> critical or major scientific finding. Investigators must address it before the meeting.
 </div>
 <div class="outcome" style="left:1205px; top:925px; width:370px; height:88px; border-color:var(--greyb); background:var(--grey);">
-  <b>↩ RETURNED_ADMIN</b>A blocking administrative item failed. Scientific agents never ran (only the free deterministic scientific checks are reported). Submitter revises and resubmits.
+  <b>↩ RETURNED_ADMIN</b>The administrative part is not 100% complete. Scientific agents never ran (only the free deterministic scientific checks are reported). Submitter revises and resubmits.
 </div>
 
 <!-- Wires -->
@@ -285,7 +285,7 @@
 </svg>
 
 <!-- wire labels -->
-<div class="lab" style="left:592px; top:74px; width:296px; color:#d14b4b; line-height:1.3;">BLOCKING ITEM FAILS → RETURNED_ADMIN<br><span style="font-weight:600; font-size:10.5px;">(consent form · insurance · unreadable PDF)<br>scientific stage skipped, boss emailed at once</span></div>
+<div class="lab" style="left:592px; top:74px; width:296px; color:#d14b4b; line-height:1.3;">ANY ADMIN FINDING → RETURNED_ADMIN<br><span style="font-weight:600; font-size:10.5px;">(administrative part must be 100% complete)<br>scientific stage skipped, boss emailed at once</span></div>
 <div class="lab" style="left:655px; top:383px; color:#2e9a62;">PASS</div>
 <div class="lab" style="left:1190px; top:383px; color:#4b5a73;">done</div>
 <div class="lab" style="left:860px; top:590px; color:#7c5cc4;">REVISE → focused re-check (max 1 round)</div>

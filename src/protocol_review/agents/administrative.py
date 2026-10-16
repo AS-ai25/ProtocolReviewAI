@@ -66,8 +66,10 @@ def administrative_node(state: ReviewState, llm) -> dict:
             llm_findings.append(f)
 
     admin_findings = rule_findings + llm_findings
-    blocking = [f for f in admin_findings if f["severity"] == Severity.CRITICAL.value
-                and f["status"] in (FindingStatus.VERIFIED.value,)]
+    # Policy (Amir, 2026-10-16): the administrative part must be 100% complete. ANY verified
+    # administrative finding (critical, major or minor) returns the submission; "info" does not.
+    blocking = [f for f in admin_findings if f["severity"] != Severity.INFO.value
+                and f["status"] == FindingStatus.VERIFIED.value]
     accepted_by_llm = report.accepted if report is not None else True
     admin_ok = accepted_by_llm and not blocking
 
