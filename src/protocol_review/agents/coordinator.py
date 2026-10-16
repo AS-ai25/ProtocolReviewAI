@@ -93,6 +93,16 @@ def finalize_node(state: ReviewState, llm) -> dict:
         if f["status"] in (FindingStatus.PROPOSED.value, FindingStatus.REVISE.value):
             f["status"] = FindingStatus.UNVERIFIED.value
             f["critic_notes"] = (f.get("critic_notes") or "") + " [left unverified at finalisation]"
+    if not state.get("admin_ok"):
+        # Scientific agents did not run, but the deterministic scientific checks cost nothing:
+        # include them so the submitter gets the full picture in one round trip.
+        present = {f["id"] for f in findings}
+        for f in state.get("rule_findings") or []:
+            if f["domain"] == Domain.SCIENTIFIC.value and f["id"] not in present:
+                f = dict(f)
+                f["status"] = FindingStatus.VERIFIED.value
+                f["critic_notes"] = "Deterministic check (code); scientific agents did not run because the submission was returned at the administrative stage."
+                findings.append(f)
     state = {**state, "findings": findings}
     decision = decide(state)
     trace = trace_event(state, AGENT, "decision", decision.value)

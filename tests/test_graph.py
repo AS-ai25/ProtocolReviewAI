@@ -20,6 +20,8 @@ def test_flawed_protocol_is_returned_at_admin_stage(flawed_pdf, registry_fetch):
     assert res["decision"] == "RETURNED_ADMIN"
     assert res["admin_ok"] is False
     assert res.get("scientific_report") is None       # scientific agents never ran
+    sci_rule = [f for f in res["findings"] if f["domain"] == "scientific"]
+    assert sci_rule and all(f["source"] == "rule" and f["status"] == "verified" for f in sci_rule)  # free checks still reported
     assert {c["schema"] for c in llm.calls} == {"AdminReport", "FinalSummary"}
     assert Path(res["report_paths"]["final_report"]).exists()
     assert Path(res["report_paths"]["administrative_report"]).exists()
