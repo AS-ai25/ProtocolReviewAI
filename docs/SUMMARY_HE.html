@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ProtocolReviewAI - סיכום המערכת</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  :root { --ink:#1b2430; --muted:#5a6675; --line:#d6dbe3; --acc:#0f6e56; --acc2:#1f4e8c; --warn:#b4541a; --soft:#f3f6f9; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, "Segoe UI", sans-serif; color: var(--ink); font-size: 11pt; line-height: 1.55; margin: 0; direction: rtl; }
+  h1 { font-size: 24pt; margin: 0 0 4px; color: var(--acc2); }
+  h2 { font-size: 15pt; margin: 22px 0 8px; color: var(--acc2); border-bottom: 2px solid var(--acc2); padding-bottom: 3px; page-break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14px 0 6px; color: var(--acc); page-break-after: avoid; }
+  p { margin: 5px 0; }
+  .sub { color: var(--muted); font-size: 10.5pt; margin-bottom: 14px; }
+  .cover { border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; background: var(--soft); }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; font-size: 10pt; margin-top: 10px; }
+  .meta b { color: var(--acc2); }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10pt; page-break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 8px; text-align: right; vertical-align: top; }
+  th { background: var(--soft); color: var(--acc2); }
+  code, .ltr { direction: ltr; unicode-bidi: isolate; font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; }
+  pre { direction: ltr; text-align: left; background: #0f1720; color: #e6edf3; padding: 10px 12px; border-radius: 6px; font-size: 9pt; line-height: 1.45; overflow: hidden; page-break-inside: avoid; }
+  .box { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; background: #fff; page-break-inside: avoid; }
+  .note { border-right: 4px solid var(--warn); background: #fff7f1; }
+  .ok { border-right: 4px solid var(--acc); background: #f0faf6; }
+  figure { margin: 10px 0 14px; page-break-inside: avoid; text-align: center; }
+  figcaption { font-size: 9.5pt; color: var(--muted); margin-top: 4px; }
+  svg { max-width: 100%; height: auto; }
+  svg text { font-family: Arial, sans-serif; }
+  ul, ol { margin: 4px 0 8px; padding-right: 22px; padding-left: 0; }
+  li { margin: 2px 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+  .kpi div { border: 1px solid var(--line); border-radius: 8px; padding: 8px; text-align: center; background: var(--soft); }
+  .kpi b { display: block; font-size: 18pt; color: var(--acc2); }
+  .kpi span { font-size: 9pt; color: var(--muted); }
+  .pb { page-break-before: always; }
+  footer { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 6px; font-size: 8.5pt; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>ProtocolReviewAI</h1>
+  <div class="sub">מערכת מולטי-אג'נטים לסקירת פרוטוקולים של ניסויים קליניים עבור ועדות הלסינקי (IRB)</div>
+  <p>פרויקט גמר BIU DS23. צוות: אמיר שמריהו (סוכנים ומודל) ורון לוי (מוצר ונתונים). מסמך זה מסכם את מה שנבנה ב-16 באוקטובר 2026 (נקודת ביקורת 1), את הטכנולוגיה, ואת אופן ההפעלה.</p>
+  <div class="meta">
+    <div><b>מאגר:</b> <span class="ltr">github.com/AS-ai25/ProtocolReviewAI</span> (פרטי)</div>
+    <div><b>תיקייה:</b> <span class="ltr">ClaudCode\ProtocolReviewAI</span></div>
+    <div><b>שפה:</b> קוד ותיעוד באנגלית</div>
+    <div><b>סטטוס:</b> 15 טסטים ירוקים, ריצה חיה מלאה הושלמה</div>
+  </div>
+</div>
+
+<div class="kpi">
+  <div><b>4</b><span>סוכנים (LangGraph)</span></div>
+  <div><b>3</b><span>שכבות זיכרון</span></div>
+  <div><b>31</b><span>בדיקות דטרמיניסטיות</span></div>
+  <div><b>15</b><span>טסטים אוטומטיים</span></div>
+</div>
+
+<h2>1. הבעיה והפתרון</h2>
+<p>רכזי ועדות הלסינקי וחברי הוועדה סוקרים פרוטוקולים מורכבים לפני הדיון. הבדיקה כוללת חלק אדמיניסטרטיבי (שלמות, פורמט, מסמכים נלווים) וחלק מדעי (מתודולוגיה, סתירות פנימיות, התאמה לרשם הניסויים). התהליך איטי ורגיש לפספוסים.</p>
+<p>המערכת מקבלת PDF אוטומטית (Drive או מייל), מריצה שרשרת של סוכנים מתמחים, ומחזירה לרכז הוועדה ("הבוס") דוחות וסיכום מנהלים במייל. <b>כל ממצא נושא ראיה</b>: מספר עמוד, ציטוט מילולי מהפרוטוקול, וקוד כלל מבסיס הידע (SPIRIT, ICH-GCP, צ'קליסט אדמיניסטרטיבי). המערכת מסייעת לוועדה ואינה מחליפה אותה.</p>
+
+<h2>2. ארכיטקטורה</h2>
+<figure>
+<svg viewBox="0 0 760 520" width="760" height="520" xmlns="http://www.w3.org/2000/svg" direction="rtl">
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker>
+    <style>.b{fill:#fff;stroke:#1f4e8c;stroke-width:1.6;rx:8} .t{font-size:12px;fill:#1b2430} .s{font-size:10px;fill:#5a6675} .e{stroke:#5a6675;stroke-width:1.5;fill:none;marker-end:url(#ar)} .lab{font-size:10px;fill:#0f6e56;font-weight:bold}</style>
+  </defs>
+  <!-- intake -->
+  <rect class="b" x="300" y="12" width="160" height="46" rx="8" style="stroke:#0f6e56"/>
+  <text class="t" x="380" y="31" text-anchor="middle">קובץ PDF מגיע</text>
+  <text class="s" x="380" y="47" text-anchor="middle">Google Drive / מייל / Webhook</text>
+  <!-- coordinator -->
+  <rect class="b" x="270" y="86" width="220" height="50" rx="8"/>
+  <text class="t" x="380" y="106" text-anchor="middle">סוכן מתאם (Coordinator)</text>
+  <text class="s" x="380" y="123" text-anchor="middle">חילוץ טקסט + בדיקות דטרמיניסטיות</text>
+  <!-- admin -->
+  <rect class="b" x="270" y="166" width="220" height="50" rx="8"/>
+  <text class="t" x="380" y="186" text-anchor="middle">סוכן סקירה אדמיניסטרטיבית</text>
+  <text class="s" x="380" y="203" text-anchor="middle">צ'קליסט ADMIN-CHK-01..15</text>
+  <!-- scientific reviewer -->
+  <rect class="b" x="420" y="262" width="220" height="50" rx="8"/>
+  <text class="t" x="530" y="282" text-anchor="middle">סוכן סקירה מדעית</text>
+  <text class="s" x="530" y="299" text-anchor="middle">SPIRIT / ICH-GCP + ClinicalTrials.gov</text>
+  <!-- critic -->
+  <rect class="b" x="420" y="352" width="220" height="50" rx="8"/>
+  <text class="t" x="530" y="372" text-anchor="middle">סוכן מבקר מדעי (Critic)</text>
+  <text class="s" x="530" y="389" text-anchor="middle">פסק דין לכל ממצא + אימות ראיות</text>
+  <!-- finalize -->
+  <rect class="b" x="120" y="352" width="220" height="50" rx="8"/>
+  <text class="t" x="230" y="372" text-anchor="middle">מתאם: החלטה + סיכום מנהלים</text>
+  <text class="s" x="230" y="389" text-anchor="middle">PASS / RETURNED / MAJOR / HUMAN</text>
+  <!-- email -->
+  <rect class="b" x="120" y="440" width="220" height="50" rx="8" style="stroke:#0f6e56"/>
+  <text class="t" x="230" y="460" text-anchor="middle">מייל לרכז הוועדה</text>
+  <text class="s" x="230" y="477" text-anchor="middle">3 דוחות Markdown מצורפים</text>
+  <!-- blackboard -->
+  <rect x="20" y="86" width="200" height="200" rx="10" fill="#f3f6f9" stroke="#d6dbe3" stroke-dasharray="4 3"/>
+  <text class="t" x="120" y="108" text-anchor="middle" font-weight="bold">לוח משותף (Blackboard)</text>
+  <text class="s" x="120" y="132" text-anchor="middle">ממצאים + ראיות + סטטוס</text>
+  <text class="s" x="120" y="150" text-anchor="middle">דוחות סוכנים</text>
+  <text class="s" x="120" y="168" text-anchor="middle">בקשות תיקון</text>
+  <text class="s" x="120" y="186" text-anchor="middle">מעקב (trace) מלא</text>
+  <text class="s" x="120" y="216" text-anchor="middle" font-weight="bold">זיכרון 3 שכבות</text>
+  <text class="s" x="120" y="234" text-anchor="middle">קצר: הודעות בריצה</text>
+  <text class="s" x="120" y="252" text-anchor="middle">ארוך: תובנות באישור אדם</text>
+  <text class="s" x="120" y="270" text-anchor="middle">היסטורי: כל קריאת LLM</text>
+  <!-- edges -->
+  <path class="e" d="M380,58 L380,84"/>
+  <path class="e" d="M380,136 L380,164"/>
+  <path class="e" d="M440,216 L510,260"/>
+  <text class="lab" x="490" y="236">תקין</text>
+  <path class="e" d="M320,216 L240,350"/>
+  <text class="lab" x="300" y="300">חוסם</text>
+  <path class="e" d="M530,312 L530,350"/>
+  <path class="e" d="M640,352 C690,330 690,290 640,282" />
+  <text class="lab" x="700" y="320">REVISE (סבב 1)</text>
+  <path class="e" d="M420,377 L342,377"/>
+  <text class="lab" x="380" y="370" text-anchor="middle">סיום</text>
+  <path class="e" d="M230,402 L230,438"/>
+</svg>
+<figcaption>תרשים 1: זרימת הסקירה. דחייה אדמיניסטרטיבית חוסמת מדלגת על השלב המדעי ושולחת מייל לבוס מיד.</figcaption>
+</figure>
+
+<h3>תפקיד כל סוכן</h3>
+<table>
+<tr><th>סוכן</th><th>מה הוא עושה</th><th>כלים</th><th>פלט מובנה</th></tr>
+<tr><td>מתאם (Coordinator)</td><td>מקבל את הפרויקט, מחלץ טקסט ומטא-דאטה, מריץ בדיקות קוד, מנתב בין הסוכנים, מחליט, כותב סיכום מנהלים ושולח מייל</td><td>PyMuPDF, בדיקות regex, SQLite, SMTP</td><td class="ltr">FinalSummary</td></tr>
+<tr><td>סקירה אדמיניסטרטיבית</td><td>בודק שהפורמט תקין וכל המסמכים והסעיפים קיימים לפי מסמכי הכללים; 3 פריטים חוסמים: טופס הסכמה, ביטוח, PDF קריא</td><td>בסיס ידע אדמיניסטרטיבי, זיכרון ארוך</td><td class="ltr">AdminReport</td></tr>
+<tr><td>סקירה מדעית</td><td>סוקר מתודולוגיה מול SPIRIT ו-ICH-GCP, מזהה סתירות פנימיות ומשווה לרשומת ClinicalTrials.gov לפי NCT</td><td>API של ClinicalTrials.gov, בסיס ידע מדעי</td><td class="ltr">ScientificReport</td></tr>
+<tr><td>מבקר מדעי (Critic)</td><td>בודק כל ממצא של הסוקר: verified / revise / unverified / rejected; מחזיר בקשות תיקון ממוקדות; מציע תובנות לזיכרון</td><td>מאמת ציטוטים בקוד, אימות קודי כללים</td><td class="ltr">CriticReport</td></tr>
+</table>
+
+<div class="box note"><b>הערה לצ'ארטר:</b> הצ'ארטר מונה סוכן חמישי, מבקר אדמיניסטרטיבי. בגרסה זו הוא הוחלף באימות ראיות אוטומטי בקוד; הוספתו היא צומת אחד נוסף בגרף ונמצאת בעבודה בסשן נפרד יחד עם ה-Single-Agent Baseline.</div>
+
+<h2>3. מחזור חיים של ממצא וגדרות בטיחות</h2>
+<figure>
+<svg viewBox="0 0 760 170" width="760" height="170" xmlns="http://www.w3.org/2000/svg" direction="rtl">
+  <defs><marker id="ar2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+  <g font-size="12" fill="#1b2430">
+    <rect x="610" y="40" width="130" height="44" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="675" y="67" text-anchor="middle">PROPOSED</text>
+    <rect x="420" y="40" width="130" height="44" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="485" y="67" text-anchor="middle">בדיקת ראיות בקוד</text>
+    <rect x="230" y="40" width="130" height="44" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="295" y="67" text-anchor="middle">פסק דין המבקר</text>
+    <rect x="20" y="10" width="150" height="30" rx="6" fill="#f0faf6" stroke="#0f6e56"/><text x="95" y="30" text-anchor="middle">VERIFIED</text>
+    <rect x="20" y="48" width="150" height="30" rx="6" fill="#fff7f1" stroke="#b4541a"/><text x="95" y="68" text-anchor="middle">REVISE → סוקר</text>
+    <rect x="20" y="86" width="150" height="30" rx="6" fill="#f3f6f9" stroke="#5a6675"/><text x="95" y="106" text-anchor="middle">UNVERIFIED → אדם</text>
+    <rect x="20" y="124" width="150" height="30" rx="6" fill="#f3f6f9" stroke="#5a6675"/><text x="95" y="144" text-anchor="middle">REJECTED</text>
+  </g>
+  <g stroke="#5a6675" stroke-width="1.5" fill="none" marker-end="url(#ar2)">
+    <path d="M610,62 L552,62"/><path d="M420,62 L362,62"/>
+    <path d="M230,55 L172,25"/><path d="M230,62 L172,63"/><path d="M230,70 L172,101"/><path d="M230,78 L172,139"/>
+  </g>
+  <text x="485" y="110" text-anchor="middle" font-size="10" fill="#5a6675">הציטוט קיים בעמוד? קוד הכלל קיים בבסיס הידע?</text>
+</svg>
+<figcaption>תרשים 2: ממצא של סוכן LLM לעולם אינו "מאומת" אם הציטוט שלו לא נמצא בפועל ב-PDF, גם אם המבקר אישר אותו.</figcaption>
+</figure>
+<ul>
+  <li><b>פלט מובנה</b>: כל קריאה למודל מוגבלת לסכמת JSON (structured outputs) ומאומתת ב-pydantic; JSON שגוי מתוקן בניסיון חוזר אחד.</li>
+  <li><b>סירובים</b>: טיפול ב-<span class="ltr">stop_reason = refusal</span> ו-fallbacks בצד השרת.</li>
+  <li><b>כשל LLM</b> לא מפיל את הריצה: המערכת יורדת לתוצאות הדטרמיניסטיות ומדווחת על השגיאה בדוח.</li>
+  <li><b>לולאת תיקון חסומה</b>: סבב אחד (ניתן להגדרה). כל מה שנותר פתוח בסיום הופך ל-UNVERIFIED ועובר לבדיקה אנושית.</li>
+  <li><b>trace</b> מלא של כל פעולה והחלטה נשמר ב-<span class="ltr">state.json</span> ובדוח הסופי.</li>
+</ul>
+
+<h2>4. זיכרון בשלוש שכבות (תקן הפלטפורמה)</h2>
+<table>
+<tr><th>שכבה</th><th>טבלה</th><th>תוכן</th><th>גישה</th></tr>
+<tr><td>קצרה</td><td class="ltr">run_messages</td><td>שיחת הסוכנים על הלוח המשותף לכל ריצה (TTL 7 ימים)</td><td class="ltr">GET /runs/{id}/messages</td></tr>
+<tr><td>ארוכה (HITL)</td><td class="ltr">agent_memories</td><td>תובנות שסוכן <b>מציע</b>; אדם מאשר / עורך / דוחה; רק מאושרות נכנסות לפרומפט. היקף global לעולם לא מאושר אוטומטית</td><td class="ltr">GET /memory, POST /memory/{id}/approve</td></tr>
+<tr><td>היסטורית</td><td class="ltr">agent_interactions</td><td>כל קריאת LLM: מודל, טוקנים, משך, פלט (ביקורת, עלויות, הערכה)</td><td class="ltr">GET /runs/{id}/cost</td></tr>
+</table>
+
+<h2>5. טכנולוגיה</h2>
+<table>
+<tr><th>רכיב</th><th>טכנולוגיה</th><th>הערות</th></tr>
+<tr><td>אורקסטרציה</td><td>LangGraph 1.2 (StateGraph, conditional edges)</td><td>הלוח המשותף הוא ה-state של הגרף</td></tr>
+<tr><td>מודל שפה</td><td>Anthropic SDK 1.15, Claude Opus 5.5 (ברירת מחדל)</td><td>ניתן להחליף ל-Sonnet 5.5 ב-.env לריצות זולות; NO_LLM מריץ רק כללים</td></tr>
+<tr><td>פלט מובנה</td><td class="ltr">output_config.format = json_schema</td><td>סכמות pydantic: AdminReport, ScientificReport, CriticReport, FinalSummary</td></tr>
+<tr><td>עיבוד PDF</td><td>PyMuPDF</td><td>טקסט לפי עמוד + מטא-דאטה בביטויים רגולריים (NCT, גרסה, תאריך, חוקר ראשי, ספונסר, פאזה)</td></tr>
+<tr><td>מטא-דאטה מדעי</td><td>ClinicalTrials.gov API v2</td><td>לפי מזהה NCT: כותרת, פאזה, גודל מדגם, תוצאות ראשיות, ספונסר, מיסוך</td></tr>
+<tr><td>בסיס ידע</td><td>קבצי Markdown + אחזור לפי מילות מפתח</td><td>SPIRIT (33 פריטים), ICH-GCP (12), צ'קליסט אדמיניסטרטיבי (15). טיוטה לאימות של רון</td></tr>
+<tr><td>שרת</td><td>FastAPI + Uvicorn (פורט 8040)</td><td>Webhooks, מעקב ריצות, אישור זיכרון; הגנה בכותרת X-Webhook-Secret</td></tr>
+<tr><td>אחסון</td><td>SQLite דרך SQLAlchemy 2</td><td>ריצות, זיכרון; החלפה ל-Postgres בשינוי DATABASE_URL</td></tr>
+<tr><td>כניסה אוטומטית</td><td>Make.com / n8n / Google Drive, IMAP poller</td><td>הוראות חיבור ב-README סעיף 5</td></tr>
+<tr><td>יציאה</td><td>SMTP (או dry-run לקובץ .eml)</td><td>מייל לבוס עם 3 דוחות Markdown</td></tr>
+<tr><td>בדיקות והערכה</td><td>pytest (MockLLM, ללא רשת), eval/evaluate.py</td><td>P / R / F1 מול מקרים מתויגים, זמן ריצה, טוקנים</td></tr>
+</table>
+
+<h2 class="pb">6. איך משתמשים</h2>
+<h3>התקנה (פעם אחת)</h3>
+<pre>cd C:\Users\amirs\Documents\ClaudCode\ProtocolReviewAI
+python -m venv .venv
+.venv\Scripts\python -m pip install -e .
+copy .env.example .env        # ANTHROPIC_API_KEY, BOSS_EMAIL, SMTP_*, WEBHOOK_SECRET
+.venv\Scripts\python samples\make_sample_protocols.py
+.venv\Scripts\python -m pytest</pre>
+<div class="box note">ב-Windows עם Smart App Control יש להריץ כלים תמיד דרך <span class="ltr">python -m ...</span> (קבצי exe של ה-venv חסומים).</div>
+
+<h3>הרצה משורת הפקודה</h3>
+<pre># סקירה מולטי-אג'נטית מלאה
+.venv\Scripts\python -m protocol_review.cli review samples\synthetic_protocol_flawed.pdf
+
+# Baseline דטרמיניסטי בלבד (ללא LLM)
+.venv\Scripts\python -m protocol_review.cli baseline samples\synthetic_protocol_flawed.pdf
+
+# שרת Webhooks (תיעוד אינטראקטיבי: http://127.0.0.1:8040/docs)
+.venv\Scripts\python -m uvicorn protocol_review.api:app --port 8040
+
+# משיכת פרוטוקולים מתיבת מייל
+.venv\Scripts\python -m protocol_review.cli poll-mail
+
+# הערכה
+.venv\Scripts\python eval\evaluate.py --mode baseline
+.venv\Scripts\python eval\evaluate.py --mode agents</pre>
+
+<h3>תוצרים של כל ריצה</h3>
+<p>בתיקייה <span class="ltr">outputs/&lt;run_id&gt;/</span>: <span class="ltr">final_report.md</span> (החלטה, סיכום מנהלים, כל הממצאים, trace), <span class="ltr">administrative_report.md</span>, <span class="ltr">scientific_report.md</span> (כולל טבלת השוואה לרשם ושאלות פתוחות לחוקרים), <span class="ltr">findings.json</span>, <span class="ltr">state.json</span>, ו-<span class="ltr">email.eml</span> במצב dry-run.</p>
+
+<h3>ממשק ה-API</h3>
+<table>
+<tr><th>שיטה</th><th>נתיב</th><th>מטרה</th></tr>
+<tr><td>POST</td><td class="ltr">/webhook/protocol</td><td>העלאת PDF (multipart) + nct_id, submitter → מחזיר run_id; הסקירה רצה ברקע</td></tr>
+<tr><td>POST</td><td class="ltr">/webhook/protocol-url</td><td>JSON עם קישור הורדה (Google Drive)</td></tr>
+<tr><td>POST</td><td class="ltr">/baseline</td><td>Baseline סינכרוני</td></tr>
+<tr><td>GET</td><td class="ltr">/runs, /runs/{id}</td><td>רשימת ריצות, מצב מלא והחלטה</td></tr>
+<tr><td>GET</td><td class="ltr">/runs/{id}/report?kind=final|admin|scientific</td><td>הדוחות</td></tr>
+<tr><td>GET</td><td class="ltr">/runs/{id}/messages, /runs/{id}/cost</td><td>זיכרון קצר, טוקנים ועלות</td></tr>
+<tr><td>GET/POST</td><td class="ltr">/memory, /memory/{id}/approve|reject|deactivate</td><td>אישור אנושי של תובנות לזיכרון הארוך</td></tr>
+</table>
+
+<h3>חיבור האוטומציה (Make.com / n8n)</h3>
+<figure>
+<svg viewBox="0 0 760 120" width="760" height="120" xmlns="http://www.w3.org/2000/svg" direction="rtl">
+  <defs><marker id="ar3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+  <g font-size="11" fill="#1b2430">
+    <rect x="620" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#0f6e56" stroke-width="1.6"/><text x="685" y="53" text-anchor="middle">תיקיית Drive</text><text x="685" y="72" text-anchor="middle" font-size="9.5" fill="#5a6675">Watch Files (PDF)</text>
+    <rect x="450" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="515" y="53" text-anchor="middle">Download a File</text><text x="515" y="72" text-anchor="middle" font-size="9.5" fill="#5a6675">binary</text>
+    <rect x="280" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="345" y="53" text-anchor="middle">HTTP POST</text><text x="345" y="72" text-anchor="middle" font-size="9.5" fill="#5a6675">/webhook/protocol</text>
+    <rect x="110" y="30" width="130" height="56" rx="8" fill="#fff" stroke="#1f4e8c" stroke-width="1.6"/><text x="175" y="53" text-anchor="middle">ProtocolReviewAI</text><text x="175" y="72" text-anchor="middle" font-size="9.5" fill="#5a6675">run_id → ריצה ברקע</text>
+    <rect x="10" y="30" width="80" height="56" rx="8" fill="#fff" stroke="#0f6e56" stroke-width="1.6"/><text x="50" y="62" text-anchor="middle">מייל לבוס</text>
+  </g>
+  <g stroke="#5a6675" stroke-width="1.5" fill="none" marker-end="url(#ar3)">
+    <path d="M620,58 L582,58"/><path d="M450,58 L412,58"/><path d="M280,58 L242,58"/><path d="M110,58 L92,58"/>
+  </g>
+  <text x="380" y="108" text-anchor="middle" font-size="10" fill="#5a6675">כותרת X-Webhook-Secret בכל קריאה; השרת חשוף לאינטרנט דרך VPS או ngrok</text>
+</svg>
+<figcaption>תרשים 3: תרחיש Make.com. ב-n8n: Google Drive Trigger → Download → HTTP Request (Form-Data, שדה file).</figcaption>
+</figure>
+
+<h2>7. תוצאות עד כה והמשך</h2>
+<div class="two">
+<div class="box ok">
+<b>אימות (16.10.2026)</b>
+<ul>
+  <li>15 טסטים ירוקים (זרימה מלאה עם MockLLM, גדרות, API, זיכרון).</li>
+  <li>Baseline על 2 מקרים סינתטיים: F1 = 1.0 (10/10 פגמים מוזרקים זוהו, 0 חיוביים שגויים).</li>
+  <li>ריצה חיה עם Claude Opus 5.5: כל הסוכנים כולל סבב תיקון, 6 קריאות, כ-7 דקות, כ-84K טוקני קלט ו-38K פלט (כדולר אחד).</li>
+</ul>
+</div>
+<div class="box note">
+<b>מה עוד לא נעשה</b>
+<ul>
+  <li>SMTP ו-Make/n8n לא מחוברים (אין פרטי חשבון).</li>
+  <li>בסיס הידע הוא טיוטה; רון מאמת מול SPIRIT 2025 הרשמי.</li>
+  <li>פרוטוקולים ציבוריים אמיתיים ותיוג ממצאים (נקודת ביקורת 2).</li>
+  <li>Single-Agent Baseline ומבקר אדמיניסטרטיבי: בעבודה בסשן נפרד.</li>
+</ul>
+</div>
+</div>
+<table>
+<tr><th>תאריך</th><th>אבן דרך</th><th>מצב</th></tr>
+<tr><td>18.10.2026</td><td>נקודת ביקורת 1: צנרת מקצה לקצה + Baseline דטרמיניסטי</td><td>הושלם</td></tr>
+<tr><td>30.10.2026</td><td>נקודת ביקורת 2: בסיס ידע מאומת, פרוטוקולים אמיתיים, סט מתויג, דמו</td><td>בעבודה</td></tr>
+<tr><td>12.11.2026</td><td>הגשה סופית: הערכה מול Rule-Based ו-Single-Agent, README, מצגת</td><td>מתוכנן</td></tr>
+</table>
+
+</body>
+</html>
