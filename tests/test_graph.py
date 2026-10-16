@@ -14,35 +14,13 @@ def _sci_finding(i, title, page, quote, ref="SPIRIT-14", severity="major"):
             "recommendation": "", "status": "proposed", "critic_notes": "", "source": "llm"}
 
 
-def _adm_finding(i, title, page, quote, ref="ADMIN-CHK-04", severity="major", category="MISSING_SECTION"):
-    return {"id": f"ADM-{i}", "domain": "administrative", "category": category, "severity": severity, "title": title,
-            "description": title, "evidence": [{"page": page, "quote": quote}], "guideline_ref": ref,
-            "recommendation": "", "status": "proposed", "critic_notes": "", "source": "llm"}
-
-
-def _admin_report(findings, accepted=True):
-    return {"accepted": accepted, "summary": "admin summary", "findings": findings, "checklist": []}
-
-
-def _critic_report(verdicts, missed=None, proposed=None, summary="critic"):
-    return {"summary": summary, "missed_issues": missed or [], "proposed_memory": proposed or [],
-            "verdicts": [{"finding_id": fid, "verdict": verdict, "notes": notes, "revised_severity": sev}
-                         for fid, verdict, notes, sev in verdicts]}
-
-
-def _audited_ids(user):
-    return [f["id"] for f in json.loads(user.split("# Findings to audit (return one verdict per id)\n")[1].split("\n\n# Deterministic")[0])]
-
-
 def test_flawed_protocol_is_returned_at_admin_stage(flawed_pdf, registry_fetch):
     llm = MockLLM(NO_LLM_RESPONSES)
     res = run_review(flawed_pdf, source="test", submitter="pytest", llm=llm, registry_fetch=registry_fetch)
     assert res["decision"] == "RETURNED_ADMIN"
     assert res["admin_ok"] is False
     assert res.get("scientific_report") is None       # scientific agents never ran
-    # the admin critic has nothing to audit (no LLM admin findings in NO_LLM mode) -> no LLM call
     assert {c["schema"] for c in llm.calls} == {"AdminReport", "FinalSummary"}
-    assert res["admin_critic_report"]["summary"] == "No LLM findings to audit."
     assert Path(res["report_paths"]["final_report"]).exists()
     assert Path(res["report_paths"]["administrative_report"]).exists()
     assert res["notifications"] and "dry-run" in res["notifications"][0]
@@ -51,84 +29,6 @@ def test_flawed_protocol_is_returned_at_admin_stage(flawed_pdf, registry_fetch):
     assert run["status"] == "done" and run["decision"] == "RETURNED_ADMIN"
     msgs = memory.get_messages(res["run_id"])
     assert [m["agent"] for m in msgs][:2] == ["coordinator", "administrative"]
-
-
-def test_admin_critic_revision_round_and_recomputed_acceptance(good_pdf, registry_fetch):
-    """Admin agent proposes 3 findings; the admin critic verifies one, asks to revise one and wrongly
-    'verifies' a hallucinated one (guardrail -> unverified). Round 2: the agent escalates the revised
-    finding to critical, the critic verifies it -> the submission is RETURNED_ADMIN although the agent
-    said `accepted`; the scientific agents never run; a lesson is proposed for HITL approval."""
-    real = "two intramuscular injections of VX-101 100 micrograms or saline placebo"
-    rounds = {"n": 0}
-
-    def admin(system, user):
-        rounds["n"] += 1
-        if rounds["n"] == 1:
-            assert "REVISION ROUND" not in user
-            return _admin_report([
-                _adm_finding(1, "Real quote", 1, real, severity="minor"),
-                _adm_finding(2, "Needs revision", 2, "Independent audits occur annually"),
-                _adm_finding(3, "Hallucinated", 1, "this sentence does not exist anywhere in the protocol text"),
-            ])
-        assert "REVISION ROUND - administrative critic feedback" in user and "ADM-L002" in user
-        return _admin_report([
-            _adm_finding(1, "Real quote", 1, real, severity="minor"),
-            _adm_finding(2, "Insurance certificate missing", 2, "Independent audits occur annually",
-                         ref="ADMIN-CHK-07", severity="critical", category="MISSING_INSURANCE"),
-            _adm_finding(3, "Hallucinated", 1, "this sentence does not exist anywhere in the protocol text"),
-        ])
-
-    def critic(system, user):
-        assert "Administrative checklist (knowledge base)" in user
-        ids = _audited_ids(user)
-        assert ids == ["ADM-L001", "ADM-L002", "ADM-L003"]
-        if "Needs revision" in user:
-            return _critic_report([("ADM-L001", "verified", "quote confirmed", None),
-                                   ("ADM-L002", "revise", "which document is missing? cite the ADMIN-CHK code", None),
-                                   ("ADM-L003", "verified", "looks fine", None)],
-                                  proposed=["Check that the insurance certificate names the sponsor."])
-        return _critic_report([("ADM-L001", "verified", "ok", None),
-                               ("ADM-L002", "verified", "insurance really missing", None),
-                               ("ADM-L003", "verified", "still looks fine", None)])
-
-    llm = MockLLM({**NO_LLM_RESPONSES, "AdminReport": admin, "AdminCriticReport": critic})
-    res = run_review(good_pdf, source="test", submitter="pytest", llm=llm, registry_fetch=registry_fetch)
-
-    assert [c["schema"] for c in llm.calls] == ["AdminReport", "AdminCriticReport", "AdminReport", "AdminCriticReport", "FinalSummary"]
-    assert res["admin_revise_rounds"] == 1
-    by_id = {f["id"]: f for f in res["findings"]}
-    assert by_id["ADM-L001"]["status"] == "verified"
-    assert by_id["ADM-L002"]["status"] == "verified" and by_id["ADM-L002"]["severity"] == "critical"
-    assert by_id["ADM-L003"]["status"] == "unverified" and "not located" in by_id["ADM-L003"]["critic_notes"]  # guardrail
-    assert res["admin_report"]["accepted_by_agent"] is True
-    assert res["admin_ok"] is False and res["admin_report"]["blocking_findings"] == ["ADM-L002"]
-    assert res["decision"] == "RETURNED_ADMIN"
-    assert res.get("scientific_report") is None
-    assert res["cost"]["by_agent"] == {"administrative": 2, "administrative_critic": 2, "coordinator": 1}
-    proposals = memory.list_memories(status="proposed", agent="administrative_critic")
-    assert any("insurance certificate" in p["fact"] for p in proposals)
-    report = Path(res["report_paths"]["administrative_report"]).read_text(encoding="utf-8")
-    assert "Administrative critic" in report and "ADM-L002" in report
-
-
-def test_admin_critic_rejects_and_escalates_missed_issues_to_humans(good_pdf, registry_fetch):
-    """Rejected findings disappear from the decision; an issue the critic says was MISSED becomes a
-    revision request first and, after the last round, an UNVERIFIED finding for a human."""
-    real = "two intramuscular injections of VX-101 100 micrograms or saline placebo"
-    llm = MockLLM({**NO_LLM_RESPONSES,
-                   "AdminReport": _admin_report([_adm_finding(1, "Duplicate of a rule finding", 1, real)]),
-                   "AdminCriticReport": _critic_report([("ADM-L001", "rejected", "duplicates ADM-001", None)],
-                                                       missed=["Appendix B is referenced on p. 2 but not attached"])})
-    res = run_review(good_pdf, source="test", llm=llm, registry_fetch=registry_fetch)
-
-    # NO_LLM scientific reviewer proposes nothing -> the scientific critic has nothing to audit (no call)
-    assert [c["schema"] for c in llm.calls] == ["AdminReport", "AdminCriticReport", "AdminReport", "AdminCriticReport",
-                                                "ScientificReport", "FinalSummary"]
-    by_id = {f["id"]: f for f in res["findings"]}
-    assert by_id["ADM-L001"]["status"] == "rejected"
-    assert by_id["ADM-C001"]["status"] == "unverified" and "Appendix B" in by_id["ADM-C001"]["description"]
-    assert res["admin_ok"] is True                        # rejected findings never block
-    assert res["decision"] == "NEEDS_HUMAN_REVIEW"        # the missed issue waits for a human
 
 
 def test_full_flow_with_critic_revision_round(good_pdf, registry_fetch):

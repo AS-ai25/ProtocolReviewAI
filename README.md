@@ -15,10 +15,8 @@ but does not replace,** professional committee review.
 flowchart TD
     IN[Protocol PDF arrives<br/>Google Drive / email / upload] -->|webhook| C0[Coordinator Agent<br/>parse PDF + deterministic rule checks]
     C0 --> A[Administrative Review Agent<br/>checklist KB: ADMIN-CHK-xx]
-    A --> AK[Administrative Critic Agent<br/>evidence check, verdict per finding]
-    AK -->|REVISE, round left| A
-    AK -->|submission complete| S[Scientific Review Agent<br/>SPIRIT / ICH-GCP KB + ClinicalTrials.gov]
-    AK -->|blocking issues| F[Coordinator: decision + executive summary]
+    A -->|submission complete| S[Scientific Review Agent<br/>SPIRIT / ICH-GCP KB + ClinicalTrials.gov]
+    A -->|blocking issues| F[Coordinator: decision + executive summary]
     S --> K[Scientific Critic Agent<br/>evidence check, verdict per finding]
     K -->|REVISE, round left| S
     K -->|done| F
@@ -43,26 +41,18 @@ flowchart TD
    NCT id, PI, sponsor, phase) and runs the **deterministic rule checks** (shared with the baseline).
 3. **Administrative Review Agent.** Receives the administrative checklist (knowledge base), approved
    lessons from memory, the rule findings and the full protocol text. Returns a structured
-   `AdminReport` (accepted?, checklist, extra findings). Its own findings start as **proposed**;
-   only the rule findings are verified by construction.
-4. **Administrative Critic Agent.** Mirrors the scientific critic for the administrative domain: the
-   code first checks each finding's evidence (quote located in the PDF? ADMIN-CHK code real?), then the
-   critic returns one verdict per finding: **verified / revise / unverified / rejected**. `revise` sends
-   focused requests back to the administrative agent (bounded: `MAX_REVISE_ROUNDS`, default 1, tracked
-   separately as `admin_revise_rounds`). The critic cannot mark a finding verified when its quote was
-   not found (guardrail). It then recomputes the administrative decision: a *verified* critical finding
-   (no consent form, no insurance, unreadable PDF) blocks the submission even if the admin agent said
-   "accepted", and a *rejected* one never blocks. Blocking failures stop the pipeline: the coordinator
-   emails the boss the administrative report and the submission is **RETURNED_ADMIN**.
-5. **Scientific Review Agent.** Fetches the ClinicalTrials.gov record by NCT id (API v2), compares it
+   `AdminReport` (accepted?, checklist, extra findings). Blocking failures (no consent form,
+   no insurance, unreadable PDF) stop the pipeline: the coordinator emails the boss the administrative
+   report and the submission is **RETURNED_ADMIN**.
+4. **Scientific Review Agent.** Fetches the ClinicalTrials.gov record by NCT id (API v2), compares it
    with the protocol, and reviews against SPIRIT / ICH-GCP. Returns a `ScientificReport` with findings,
    a registry comparison table and open questions.
-6. **Scientific Critic Agent.** First the code verifies each finding's evidence (is the quoted text really
+5. **Scientific Critic Agent.** First the code verifies each finding's evidence (is the quoted text really
    on that page? is the guideline code real?). The critic then returns one verdict per finding:
    **verified / revise / unverified / rejected**. `revise` sends focused requests back to the reviewer
    (bounded: `MAX_REVISE_ROUNDS`, default 1). A critic cannot mark a finding verified when its quote was
    not found in the PDF (guardrail). Reusable lessons are **proposed** to long-term memory.
-7. **Coordinator - finalize.** Decision = `PASS` | `RETURNED_ADMIN` | `MAJOR_CONCERNS` |
+6. **Coordinator - finalize.** Decision = `PASS` | `RETURNED_ADMIN` | `MAJOR_CONCERNS` |
    `NEEDS_HUMAN_REVIEW`, an executive summary, three markdown reports, and an email to the boss with
    the reports attached.
 
@@ -72,27 +62,17 @@ flowchart TD
 |---|---|---|
 | Coordinator | PDF parser, rule checks, SQLite memory, SMTP | routing decisions, `FinalSummary` |
 | Administrative Review | admin checklist KB, memory recall | `AdminReport` |
-| Administrative Critic | evidence verifier (fuzzy quote search), KB code validation, memory proposals | `AdminCriticReport` |
 | Scientific Review | SPIRIT/GCP KB, ClinicalTrials.gov client, registry comparison | `ScientificReport` |
-| Scientific Critic | evidence verifier (fuzzy quote search), KB code validation, memory proposals | `CriticReport` |
+| Scientific Critic | evidence verifier (fuzzy quote search), KB code validation | `CriticReport` |
 
-This is the five-agent structure of the charter (coordinator, administrative reviewer, administrative
-critic, scientific reviewer, scientific critic). Both critics share the same verdict vocabulary, the
-same code-level evidence check and the same bounded revision loop; each proposes lessons to long-term
-memory under its own agent name, so the human approves them separately.
+The charter also lists an *Administrative Critic*; this implementation follows the original
+four-agent structure (coordinator, administrative, scientific reviewer, scientific critic) and
+replaces the administrative critic with automatic evidence verification of the admin agent's
+findings. Adding a fifth LLM critic is one extra node in `graph.py`.
 
-**Baselines for the evaluation.** Both emit the same `Finding` format and decision vocabulary as the
-multi-agent pipeline, so `eval/evaluate.py` scores all three on the same labeled cases.
-- *Rule-Based Baseline (Checkpoint 1).* `protocol_review.baseline` runs only the deterministic checks
-  (no LLM).
-- *Single-Agent Baseline.* `protocol_review.single_agent` makes **one** Claude call (same model, same
-  `LLM.structured` wrapper) with everything the multi-agent system has: the full protocol text with
-  page markers, both knowledge-base domains, the deterministic rule findings, the ClinicalTrials.gov
-  summary and the approved memories. It returns a `SingleAgentReport` (both domains in one findings
-  list, checklist, registry comparison, executive summary). The same evidence verification is applied
-  (an unlocated quote or unknown guideline code makes a finding `unverified`) and the same decision
-  rule as the coordinator, but there is no critic and no revision round - that difference is what the
-  comparison measures.
+**Rule-Based Baseline (Checkpoint 1).** `protocol_review.baseline` runs only the deterministic checks
+(no LLM) and emits the same `Finding` format and decisions, so `eval/evaluate.py` compares baseline vs
+agents on the same labeled cases.
 
 **Three-layer memory (platform standard).**
 - *short*: the agents' conversation on the blackboard per run (`run_messages`, `GET /runs/{id}/messages`).
@@ -106,24 +86,23 @@ multi-agent pipeline, so `eval/evaluate.py` scores all three on the same labeled
 ```
 src/protocol_review/
   api.py              FastAPI webhooks, run inspection, memory HITL endpoints
-  cli.py              review / baseline / single / serve / poll-mail / graph
+  cli.py              review / baseline / serve / poll-mail / graph
   graph.py            LangGraph wiring (nodes + conditional edges)
-  pipeline.py         run_review(), run_baseline(), run_single_agent()
+  pipeline.py         run_review(), run_baseline()
   baseline.py         rule-based baseline
-  single_agent.py     single-agent baseline (one LLM call, all tools and data)
-  state.py            Blackboard models: Finding, AdminReport, AdminCriticReport, ScientificReport, CriticReport, SingleAgentReport ...
+  state.py            Blackboard models: Finding, AdminReport, ScientificReport, CriticReport ...
   llm.py              Anthropic SDK wrapper (structured outputs, refusal fallbacks) + MockLLM
   pdf_parser.py       PyMuPDF extraction + regex metadata
   knowledge_base.py   KB loader + keyword retrieval
   memory.py / db.py   3-layer memory (SQLite via SQLAlchemy)
   reports.py          markdown reports     notify.py  email (SMTP / dry-run .eml)
-  agents/             coordinator, administrative, administrative_critic, scientific_reviewer, scientific_critic, prompts
+  agents/             coordinator, administrative, scientific_reviewer, scientific_critic, prompts
   tools/              checks.py (deterministic), clinicaltrials.py (registry API)
   ingest/imap_poller.py
 knowledge_base/       administrative/admin_checklist.md, scientific/spirit_checklist.md, ich_gcp_key_points.md
 samples/              make_sample_protocols.py -> two synthetic PDFs (good / flawed)
 eval/                 labeled_cases/*.json, evaluate.py (P/R/F1, runtime, tokens)
-tests/                21 pytest tests (MockLLM, no network)
+tests/                15 pytest tests (MockLLM, no network)
 outputs/<run_id>/     final_report.md, administrative_report.md, scientific_report.md, findings.json, state.json, email.eml
 ```
 
@@ -153,18 +132,14 @@ refusal fallbacks are enabled (`LLM_FALLBACKS=true`); set `false` when running t
 # rule-based baseline only
 .venv/Scripts/python -m protocol_review.cli baseline samples/synthetic_protocol_flawed.pdf
 
-# single-agent baseline (one LLM call with all tools; --no-llm = rule findings through the same path)
-.venv/Scripts/python -m protocol_review.cli single samples/synthetic_protocol_flawed.pdf
-
 # webhook server (http://127.0.0.1:8040/docs)
 .venv/Scripts/python -m uvicorn protocol_review.api:app --port 8040
 
 # email inbox poller
 .venv/Scripts/python -m protocol_review.cli poll-mail
 
-# evaluation: rule-based baseline / single-agent baseline / multi-agent system
+# evaluation
 .venv/Scripts/python eval/evaluate.py --mode baseline
-.venv/Scripts/python eval/evaluate.py --mode single
 .venv/Scripts/python eval/evaluate.py --mode agents
 ```
 
@@ -215,9 +190,8 @@ message with a PDF attachment starts a review (an NCT id in the subject is picke
 ## 6. Evaluation
 
 Labeled cases live in `eval/labeled_cases/*.json`: expected `(domain, category)` pairs plus the expected
-decision. `eval/evaluate.py` runs the rule-based baseline (`--mode baseline`), the single-agent baseline
-(`--mode single`) or the multi-agent system (`--mode agents`), scores precision / recall / F1
-(critic-rejected findings are not counted), and records runtime and tokens. Current synthetic cases: one complete
+decision. `eval/evaluate.py` runs the baseline or the agents, scores precision / recall / F1 (critic-rejected
+findings are not counted), and records runtime and tokens. Current synthetic cases: one complete
 protocol (any finding = false positive) and one with ten documented injected deficiencies.
 
 Baseline on the synthetic cases (live ClinicalTrials.gov): flawed F1 = 1.00 (10/10 injected
@@ -237,7 +211,6 @@ evaluation results; the real evaluation uses public protocols labeled by the tea
 
 - Checkpoint 1 (18 Oct): end-to-end pipeline + rule-based baseline - **this repository**.
 - Checkpoint 2 (30 Oct): verified SPIRIT 2025 / ICH-GCP E6(R3) knowledge base, real public protocols,
-  labeled findings, demo video. The administrative critic (`agents/administrative_critic.py`) and the
-  single-agent baseline (`single_agent.py`) are already in this repository.
-- Final (12 Nov): evaluation vs rule-based and single-agent baselines on the labeled public protocols,
-  results and presentation.
+  labeled findings, optional administrative critic, demo video.
+- Final (12 Nov): evaluation vs rule-based and single-agent baselines (add a `single_agent.py`
+  that gives one agent all tools), results and presentation.

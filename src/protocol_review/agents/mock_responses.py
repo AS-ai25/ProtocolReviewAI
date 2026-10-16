@@ -13,7 +13,6 @@ NO_LLM_RESPONSES = {
         "registry_comparison": [],
         "open_questions": [],
     },
-    "AdminCriticReport": {"summary": "NO_LLM mode: nothing to audit.", "verdicts": [], "missed_issues": [], "proposed_memory": []},
     "CriticReport": {"summary": "NO_LLM mode: nothing to audit.", "verdicts": [], "missed_issues": [], "proposed_memory": []},
     "SingleAgentReport": {
         "admin_accepted": True,

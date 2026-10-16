@@ -31,8 +31,7 @@ def intake_node(state: ReviewState) -> dict:
                         f"Forwarding to the Administrative Review Agent.", role="system")
     trace = trace_event(state, AGENT, "intake", f"pages={meta.get('page_count')} nct={nct} rule_findings={len(rule_findings)}")
     return {**parsed, "nct_id": nct, "rule_findings": rule_findings, "findings": [], "revise_rounds": 0,
-            "revise_requests": [], "admin_revise_rounds": 0, "admin_revise_requests": [], "registry": None,
-            "errors": [], "notifications": [], "trace": trace}
+            "revise_requests": [], "registry": None, "errors": [], "notifications": [], "trace": trace}
 
 
 # ----------------------------------------------------------------- routing
@@ -40,24 +39,10 @@ def route_after_admin(state: ReviewState) -> str:
     return "scientific_reviewer" if state.get("admin_ok") else "finalize"
 
 
-def route_after_admin_critic(state: ReviewState) -> str:
-    """After the administrative critic: one bounded revision round, then the admin routing."""
-    if state.get("admin_revise_requests") and state.get("admin_revise_rounds", 0) < settings.max_revise_rounds:
-        return "revise"
-    return route_after_admin(state)
-
-
 def route_after_critic(state: ReviewState) -> str:
     if state.get("revise_requests") and state.get("revise_rounds", 0) < settings.max_revise_rounds:
         return "revise"
     return "finalize"
-
-
-def admin_bump_round_node(state: ReviewState) -> dict:
-    rounds = state.get("admin_revise_rounds", 0) + 1
-    memory.post_message(state["run_id"], AGENT, f"Administrative critic requested a focused re-check (round {rounds}). "
-                        f"Requests: {len(state.get('admin_revise_requests') or [])}.")
-    return {"admin_revise_rounds": rounds, "trace": trace_event(state, AGENT, "admin_revise_round", f"round={rounds}")}
 
 
 def bump_round_node(state: ReviewState) -> dict:
@@ -120,7 +105,6 @@ def finalize_node(state: ReviewState, llm) -> dict:
                 "decision": decision.value,
                 "protocol_meta": state.get("protocol_meta"),
                 "admin_summary": (state.get("admin_report") or {}).get("summary"),
-                "admin_critic_summary": (state.get("admin_critic_report") or {}).get("summary"),
                 "scientific_summary": (state.get("scientific_report") or {}).get("summary"),
                 "critic_summary": (state.get("critic_report") or {}).get("summary"),
                 "open_questions": (state.get("scientific_report") or {}).get("open_questions"),

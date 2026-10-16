@@ -104,10 +104,6 @@ class CriticReport(BaseModel):
     )
 
 
-class AdminCriticReport(CriticReport):
-    """Structured output of the Administrative Critic Agent (same shape as the scientific critic's)."""
-
-
 class Decision(str, Enum):
     PASS = "PASS"                              # no blocking issues; report goes to the committee
     RETURNED_ADMIN = "RETURNED_ADMIN"          # administrative blockers -> back to submitter
@@ -163,16 +159,13 @@ class ReviewState(TypedDict, total=False):
     protocol_meta: dict         # title, version, date, sponsor, PI ... extracted deterministically
     rule_findings: list[dict]   # deterministic checks output (shared with baseline)
     admin_report: dict | None
-    admin_critic_report: dict | None
     admin_ok: bool
-    admin_revise_rounds: int
-    admin_revise_requests: list[str]  # administrative critic questions for the next admin pass
     registry: dict | None
     scientific_report: dict | None
     critic_report: dict | None
     findings: list[dict]        # consolidated blackboard findings
     revise_rounds: int
-    revise_requests: list[str]  # scientific critic questions for the next reviewer pass
+    revise_requests: list[str]  # critic questions for the next reviewer pass
     decision: str
     final_summary: str
     report_paths: dict
