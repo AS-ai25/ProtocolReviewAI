@@ -1,0 +1,19 @@
+{
+  "case_id": "synthetic_flawed",
+  "pdf": "samples/synthetic_protocol_flawed.pdf",
+  "nct_id": "NCT04470427",
+  "description": "Synthetic protocol with documented, deliberately injected deficiencies (see samples/make_sample_protocols.py).",
+  "expected_findings": [
+    {"domain": "administrative", "category": "MISSING_CONSENT_FORM", "note": "ICF appendix removed"},
+    {"domain": "administrative", "category": "MISSING_INSURANCE", "note": "insurance statement removed"},
+    {"domain": "administrative", "category": "MISSING_SIGNATURE_PAGE", "note": "CV / signature appendix removed"},
+    {"domain": "administrative", "category": "MISSING_SECTION", "note": "data management / confidentiality section removed"},
+    {"domain": "scientific", "category": "INCONSISTENT_SAMPLE_SIZE", "note": "30,415 vs 28,000"},
+    {"domain": "scientific", "category": "NO_SAMPLE_SIZE_JUSTIFICATION", "note": "power assumptions removed"},
+    {"domain": "scientific", "category": "RANDOMIZATION_METHOD_UNSPECIFIED", "note": "sequence generation / concealment removed"},
+    {"domain": "scientific", "category": "NO_STATISTICAL_PLAN", "note": "statistical analysis plan removed"},
+    {"domain": "scientific", "category": "INCONSISTENT_AGE_RANGE", "note": "18+ in title/registry vs 21-65 in eligibility"},
+    {"domain": "scientific", "category": "INCONSISTENT_PHASE", "note": "Phase 2 in design section vs Phase 3 in title (registry: phase 3)"}
+  ],
+  "expected_decision": "RETURNED_ADMIN"
+}

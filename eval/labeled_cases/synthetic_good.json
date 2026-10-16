@@ -1,0 +1,8 @@
+{
+  "case_id": "synthetic_good",
+  "pdf": "samples/synthetic_protocol_good.pdf",
+  "nct_id": "NCT04470427",
+  "description": "Synthetic complete protocol; no injected deficiencies (any finding counts as a false positive).",
+  "expected_findings": [],
+  "expected_decision": "PASS"
+}
