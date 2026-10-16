@@ -2,6 +2,7 @@
 
   review  <pdf> [--nct NCT...] [--no-llm] [--submitter x]   full multi-agent review
   baseline <pdf> [--nct NCT...]                             rule-based baseline only
+  single   <pdf> [--nct NCT...] [--no-llm]                  single-agent baseline (one LLM call, all tools)
   serve [--port 8040]                                       FastAPI webhook server
   poll-mail                                                 IMAP inbox poller (protocols by email)
   graph                                                     print the Mermaid diagram
@@ -23,6 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("review"); r.add_argument("pdf"); r.add_argument("--nct", default=""); r.add_argument("--no-llm", action="store_true")
     r.add_argument("--submitter", default="cli-user")
     b = sub.add_parser("baseline"); b.add_argument("pdf"); b.add_argument("--nct", default="")
+    g = sub.add_parser("single"); g.add_argument("pdf"); g.add_argument("--nct", default=""); g.add_argument("--no-llm", action="store_true")
     s = sub.add_parser("serve"); s.add_argument("--port", type=int, default=8040); s.add_argument("--host", default="127.0.0.1")
     sub.add_parser("poll-mail"); sub.add_parser("graph"); sub.add_parser("purge-memory")
     a = p.parse_args(argv)
@@ -38,6 +40,13 @@ def main(argv: list[str] | None = None) -> int:
         res = run_baseline(a.pdf, nct_id=a.nct)
         print(json.dumps({"decision": res["decision"], "findings": [(f["id"], f["category"], f["severity"]) for f in res["findings"]],
                           "paths": res.get("paths")}, indent=1))
+    elif a.cmd == "single":
+        from .pipeline import run_single_agent
+        res = run_single_agent(a.pdf, nct_id=a.nct, no_llm=a.no_llm or None)
+        print(json.dumps({"run_id": res["run_id"], "decision": res["decision"],
+                          "findings": [(f["id"], f["category"], f["severity"], f["status"]) for f in res["findings"]],
+                          "errors": res["errors"], "cost": res.get("cost"), "paths": res.get("paths")}, indent=1))
+        print("\n" + res.get("final_summary", ""))
     elif a.cmd == "serve":
         import uvicorn
         uvicorn.run("protocol_review.api:app", host=a.host, port=a.port, reload=False)

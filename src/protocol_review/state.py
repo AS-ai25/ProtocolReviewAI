@@ -118,6 +118,20 @@ class FinalSummary(BaseModel):
     recommendation: str = Field(description="What the coordinator should do next")
 
 
+class SingleAgentReport(BaseModel):
+    """Structured output of the Single-Agent Baseline: one Claude call that plays
+    administrative reviewer, scientific reviewer, critic and coordinator at once."""
+    admin_accepted: bool = Field(description="True when no BLOCKING administrative checklist item fails")
+    admin_summary: str = Field(description="Administrative completeness in 2-4 sentences")
+    scientific_summary: str = Field(description="Scientific / methodological quality in 3-6 sentences")
+    findings: list[Finding] = Field(description="All findings, administrative and scientific, each with evidence and guideline_ref")
+    checklist: list[ChecklistItem] = Field(default_factory=list)
+    registry_comparison: list[RegistryComparison] = Field(default_factory=list)
+    open_questions: list[str] = Field(default_factory=list)
+    executive_summary: str = Field(description="5-8 sentences for the committee coordinator")
+    recommendation: str = Field(description="What the coordinator should do next")
+
+
 class RegistryRecord(BaseModel):
     nct_id: str
     found: bool = False

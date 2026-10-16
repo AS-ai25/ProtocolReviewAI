@@ -1,4 +1,4 @@
-"""Entry points: run the multi-agent review or the rule-based baseline on one PDF."""
+"""Entry points: run the multi-agent review, the rule-based baseline or the single-agent baseline on one PDF."""
 from __future__ import annotations
 
 import logging
@@ -10,6 +10,7 @@ from . import memory
 from .baseline import run_baseline
 from .graph import build_graph
 from .llm import make_llm
+from .single_agent import run_single_agent
 
 log = logging.getLogger(__name__)
 
@@ -42,4 +43,4 @@ def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = ""
     return slim
 
 
-__all__ = ["run_review", "run_baseline", "new_run_id"]
+__all__ = ["run_review", "run_baseline", "run_single_agent", "new_run_id"]
