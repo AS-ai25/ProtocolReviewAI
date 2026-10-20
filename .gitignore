@@ -9,3 +9,4 @@ outputs/*
 *.egg-info/
 data/uploads/
 eval/results/
+docs/MANUAL_HE.*
