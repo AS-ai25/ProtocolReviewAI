@@ -32,6 +32,7 @@ from .agents.prompts import SINGLE_AGENT_SYSTEM
 from .knowledge_base import kb_text, rule_codes
 from .llm import LLMError, make_llm
 from .pdf_parser import parse_pdf
+from .protocol_json import build_protocol_json
 from .reports import run_dir
 from .scoring import compute_score
 from .state import Domain, FindingStatus, Severity, SingleAgentReport
@@ -134,6 +135,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
         for f in admin + sci:
             f["source"] = "llm"
         llm_findings = apply_evidence_verification(admin + sci, pages, codes)
+    base.attach_sections(rule_findings + llm_findings, build_protocol_json(pages, meta, pdf_path))
 
     findings = rule_findings + llm_findings
     blocking = [f for f in findings if f["domain"] == Domain.ADMINISTRATIVE.value

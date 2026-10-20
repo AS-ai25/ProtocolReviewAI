@@ -32,7 +32,12 @@ def test_flawed_protocol_is_returned_at_admin_stage(flawed_pdf, registry_fetch):
     run = memory.get_run(res["run_id"])
     assert run["status"] == "done" and run["decision"] == "RETURNED_ADMIN"
     msgs = memory.get_messages(res["run_id"])
-    assert [m["agent"] for m in msgs][:2] == ["coordinator", "administrative"]
+    assert [m["agent"] for m in msgs][:3] == ["coordinator", "coordinator", "administrative"]  # intake, validation, admin
+    assert res["validation"]["valid"] is True
+    assert res["decision_rationale"].startswith("administrative part")
+    assert Path(res["report_paths"]["final_report_pdf"]).stat().st_size > 1000          # PDF rendered
+    assert Path(res["report_paths"]["protocol_json"]).exists()
+    assert all(f.get("section") for f in res["findings"] if f["source"] == "rule" and f["evidence"])  # sections attached
 
 
 def test_full_flow_with_critic_revision_round(good_pdf, registry_fetch):
@@ -51,10 +56,10 @@ def test_full_flow_with_critic_revision_round(good_pdf, registry_fetch):
                     _sci_finding(3, "Hallucinated", 1, "this sentence does not exist anywhere in the protocol text"),
                 ]}
         assert "REVISION ROUND" in user and "SCI-L002" in user
-        return {"summary": "revised", "registry_comparison": [], "open_questions": [], "findings": [
-            _sci_finding(1, "Real quote finding", 1, "two intramuscular injections of VX-101 100 micrograms or saline placebo"),
-            _sci_finding(2, "Revised finding", 2, "Independent audits occur annually", severity="minor"),
-        ]}
+        f1 = _sci_finding(1, "Real quote finding", 1, "two intramuscular injections of VX-101 100 micrograms or saline placebo")
+        f2 = _sci_finding(2, "Revised finding", 2, "Independent audits occur annually", severity="minor")
+        f1["id"], f2["id"] = "SCI-L001", "SCI-L002"                       # reviewer keeps the ids it was given
+        return {"summary": "revised", "registry_comparison": [], "open_questions": [], "findings": [f1, f2]}
 
     def critic(system, user):
         ids = [f["id"] for f in json.loads(user.split("# Findings to audit (return one verdict per id)\n")[1].split("\n\n# Deterministic")[0])]
@@ -80,8 +85,12 @@ def test_full_flow_with_critic_revision_round(good_pdf, registry_fetch):
     by_id = {f["id"]: f for f in res["findings"]}
     assert by_id["SCI-L001"]["status"] == "verified"
     assert by_id["SCI-L002"]["status"] == "verified" and by_id["SCI-L002"]["severity"] == "minor"
-    assert "SCI-L003" not in by_id                      # withdrawn by the reviewer in round 2
-    assert res["decision"] == "MAJOR_CONCERNS"           # SCI-L001 is a verified major finding
+    assert by_id["SCI-L003"]["status"] == "withdrawn"  # append-only: dropped findings are kept, not deleted
+    assert len(res["scientific_reports"]) == 2 and len(res["critic_reports"]) == 2   # one report per round
+    assert res["critic_reports"][0]["round"] == 0 and res["critic_reports"][1]["round"] == 1
+    # hybrid rule: no critical; score = 100 - 10 (major) - 3 (minor) = 87 -> NEEDS_HUMAN_REVIEW
+    assert res["score"]["score"] == 87
+    assert res["decision"] == "NEEDS_HUMAN_REVIEW" and "87" in res["decision_rationale"]
     assert "done" in res["final_summary"]
     proposals = memory.list_memories(status="proposed", agent="scientific_critic")
     assert any("stopping boundaries" in p["fact"] for p in proposals)

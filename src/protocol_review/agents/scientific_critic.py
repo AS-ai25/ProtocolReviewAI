@@ -112,6 +112,7 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
             proposed_ids.append(mid)
 
     critic_dict = {
+        "round": rounds,
         "summary": report.summary if report else ("No LLM findings to audit." if not targets else "Critic unavailable."),
         "verdicts": [v.model_dump(mode="json") for v in (report.verdicts if report else [])],
         "missed_issues": missed,
@@ -122,5 +123,5 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
                         f"{len(revise_requests)} revision requests. {critic_dict['summary'][:800]}")
     trace = trace_event({"trace": trace}, AGENT, "done",
                         f"verdicts={len(verdicts)} revise={len(revise_requests)} missed={len(missed)} memories_proposed={len(proposed_ids)}")
-    return {"critic_report": critic_dict, "findings": findings, "revise_requests": revise_requests,
-            "trace": trace, "errors": errors}
+    return {"critic_report": critic_dict, "critic_reports": list(state.get("critic_reports") or []) + [critic_dict],
+            "findings": findings, "revise_requests": revise_requests, "trace": trace, "errors": errors}

@@ -47,6 +47,10 @@ class Settings(BaseSettings):
 
     # Pipeline
     max_revise_rounds: int = 1
+    # Hybrid scientific decision rule (charter v1.3): score >= pass_min -> PASS,
+    # human_min..pass_min-1 -> NEEDS_HUMAN_REVIEW, < human_min -> MAJOR_CONCERNS
+    score_pass_min: int = 90
+    score_human_min: int = 70
     clinicaltrials_timeout: int = 20
 
     @property

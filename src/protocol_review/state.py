@@ -31,6 +31,7 @@ class FindingStatus(str, Enum):
     REVISE = "revise"           # critic asks the reviewer for a focused re-check
     UNVERIFIED = "unverified"   # could not be verified -> human review
     REJECTED = "rejected"       # critic found it unsupported / wrong
+    WITHDRAWN = "withdrawn"     # reviewer dropped it in a revision round (kept for the audit trail)
 
 
 class Evidence(BaseModel):
@@ -49,7 +50,8 @@ class Finding(BaseModel):
     guideline_ref: str = Field(
         default="", description="Reference to a knowledge-base rule, e.g. 'SPIRIT-14' or 'ADMIN-CHK-03'"
     )
-    recommendation: str = ""
+    recommendation: str = Field(default="", description="Required action: what the submitter must change or add")
+    section: str = Field(default="", description="Protocol section heading where the issue is located, e.g. '8. Sample Size'; empty when the item is absent from the whole document")
     status: FindingStatus = FindingStatus.PROPOSED
     critic_notes: str = ""
     source: Literal["rule", "llm"] = "llm"
@@ -157,17 +159,22 @@ class ReviewState(TypedDict, total=False):
     pages: list[dict]           # [{page, text}]
     nct_id: str
     protocol_meta: dict         # title, version, date, sponsor, PI ... extracted deterministically
+    protocol_json: dict         # structured protocol: metadata + sections (text, pages) - IMMUTABLE after intake
+    validation: dict            # JSON Validation Tool result {valid, errors, warnings}
     rule_findings: list[dict]   # deterministic checks output (shared with baseline)
     admin_report: dict | None
     admin_ok: bool
     registry: dict | None
-    scientific_report: dict | None
-    critic_report: dict | None
+    scientific_report: dict | None   # latest round
+    critic_report: dict | None       # latest round
+    scientific_reports: list[dict]   # every round, append-only
+    critic_reports: list[dict]       # every round, append-only
     findings: list[dict]        # consolidated blackboard findings
     revise_rounds: int
     revise_requests: list[str]  # critic questions for the next reviewer pass
     decision: str
-    score: dict                 # derived, display-only (see scoring.py)
+    decision_rationale: str     # which rule fired, in one sentence (traceability)
+    score: dict                 # derived from verified findings (see scoring.py); input to the hybrid rule
     final_summary: str
     report_paths: dict
     notifications: list[str]

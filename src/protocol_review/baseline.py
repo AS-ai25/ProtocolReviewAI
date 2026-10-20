@@ -8,7 +8,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .agents.base import attach_sections
+from .agents.coordinator import decide
 from .pdf_parser import parse_pdf
+from .protocol_json import build_protocol_json
 from .reports import run_dir
 from .scoring import compute_score
 from .state import Decision, FindingStatus, Severity
@@ -27,13 +30,9 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check."
 
+    attach_sections(findings, build_protocol_json(parsed["pages"], meta, pdf_path))
     blocking = [f for f in findings if f["domain"] == "administrative" and f["severity"] != Severity.INFO.value]
-    if blocking:
-        decision = Decision.RETURNED_ADMIN
-    elif any(f["severity"] in (Severity.CRITICAL.value, Severity.MAJOR.value) for f in findings):
-        decision = Decision.MAJOR_CONCERNS
-    else:
-        decision = Decision.PASS
+    decision = decide({"admin_ok": not blocking, "findings": findings})  # same hybrid rule as the agents
 
     result = {
         "run_id": run_id or "baseline",

@@ -6,6 +6,7 @@ import json
 import re
 
 from ..knowledge_base import rule_codes
+from ..protocol_json import section_for, section_index
 from ..state import FindingStatus, ReviewState
 
 MAX_PROTOCOL_CHARS = 400_000  # ~100k tokens; protocols are normally far smaller
@@ -25,14 +26,64 @@ def findings_json(findings: list[dict]) -> str:
     return json.dumps(slim, indent=1, ensure_ascii=False)
 
 
-def renumber(findings: list[dict], prefix: str) -> list[dict]:
-    """Give LLM findings stable ids (ADM-L001...) so they never clash with rule ids."""
+def renumber(findings: list[dict], prefix: str, previous: list[dict] | None = None) -> list[dict]:
+    """Give LLM findings stable ids (ADM-L001...) so they never clash with rule ids.
+
+    In a revision round `previous` holds the earlier LLM findings: an emitted finding
+    keeps its id when it re-uses a previous id or title; new ones get the next free number.
+    """
+    prev_by_id = {f["id"]: f for f in previous or []}
+    prev_by_title = {_norm(f.get("title", "")): f["id"] for f in previous or []}
+    used: set[str] = set()
+    next_n = 1 + max([int(i.split("-L")[1]) for i in prev_by_id if "-L" in i] or [0])
     out = []
-    for i, f in enumerate(findings, start=1):
+    for f in findings:
         f = dict(f)
-        f["id"] = f"{prefix}-L{i:03d}"
+        fid = f.get("id", "")
+        title_key = _norm(f.get("title", ""))
+        if fid in prev_by_id and fid not in used:
+            pass
+        elif prev_by_title.get(title_key) and prev_by_title[title_key] not in used:
+            fid = prev_by_title[title_key]
+        else:
+            fid = f"{prefix}-L{next_n:03d}"
+            next_n += 1
+        used.add(fid)
+        f["id"] = fid
         out.append(f)
     return out
+
+
+def withdraw_missing(previous: list[dict], current: list[dict]) -> list[dict]:
+    """Append-only state: findings the reviewer did not re-emit are kept as WITHDRAWN."""
+    kept = {f["id"] for f in current}
+    out = []
+    for f in previous:
+        if f["id"] not in kept and f["status"] != FindingStatus.WITHDRAWN.value:
+            f = dict(f)
+            f["status"] = FindingStatus.WITHDRAWN.value
+            f["critic_notes"] = (f.get("critic_notes") or "") + " [withdrawn by the reviewer in the revision round]"
+            out.append(f)
+    return out
+
+
+def attach_sections(findings: list[dict], protocol_json: dict) -> list[dict]:
+    """Fill `section` from the protocol JSON when the agent left it empty (in place)."""
+    for f in findings:
+        if f.get("section"):
+            continue
+        ev = f.get("evidence") or []
+        page = next((e.get("page") for e in ev if e.get("page")), None)
+        quote = next((e.get("quote") for e in ev if e.get("quote")), "")
+        f["section"] = section_for(protocol_json, page, quote)
+    return findings
+
+
+def sections_block(state: ReviewState) -> str:
+    pj = state.get("protocol_json") or {}
+    if not pj.get("sections"):
+        return ""
+    return "# Protocol sections (index, heading, pages) - use the heading in `section`\n" + section_index(pj)
 
 
 def _norm(s: str) -> str:

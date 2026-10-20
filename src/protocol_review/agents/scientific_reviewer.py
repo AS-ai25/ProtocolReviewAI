@@ -24,6 +24,7 @@ def _user_prompt(state: ReviewState, rule_findings: list[dict], previous: list[d
         mem,
         "# Protocol metadata\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# " + clinicaltrials.registry_summary(state.get("registry") or {}),
+        base.sections_block(state),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
     ]
     if state.get("revise_rounds", 0) > 0:
@@ -52,7 +53,9 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check (code), verified by construction."
 
-    previous_llm = [f for f in state.get("findings") or [] if f["domain"] == Domain.SCIENTIFIC.value and f["source"] == "llm"]
+    previous_llm = [f for f in state.get("findings") or [] if f["domain"] == Domain.SCIENTIFIC.value and f["source"] == "llm"
+                    and f["status"] != FindingStatus.WITHDRAWN.value]
+    already_withdrawn = [f for f in state.get("findings") or [] if f["status"] == FindingStatus.WITHDRAWN.value]
     report: ScientificReport | None = None
     try:
         report = llm.structured(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM,
@@ -64,7 +67,7 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
 
     llm_findings: list[dict] = []
     if report is not None:
-        for f in base.renumber([x.model_dump(mode="json") for x in report.findings], "SCI"):
+        for f in base.renumber([x.model_dump(mode="json") for x in report.findings], "SCI", previous=previous_llm):
             f["domain"] = Domain.SCIENTIFIC.value
             f["source"] = "llm"
             f["status"] = FindingStatus.PROPOSED.value
@@ -74,8 +77,10 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
         llm_findings = previous_llm  # keep last round's findings if the revision call failed
 
     admin_findings = [f for f in state.get("findings") or [] if f["domain"] == Domain.ADMINISTRATIVE.value]
-    sci_findings = rule_sci + llm_findings
+    withdrawn = already_withdrawn + (base.withdraw_missing(previous_llm, llm_findings) if report is not None else [])
+    sci_findings = base.attach_sections(rule_sci + llm_findings, state.get("protocol_json") or {}) + withdrawn
     report_dict = {
+        "round": state.get("revise_rounds", 0),
         "summary": report.summary if report else "Scientific reviewer unavailable; deterministic checks only.",
         "registry_comparison": [r.model_dump(mode="json") for r in report.registry_comparison] if report else [],
         "open_questions": report.open_questions if report else [],
@@ -84,5 +89,6 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     memory.post_message(run_id, AGENT, f"Scientific review round {state.get('revise_rounds', 0)} done: "
                         f"{len(sci_findings)} findings. {report_dict['summary'][:800]}")
     trace = trace_event({"trace": trace}, AGENT, "done", f"findings={len(sci_findings)} (llm={len(llm_findings)})")
-    return {"registry": registry, "scientific_report": report_dict, "findings": admin_findings + sci_findings,
-            "trace": trace, "errors": errors}
+    return {"registry": registry, "scientific_report": report_dict,
+            "scientific_reports": list(state.get("scientific_reports") or []) + [report_dict],
+            "findings": admin_findings + sci_findings, "trace": trace, "errors": errors}

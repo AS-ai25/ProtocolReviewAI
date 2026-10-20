@@ -87,12 +87,13 @@
 <div class="box blue" style="left:225px; top:250px; width:215px; height:310px;">
   <div class="hd"><span class="n">1</span>Coordinator Agent · intake</div>
   <div class="bd"><ul>
-    <li>Text extraction per page (PyMuPDF)</li>
+    <li>Text extraction per page (PyMuPDF) → <b>protocol JSON by sections</b> (original text + pages)</li>
     <li>Metadata by regex: NCT, version, date, PI, sponsor, phase</li>
+    <li><b>JSON Validation Tool</b>: structure, required fields, page refs</li>
     <li><b>29 deterministic rule checks</b> (code, no LLM) = Rule-Based Baseline</li>
     <li>Opens the run on the Blackboard, routes to agent 2</li>
   </ul></div>
-  <div class="out">Output: ReviewState + rule findings (verified by construction)</div>
+  <div class="out">Output: validated protocol JSON (immutable) + rule findings</div>
 </div>
 
 <div class="box amber" style="left:465px; top:250px; width:215px; height:310px;">
@@ -132,17 +133,17 @@
   <div class="hd"><span class="n">1</span>Coordinator Agent · final</div>
   <div class="bd"><ul>
     <li>Anything still open → UNVERIFIED (human)</li>
-    <li><b>Decision</b>: PASS / NEEDS_HUMAN_REVIEW / MAJOR_CONCERNS / RETURNED_ADMIN</li>
+    <li><b>Hybrid rule</b> (code, not LLM): critical → MAJOR_CONCERNS; else score ≥90 PASS, 70-89 HUMAN, &lt;70 MAJOR</li>
     <li>Executive summary for the committee coordinator</li>
-    <li>Writes 3 Markdown reports + findings.json + state.json</li>
+    <li>Writes 3 reports as Markdown + <b>PDF</b> (section, page, quote, action per finding)</li>
     <li>📧 Email to the boss with the reports attached (also on administrative rejection)</li>
   </ul></div>
-  <div class="out">Output: FinalSummary + reports + email</div>
+  <div class="out">Output: decision + rationale, PDF reports, email</div>
 </div>
 
 <!-- Blackboard strip -->
 <div class="strip" style="left:225px; top:610px; width:1350px; height:52px; padding-top:7px;">
-  <b>Shared State / Blackboard</b> (LangGraph <span class="tag">ReviewState</span>): findings · evidence (page + quote) · status · critic notes · revise requests · full trace &nbsp;|&nbsp;
+  <b>Shared State / Blackboard</b> (LangGraph <span class="tag">ReviewState</span>, <b>append-only</b>, authority guard per agent): protocol JSON (immutable) · findings · evidence (section, page, quote) · status · per-round reports · full trace &nbsp;|&nbsp;
   <b>3-layer memory</b> (SQLite): short = run messages · long = lessons proposed by agents, approved by a human · historical = every LLM call with tokens and cost
 </div>
 
@@ -211,10 +212,11 @@
 
 <div class="json" style="left:1360px; top:680px; width:215px; height:225px;"><b>Final state (state.json)</b>
 {
-  "decision": "MAJOR_CONCERNS",
+  "decision": "NEEDS_HUMAN_REVIEW",
+  "decision_rationale": "score 87 in 70-89",
   "findings": [ ... 31 items ... ],
   "report_paths": {
-    "final_report": ".../final_report.md",
+    "final_report_pdf": ".../final_report.pdf",
     "administrative_report": "...",
     "scientific_report": "..."},
   "notifications":
@@ -228,13 +230,13 @@
 <div class="lab" style="left:25px; top:935px; font-size:16px; color:#1e3a6e;">Final decision<br><span style="font-weight:400; font-size:11.5px; color:var(--muted);">(all four end with the report<br>+ email to the committee coordinator)</span></div>
 
 <div class="outcome" style="left:245px; top:925px; width:300px; height:88px; border-color:var(--greenb); background:var(--green);">
-  <b>✅ PASS</b>No verified critical / major finding and nothing left unverified. Report circulated to the committee.
+  <b>✅ PASS</b>No verified critical finding, score ≥ 90 and nothing left unverified. Report circulated to the committee.
 </div>
 <div class="outcome" style="left:565px; top:925px; width:300px; height:88px; border-color:var(--amberb); background:var(--amber);">
-  <b>🔎 NEEDS_HUMAN_REVIEW</b>Unverified findings remain (critic could not confirm, or revision rounds exhausted). A committee member checks them first.
+  <b>🔎 NEEDS_HUMAN_REVIEW</b>Score 70-89, or unverified findings remain. A committee member checks them first.
 </div>
 <div class="outcome" style="left:885px; top:925px; width:300px; height:88px; border-color:var(--redb); background:var(--red);">
-  <b>❗ MAJOR_CONCERNS</b>At least one <i>verified</i> critical or major scientific finding. Investigators must address it before the meeting.
+  <b>❗ MAJOR_CONCERNS</b>A <i>verified</i> critical finding, or score below 70. Investigators must address it before the meeting.
 </div>
 <div class="outcome" style="left:1205px; top:925px; width:370px; height:88px; border-color:var(--greyb); background:var(--grey);">
   <b>↩ RETURNED_ADMIN</b>The administrative part is not 100% complete. Scientific agents never ran (only the free deterministic scientific checks are reported). Submitter revises and resubmits.

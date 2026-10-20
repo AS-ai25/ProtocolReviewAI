@@ -205,7 +205,7 @@ def scientific_checks(pages: list[dict], meta: dict) -> list[dict]:
     if len(sizes) > 1:
         ev = []
         for n in list(sizes)[:3]:
-            pg, q = _find(pages, rf"\b{n}\b")
+            pg, q = _find(pages, rf"\b(?:{n}|{n:,})\b")
             if pg:
                 ev.append(Evidence(page=pg, quote=q))
         add("INCONSISTENT_SAMPLE_SIZE", Severity.MAJOR, "Sample size figures are inconsistent",
@@ -276,10 +276,15 @@ def registry_checks(pages: list[dict], meta: dict, registry: dict | None) -> lis
     sizes = sample_sizes(text)
     if enrol and sizes and enrol not in sizes:
         i += 1
+        ev = []
+        for n in list(sizes)[:2]:
+            pg, q = _find(pages, rf"\b(?:{n}|{n:,})\b")
+            if pg:
+                ev.append(Evidence(page=pg, quote=q))
         out.append(_finding(i, Domain.SCIENTIFIC, "REGISTRY_MISMATCH", Severity.MAJOR,
                             "Enrollment differs from the registry record",
                             f"Protocol states {', '.join(map(str, sizes))} participants; ClinicalTrials.gov lists {enrol}.",
-                            "SPIRIT-02", recommendation="Align the protocol and the registry entry."))
+                            "SPIRIT-02", evidence=ev, recommendation="Align the protocol and the registry entry."))
     reg_phases = {_norm_phase(p.strip().replace("PHASE", "").strip()) for p in (registry.get("phase") or "").split(",") if p.strip()}
     prot_phases = phases_mentioned(text) or ({_norm_phase(meta["phase"])} if meta.get("phase") else set())
     if reg_phases and prot_phases and not (reg_phases & prot_phases):

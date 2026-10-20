@@ -67,7 +67,7 @@ def test_evidence_verification_without_a_critic(good_pdf, registry_fetch):
     assert by_id["SCI-L003"]["status"] == "unverified" and "Guideline code" in by_id["SCI-L003"]["critic_notes"]
     assert by_id["ADM-L001"]["status"] == "verified"                         # nothing to locate, valid code
     assert res["admin_ok"] is True
-    assert res["decision"] == "MAJOR_CONCERNS"                               # SCI-L001 is a verified major finding
+    assert res["decision"] == "NEEDS_HUMAN_REVIEW"       # hybrid rule: score 90 but two findings unverified
     assert "one-call summary" in res["final_summary"] and "SCI-L001" in res["final_summary"]
     assert res["registry_comparison"][0]["field"] == "enrollment" and res["open_questions"]
     assert "paths" not in res

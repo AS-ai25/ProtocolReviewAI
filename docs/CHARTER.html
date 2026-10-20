@@ -17,11 +17,11 @@ strong { color: #1b2430; }
 <h2>Multi-Agent Clinical Trial Protocol Review System</h2>
 <p><strong>BIU DS23 Final Project</strong><br />
 <strong>Team:</strong> Amir Shmaryahu and Ron Levi<br />
-<strong>Date:</strong> 18 October 2026 | <strong>Version:</strong> 1.2 (updated after Checkpoint 1 implementation; supersedes v1.1 of 13 October 2026)<br />
+<strong>Date:</strong> 19 October 2026 | <strong>Version:</strong> 1.3 (Ron's revisions of 18 October implemented in code; supersedes v1.2 of 18 October 2026)<br />
 <strong>Repository:</strong> github.com/AS-ai25/ProtocolReviewAI (private)</p>
 <hr />
 <h2>1. Problem and Users</h2>
-<p>Helsinki (IRB / ethics) committee coordinators and professional committee members review complex clinical trial protocols before committee deliberation. The review has two distinct parts: an administrative check (is the submission complete, correctly formatted, with every required document and section?) and a scientific check (is the methodology sound, internally consistent, and aligned with the trial registry and with SPIRIT / ICH-GCP expectations?). The process is time-consuming and vulnerable to missed findings and human error.</p>
+<p>Helsinki (IRB / ethics) committee coordinators and professional committee members review complex clinical trial protocols before committee deliberation. The review has two distinct parts: an administrative check (is the submission complete, correctly formatted, with every required document and section) and a scientific check (is the methodology sound, internally consistent, and aligned with the trial registry and with SPIRIT / ICH-GCP expectations). The process is time-consuming and vulnerable to missed findings and human error.</p>
 <p>The system supports, but does not replace, professional committee review. Its users are the committee coordinator ("the boss"), who receives every result by email, and committee members, who receive reports in which every finding is traceable to a page, a quote and a guideline item.</p>
 <h2>2. Success Criteria and Evaluation</h2>
 <p>The system is evaluated on a labeled test set that includes ordinary cases, conflicting information, and cases without a valid resolution.</p>
@@ -58,51 +58,33 @@ strong { color: #1b2430; }
 </thead>
 <tbody>
 <tr>
-<td>1</td>
-<td><strong>Coordinator</strong></td>
-<td>Single point of contact between the human coordinator and the agents. Intake: extracts text per page, regex metadata (NCT ID, version, date, PI, sponsor, phase) and runs the 29 deterministic checks. Final: takes the decision, writes the executive summary and three reports, emails the boss.</td>
-<td>ReviewState, FinalSummary, reports, email</td>
-</tr>
-<tr>
-<td>2</td>
-<td><strong>Administrative Review Agent</strong></td>
-<td>Checks format and completeness against the administrative checklist and the human-approved lessons in memory; adds context findings the rules cannot see (version mismatch between pages, appendix referenced but missing, consent form in the wrong language). Evidence is verified in code.</td>
-<td>AdminReport (accepted, checklist, findings)</td>
-</tr>
-<tr>
-<td>3</td>
-<td><strong>Scientific Review Agent</strong></td>
-<td>Fetches the ClinicalTrials.gov record and compares it with the protocol; reviews against SPIRIT / ICH-GCP; detects internal contradictions between sections. On a revision request it answers each critic point and re-emits its findings.</td>
-<td>ScientificReport (findings, registry comparison, open questions)</td>
-</tr>
-<tr>
-<td>4</td>
-<td><strong>Scientific Critic Agent</strong></td>
-<td>Audits every reviewer finding. Code first (is the quote on that page? is the guideline code real?), then one verdict per finding: verified / revise / unverified / rejected, with optional severity change. Lists issues the reviewer missed. Proposes reusable lessons for human approval.</td>
-<td>CriticReport (verdicts, missed issues, proposed memory)</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
-<p><strong>Flow.</strong> PDF arrives (Google Drive or email automation → FastAPI webhook, or IMAP poller) → Coordinator intake → Administrative Review. If the administrative part is not 100% complete, the Coordinator finalizes immediately (decision RETURNED_ADMIN) and emails the boss; the scientific agents do not run. Otherwise Scientific Review → Scientific Critic, with at most one focused revision round, → Coordinator final → reports → email. The boss receives an email in every case.</p>
+<p>| 1 | <strong>Coordinator</strong> | Single point of contact between the human coordinator and the agents. Intake: extracts protocol text per page and metadata using regex (NCT ID, version, date, PI, sponsor, phase); structures the protocol content into a categorized JSON organized by sections, preserving the original text and page references. Runs a JSON Validation Tool to verify structure, required fields, and consistency before handoff to the Administrative Review Agent. Also executes the 29 deterministic checks. Final: determines the outcome, writes the executive summary and three reports, and emails the committee coordinator. | ReviewState (structured and validated JSON), rule findings, FinalSummary, reports, email |
+| 2 | <strong>Administrative Review Agent</strong> | Checks format and completeness against the administrative checklist and the human-approved lessons in memory; adds context findings the rules cannot see (version mismatch between pages, appendix referenced but missing, consent form in the wrong language). Evidence is verified in code. | AdminReport (accepted, checklist, findings) |
+| 3 | <strong>Scientific Review Agent</strong> | Fetches the ClinicalTrials.gov record and compares it with the protocol; reviews against SPIRIT / ICH-GCP; detects internal contradictions between sections. On a revision request it answers each critic point and re-emits its findings. | ScientificReport (findings, registry comparison, open questions) |
+| 4 | <strong>Scientific Critic Agent</strong> | Audits every reviewer finding. Code first (is the quote on that page? is the guideline code real?), then one verdict per finding: verified / revise / unverified / rejected, with optional severity change. Lists issues the reviewer missed. Proposes reusable lessons for human approval. | CriticReport (verdicts, missed issues, proposed memory) |</p>
+<p><strong>Flow.</strong> PDF arrives (Google Drive or email automation → FastAPI webhook, or IMAP poller) → Coordinator intake (structured protocol JSON) → JSON Validation Tool (invalid → RETURNED_ADMIN at once) → Administrative Review. If the administrative part is not 100% complete, the Coordinator finalizes immediately (decision RETURNED_ADMIN) and emails the boss; the scientific agents do not run. Otherwise Scientific Review → Scientific Critic, with at most one focused revision round, → Coordinator final → reports → email. The boss receives an email in every case.</p>
 <p><strong>Design change from v1.1.</strong> v1.1 listed a fifth agent, an Administrative Critic. The team decided to keep four agents: administrative completeness is a technical check, and automatic evidence verification in code (quote located in the PDF, guideline code valid) is deterministic, free and sufficient for it. An LLM critic is kept only for the scientific part, where judgement is needed.</p>
-<p><strong>Shared State / Blackboard.</strong> Findings with evidence (page + verbatim quote), guideline reference, severity, status and critic notes; agent reports; revision requests; full trace of agent actions and decisions. Persisted per run (SQLite).</p>
+<p><strong>Shared State / Blackboard.</strong> The Coordinator creates a structured, validated JSON representation of the protocol within the LangGraph ReviewState, including study metadata, original text organized by sections, and page-level references. This shared state accompanies the protocol throughout the workflow. Each agent reads the relevant information and appends its own structured review results (administrative findings, scientific findings, critic verdicts) without overwriting the original protocol data or previous agent outputs. Deterministic validation checks the JSON schema and source references before administrative review, while handoff validation checks required fields before subsequent stages. Findings include page references, verbatim quotes, guideline references, severity and verification status. The final Coordinator uses the accumulated state to determine the outcome and generate reports. The state and execution trace are persisted per run in SQLite. Implementation: findings a reviewer drops in a revision round are kept with status WITHDRAWN, every review round's report is appended to a list, and a code-level authority guard rejects any node that writes outside its permitted fields (the protocol data is writable only at intake).</p>
 <p><strong>Three-layer memory.</strong></p>
 <ul>
 <li><em>Short:</em> the agents' messages on the Blackboard per run (purged after 7 days).</li>
 <li><em>Long:</em> lessons proposed by agents; a human approves, edits or rejects them through the API; only approved lessons are injected into prompts.</li>
 <li><em>Historical:</em> every LLM call with model, tokens, duration and output, for audit, cost tracking and evaluation.</li>
 </ul>
-<p><strong>Outputs.</strong> PASS (report circulated to the committee), NEEDS_HUMAN_REVIEW (unverified findings remain; a committee member checks them first), MAJOR_CONCERNS (verified critical or major scientific findings; investigators must address them before the meeting), RETURNED_ADMIN (administrative part incomplete; submitter revises and resubmits). Every outcome ends with the reports and an email to the committee coordinator.</p>
+<p><strong>Outputs and Reporting.</strong> The Coordinator generates reports from the validated, accumulated ReviewState. Each report includes study metadata (protocol ID, NCT ID, title, sponsor, PI, phase, version and review date), final decision, score when applicable, and actionable findings. Each finding contains its ID, review category, severity, verification status, protocol section and page, verbatim quote, relevant guideline reference, explanation and required action. Missing metadata is flagged rather than invented. Outcomes are PASS, NEEDS_HUMAN_REVIEW, MAJOR_CONCERNS or RETURNED_ADMIN. Reports are produced as Markdown and PDF (final, administrative and, when the scientific stage ran, scientific) and emailed to the committee coordinator with the PDFs attached; the system does not grant ethical or scientific approval.</p>
 <h2>5. Decision Rules and the Agent's Role</h2>
 <p><strong>Administrative rule (decided).</strong> The administrative part must be 100% complete. Any verified administrative finding, critical, major or minor, is written to the report and the submission is returned (RETURNED_ADMIN). Only informational notes let a submission through. The most serious items (consent form, insurance / indemnity, readable complete PDF) are listed first.</p>
-<p><strong>Scientific rule (current, pending team decision).</strong> Today: any verified critical or major scientific finding → MAJOR_CONCERNS; otherwise, if unverified findings remain → NEEDS_HUMAN_REVIEW; otherwise PASS. Three options are under discussion with Ron:</p>
-<ul>
-<li>(a) keep the severity rule above;</li>
-<li>(b) a score threshold only (e.g. ≥ 90 PASS, 70 to 89 NEEDS_HUMAN_REVIEW, &lt; 70 MAJOR_CONCERNS);</li>
-<li>(c) hybrid (recommended): any verified critical finding → MAJOR_CONCERNS; otherwise the score threshold; unverified findings still route to human review. Thresholds configurable.</li>
-</ul>
-<p><strong>Derived score (display only).</strong> 100 minus 25 per verified critical, 10 per verified major, 3 per verified minor finding, floored at 0. Unverified findings are not counted but shown as pending human review; every deduction is listed by finding ID. The score summarises the findings and allows comparison between protocols; under rule (a) it never drives the decision.</p>
+<p><strong>Scientific Decision Rule (decided: Hybrid).</strong> Any verified critical scientific finding results in MAJOR_CONCERNS regardless of score. Otherwise, the derived score determines the outcome: 90–100 PASS, 70–89 NEEDS_HUMAN_REVIEW, and 0–69 MAJOR_CONCERNS. Unverified findings require human review and prevent automatic PASS. If multiple conditions apply, MAJOR_CONCERNS takes precedence. Thresholds are configurable.</p>
+<p><strong>Derived Score.</strong> The score starts at 100, deducting 25 points per verified critical finding, 10 per verified major finding, and 3 per verified minor finding, with a minimum of 0. Unverified findings are excluded from deductions but remain flagged for human review. Each deduction is traceable to a finding ID. The score is used in the hybrid decision rule.</p>
 <p><strong>Decisions beyond ordinary code.</strong> Agents interpret protocol meaning, detect inconsistencies across sections, and determine context-dependent checks. The Coordinator routes and bounds re-checks. The Scientific Critic verifies evidence and challenges insufficiently supported conclusions. Deterministic checks remain in code.</p>
+<p><strong>Agent Guardrails and Decision Authority.</strong> Each agent has a restricted role, tool access and permitted ReviewState fields. The Coordinator manages intake, routing, validation, reporting and applies predefined decision rules; it cannot independently judge scientific validity, alter reviewer findings or override validation failures. The Administrative Agent checks submission completeness only. The Scientific Reviewer identifies potential scientific issues, while the Scientific Critic independently verifies evidence and evaluates findings. Original protocol data is immutable. Deterministic code enforces schema validation, handoff conditions, bounded revisions and decision thresholds. All decisions are traceable, and final professional approval remains human.</p>
 <p><strong>Tools.</strong> PyMuPDF for text extraction; regex metadata; 29 deterministic checks (administrative 14, scientific 12, registry 3); ClinicalTrials.gov API v2 client; knowledge-base loader with keyword retrieval; fuzzy quote verifier; Anthropic SDK with structured outputs (every agent returns a validated schema); LangGraph for state, handoffs and conditional routing; FastAPI webhooks; SMTP; SQLite.</p>
 <p><strong>Failure handling.</strong> Invalid structured output is retried once with the error; model refusals are handled with server-side fallbacks; an LLM failure degrades to deterministic results and is listed in the report; a finding whose quote is not located in the PDF is never verified, whatever the critic says; the revision loop is bounded; anything still open at finalisation becomes UNVERIFIED and goes to a human; a full trace is kept.</p>
 <h2>6. Risks and Reduced-Scope Version</h2>
@@ -135,12 +117,17 @@ strong { color: #1b2430; }
 </tr>
 <tr>
 <td>18 Oct 2026</td>
-<td><strong>Checkpoint 1:</strong> end-to-end pipeline (intake, extraction, checks, reports, email), Rule-Based Baseline; in addition the full four-agent workflow, Single-Agent Baseline, evaluation harness, 21 automated tests, first live runs. Charter v1.2.</td>
+<td><strong>Checkpoint 1:</strong> end-to-end pipeline (intake, extraction, checks, reports, email), Rule-Based Baseline; in addition the full four-agent workflow, Single-Agent Baseline, evaluation harness, automated tests, first live runs. Charter v1.2.</td>
+<td>done</td>
+</tr>
+<tr>
+<td>19 Oct 2026</td>
+<td>Charter v1.3 implemented: structured protocol JSON + JSON Validation Tool, append-only state, PDF reports with section/page/quote/action per finding, agent authority guard, hybrid decision rule (26 automated tests).</td>
 <td>done</td>
 </tr>
 <tr>
 <td>30 Oct 2026</td>
-<td><strong>Checkpoint 2:</strong> verified knowledge base, real public protocols, labeled finding set, scientific decision rule decided and implemented, improved matching metric, one-minute recorded demo.</td>
+<td><strong>Checkpoint 2:</strong> verified knowledge base, real public protocols, labeled finding set, improved matching metric, one-minute recorded demo.</td>
 <td>planned</td>
 </tr>
 <tr>
@@ -174,7 +161,7 @@ strong { color: #1b2430; }
 <tr>
 <th>Area</th>
 <th>v1.1</th>
-<th>v1.2</th>
+<th>v1.2 / v1.3</th>
 </tr>
 </thead>
 <tbody>
@@ -191,12 +178,12 @@ strong { color: #1b2430; }
 <tr>
 <td>Scientific rule</td>
 <td>PASS / REVISE / UNVERIFIED</td>
-<td>PASS / NEEDS_HUMAN_REVIEW / MAJOR_CONCERNS; cutoff rule pending (options a / b / c)</td>
+<td>Hybrid rule adopted: verified critical findings override score thresholds; unverified findings require human review</td>
 </tr>
 <tr>
 <td>Score</td>
 <td>none</td>
-<td>derived, display-only score next to the decision</td>
+<td>Derived score used for hybrid decision-making</td>
 </tr>
 <tr>
 <td>Baselines</td>
@@ -218,11 +205,25 @@ strong { color: #1b2430; }
 <td>F1 vs baselines</td>
 <td>plus verified-only precision, critic contribution, semantic matching</td>
 </tr>
+<tr>
+<td>Protocol representation (v1.3)</td>
+<td>page text</td>
+<td>structured JSON by sections with original text and page references; JSON Validation Tool before administrative review</td>
+</tr>
+<tr>
+<td>State discipline (v1.3)</td>
+<td>implicit</td>
+<td>append-only: withdrawn findings kept, per-round reports, authority guard per agent</td>
+</tr>
+<tr>
+<td>Reports (v1.3)</td>
+<td>Markdown</td>
+<td>Markdown + PDF; each finding with section, page, quote, explanation, required action</td>
+</tr>
 </tbody>
 </table>
 <h2>9. Open Decisions</h2>
 <ol>
-<li>Scientific decision rule and thresholds (options a / b / c above). Owner: Amir and Ron. Due: before Checkpoint 2.</li>
 <li>Whether the submitter receives a copy of the administrative report on RETURNED_ADMIN (today: coordinator only).</li>
 <li>Final list of administrative checklist items against the committee SOP. Owner: Ron.</li>
 </ol></body></html>

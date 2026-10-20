@@ -29,7 +29,10 @@ def build_message(to: str, subject: str, body: str, attachments: list[Path]) -> 
     msg.set_content(body)
     for p in attachments:
         if p.exists():
-            msg.add_attachment(p.read_bytes(), maintype="text", subtype="markdown", filename=p.name)
+            if p.suffix.lower() == ".pdf":
+                msg.add_attachment(p.read_bytes(), maintype="application", subtype="pdf", filename=p.name)
+            else:
+                msg.add_attachment(p.read_bytes(), maintype="text", subtype="markdown", filename=p.name)
     return msg
 
 
@@ -53,7 +56,8 @@ def notify_boss(state: ReviewState) -> list[str]:
     meta = state.get("protocol_meta") or {}
     subject = SUBJECTS.get(decision, "[Protocol Review] Review complete") + f" - {meta.get('title', '')[:80]}"
     paths = state.get("report_paths") or {}
-    attachments = [Path(paths[k]) for k in ("final_report", "administrative_report", "scientific_report") if k in paths]
+    # PDF when rendered, Markdown fallback otherwise
+    attachments = [Path(paths.get(f"{k}_pdf") or paths[k]) for k in ("final_report", "administrative_report", "scientific_report") if k in paths]
     body = (f"Protocol review completed (run {state.get('run_id')}).\n"
             f"Decision: {decision}\n{score_line(state.get('score'))}\n\n{state.get('final_summary', '')}\n\n"
             f"Reports attached: {', '.join(p.name for p in attachments)}\n")

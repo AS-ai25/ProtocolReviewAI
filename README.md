@@ -42,7 +42,10 @@ flowchart TD
    (JSON with a download link) from Make.com / n8n / Google Drive, or is picked from an IMAP inbox
    by the poller. The API answers immediately with a `run_id`; the review runs in the background.
 2. **Coordinator - intake.** Extracts text per page (PyMuPDF), regex metadata (title, version, date,
-   NCT id, PI, sponsor, phase) and runs the **deterministic rule checks** (shared with the baseline).
+   NCT id, PI, sponsor, phase), builds the **structured protocol JSON** (sections with original text and
+   page ranges, `protocol_json.py`) and runs the **deterministic rule checks** (shared with the baseline).
+   The **JSON Validation Tool** then checks structure, required fields and page references; an invalid
+   document is returned immediately (finding `ADM-V001`), no agent is called.
 3. **Administrative Review Agent.** Receives the administrative checklist (knowledge base), approved
    lessons from memory, the rule findings and the full protocol text. Returns a structured
    `AdminReport` (accepted?, checklist, extra findings). The administrative part must be 100% complete:
@@ -98,9 +101,11 @@ src/protocol_review/
   state.py            Blackboard models: Finding, AdminReport, ScientificReport, CriticReport ...
   llm.py              Anthropic SDK wrapper (structured outputs, refusal fallbacks) + MockLLM
   pdf_parser.py       PyMuPDF extraction + regex metadata
+  protocol_json.py    structured protocol JSON by sections + JSON Validation Tool
+  scoring.py          derived score + hybrid decision rule
   knowledge_base.py   KB loader + keyword retrieval
   memory.py / db.py   3-layer memory (SQLite via SQLAlchemy)
-  reports.py          markdown reports     notify.py  email (SMTP / dry-run .eml)
+  reports.py          Markdown + PDF reports (xhtml2pdf)     notify.py  email with PDFs (SMTP / dry-run .eml)
   agents/             coordinator, administrative, scientific_reviewer, scientific_critic, prompts
   tools/              checks.py (deterministic), clinicaltrials.py (registry API)
   ingest/imap_poller.py
@@ -108,7 +113,7 @@ knowledge_base/       administrative/admin_checklist.md, scientific/spirit_check
 samples/              make_sample_protocols.py -> two synthetic PDFs (good / flawed)
 eval/                 labeled_cases/*.json, evaluate.py (P/R/F1, runtime, tokens)
 tests/                15 pytest tests (MockLLM, no network)
-outputs/<run_id>/     final_report.md, administrative_report.md, scientific_report.md, findings.json, state.json, email.eml
+outputs/<run_id>/     final_report.md/.pdf, administrative_report.md/.pdf, scientific_report.md/.pdf, protocol.json, findings.json, state.json, email.eml
 ```
 
 ## 3. Setup
@@ -203,15 +208,26 @@ Baseline on the synthetic cases (live ClinicalTrials.gov): flawed F1 = 1.00 (10/
 deficiencies found), good 0 false positives. These are development numbers, not the project's
 evaluation results; the real evaluation uses public protocols labeled by the team (Checkpoint 2).
 
-## 6b. Derived score (display only)
+## 6b. Decision rules and derived score
 
-Next to the decision every run reports a score computed **from the verified findings**
-(`scoring.py`): start at 100, subtract 25 per critical, 10 per major, 3 per minor finding,
-floor at 0. Unverified findings are not counted but are shown as "pending human review";
-rejected ones are ignored. Every deduction is listed with its finding id, so each point is
-explainable. The score never drives the decision: a protocol with one verified administrative
-item is RETURNED_ADMIN whatever its score, and the score then covers the administrative part only
-(`scope: administrative_only`). Weights live in `scoring.WEIGHTS`.
+**Administrative rule:** the administrative part must be 100% complete; any verified administrative
+finding (except `info`) returns the submission (RETURNED_ADMIN) and the scientific agents do not run.
+
+**Scientific rule (hybrid, team decision 2026-10-19, `scoring.hybrid_decision`):** any verified
+**critical** finding -> MAJOR_CONCERNS regardless of score; otherwise the derived score decides:
+`>= SCORE_PASS_MIN` (90) PASS, `SCORE_HUMAN_MIN..SCORE_PASS_MIN-1` (70-89) NEEDS_HUMAN_REVIEW,
+below MAJOR_CONCERNS. Unverified findings prevent an automatic PASS. Thresholds are in `.env`.
+The rule that fired is stored as `decision_rationale` and printed in the report.
+
+**Score** (`scoring.compute_score`): start at 100, subtract 25 per verified critical, 10 per major,
+3 per minor finding, floor at 0. Unverified findings are not counted but shown as pending human
+review; rejected and withdrawn ones are ignored. Every deduction is listed by finding id.
+
+**Agent authority guard** (`graph.guarded`): each node may write only its permitted ReviewState keys;
+the protocol data is writable at intake only; the Coordinator cannot alter agent reports or findings.
+A violation raises `AuthorityViolation` and fails the run. **Append-only state:** findings a reviewer
+drops in a revision round stay as `withdrawn`; every round's reports are kept in
+`scientific_reports` / `critic_reports`.
 
 ## 7. Guardrails and failure handling
 

@@ -22,6 +22,7 @@ def _user_prompt(state: ReviewState, rule_findings: list[dict]) -> str:
         "# Administrative checklist (knowledge base)\n" + kb_text("administrative"),
         mem,
         "# Metadata extracted from the PDF\n" + json.dumps(meta, indent=1, ensure_ascii=False),
+        base.sections_block(state),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
         "# Protocol text (with page markers)\n" + base.protocol_text(state),
         "Return the AdminReport JSON now.",
@@ -65,7 +66,7 @@ def administrative_node(state: ReviewState, llm) -> dict:
                 f["critic_notes"] = "Evidence quote not located in the protocol or guideline code invalid."
             llm_findings.append(f)
 
-    admin_findings = rule_findings + llm_findings
+    admin_findings = base.attach_sections(rule_findings + llm_findings, state.get("protocol_json") or {})
     # Policy (Amir, 2026-10-16): the administrative part must be 100% complete. ANY verified
     # administrative finding (critical, major or minor) returns the submission; "info" does not.
     blocking = [f for f in admin_findings if f["severity"] != Severity.INFO.value

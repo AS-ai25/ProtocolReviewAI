@@ -7,7 +7,7 @@
     python eval/evaluate.py --mode single --no-llm   (sanity check: rule findings through the single-agent path)
 
 A predicted finding matches an expected one when (domain, category) are equal.
-Findings the critic REJECTED are not counted as predictions. Metrics: precision,
+Findings the critic REJECTED or the reviewer WITHDREW are not counted as predictions. Metrics: precision,
 recall, F1 per case and micro-averaged, plus runtime and (for agents) tokens.
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ from protocol_review.pipeline import run_baseline, run_review, run_single_agent 
 
 def score(expected: list[dict], predicted: list[dict]) -> dict:
     exp = {(e["domain"], e["category"]) for e in expected}
-    pred = {(p["domain"], p["category"]) for p in predicted if p.get("status") != "rejected"}
+    pred = {(p["domain"], p["category"]) for p in predicted if p.get("status") not in ("rejected", "withdrawn")}
     tp = len(exp & pred)
     fp = len(pred - exp)
     fn = len(exp - pred)

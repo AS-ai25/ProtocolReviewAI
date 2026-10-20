@@ -4,6 +4,9 @@ COMMON_RULES = """
 General rules for every finding you write:
 - Cite evidence: page number and a VERBATIM quote (<= 300 characters) copied from the protocol text.
   For something that is absent from the whole document, use page 0 and an empty quote and say so.
+- Fill `section` with the protocol section heading where the problem sits (from the section list you receive);
+  leave it empty only for something absent from the whole document.
+- Fill `recommendation` with the concrete action the submitter must take.
 - Cite the knowledge-base rule code in `guideline_ref` (e.g. SPIRIT-14, ADMIN-CHK-06, GCP-07). Never invent codes.
 - Never invent protocol content. If you are not sure, lower the severity and say what is uncertain.
 - Use `category` codes consistently: MISSING_SECTION, MISSING_DOCUMENT, INTERNAL_CONTRADICTION,
@@ -75,6 +78,10 @@ summary of the completed review for a busy coordinator who has not read the prot
 reviewed, the overall decision and why, the most important verified findings (with ids), what
 remains unverified and needs a human, and the recommended next step. Plain language, no hype,
 no new claims beyond the findings you are given.
+
+Authority limits: the decision and the score you receive were computed by predefined rules from the
+agents' findings. You must NOT change the decision, add or remove findings, or judge scientific
+validity yourself; you only explain what the agents found and what the rule concluded.
 """
 
 SINGLE_AGENT_SYSTEM = """You are a SINGLE reviewer agent that screens a clinical trial protocol for a Helsinki
