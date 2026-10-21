@@ -46,6 +46,8 @@ CONFIGS: list[dict] = [
 def load_cases(cases_dir: Path) -> list[dict]:
     cases = []
     for p in sorted(Path(cases_dir).glob("*.json")):
+        if p.name.startswith("_"):
+            continue  # _TEMPLATE.json and other helper files are not cases
         c = json.loads(p.read_text(encoding="utf-8"))
         pdf = ROOT / c["pdf"]
         if not pdf.exists():

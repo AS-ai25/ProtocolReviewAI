@@ -51,7 +51,7 @@ def main():
     ap.add_argument("--no-verification", action="store_true", help="single: skip the code-level evidence verification (ablation)")
     a = ap.parse_args()
 
-    cases = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(a.cases).glob("*.json"))]
+    cases = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(a.cases).glob("*.json")) if not p.name.startswith("_")]
     results, totals = [], {"tp": 0, "fp": 0, "fn": 0}
     for c in cases:
         pdf = ROOT / c["pdf"]

@@ -1,0 +1,31 @@
+{
+  "_instructions": "Copy to <case_id>.json, delete this key. Label BEFORE running the system on the protocol. See eval/LABELING_GUIDE.md for the category list and the field rules.",
+  "case_id": "nct00000000",
+  "pdf": "eval/protocols/nct00000000.pdf",
+  "nct_id": "NCT00000000",
+  "labeler": "Ron Levi",
+  "labeled_on": "2026-10-24",
+  "blind": true,
+  "description": "One line: phase, design, document version, anything special.",
+  "expected_decision": "RETURNED_ADMIN",
+  "expected_findings": [
+    {
+      "domain": "administrative",
+      "category": "MISSING_CONSENT_FORM",
+      "guideline_ref": "ADMIN-CHK-06",
+      "page": 0,
+      "quote": "",
+      "severity": "critical",
+      "note": "No informed consent form or appendix referenced anywhere."
+    },
+    {
+      "domain": "scientific",
+      "category": "INCONSISTENT_SAMPLE_SIZE",
+      "guideline_ref": "SPIRIT-14",
+      "page": 47,
+      "quote": "verbatim text from page 47",
+      "severity": "major",
+      "note": "Synopsis says X; statistics section says Y."
+    }
+  ]
+}
