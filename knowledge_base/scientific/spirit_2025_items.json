@@ -1,0 +1,484 @@
+{
+  "standard": "SPIRIT 2025",
+  "source": "https://jamanetwork.com/journals/jama/fullarticle/2833408",
+  "scope": "Randomized trials; not an assessment of scientific design quality",
+  "items": [
+    {
+      "id": "1a",
+      "code": "SPIRIT-1a",
+      "topic": "Protocol title",
+      "review_question": "Specify trial design, participant population and intervention in the title.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "1b",
+      "code": "SPIRIT-1b",
+      "topic": "Structured summary",
+      "review_question": "Provide a structured summary of trial design and methods.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "2",
+      "code": "SPIRIT-2",
+      "topic": "Protocol version",
+      "review_question": "Identify protocol version and date.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "3a",
+      "code": "SPIRIT-3a",
+      "topic": "Contributors",
+      "review_question": "Give contributor names, affiliations and roles.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "3b",
+      "code": "SPIRIT-3b",
+      "topic": "Sponsor",
+      "review_question": "Give sponsor name and contact.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "3c",
+      "code": "SPIRIT-3c",
+      "topic": "Sponsor influence",
+      "review_question": "Describe sponsor/funder responsibilities and authority.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "3d",
+      "code": "SPIRIT-3d",
+      "topic": "Oversight roles",
+      "review_question": "Describe coordinating and oversight groups when relevant.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "4",
+      "code": "SPIRIT-4",
+      "topic": "Registry",
+      "review_question": "Give registry, registration number, URL and registration date.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "5",
+      "code": "SPIRIT-5",
+      "topic": "Protocol / SAP access",
+      "review_question": "State where protocol and statistical analysis plan are accessible.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "6",
+      "code": "SPIRIT-6",
+      "topic": "Data sharing",
+      "review_question": "Explain access to de-identified data, code and related materials.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "7a",
+      "code": "SPIRIT-7a",
+      "topic": "Funding",
+      "review_question": "Identify support and funding sources.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "7b",
+      "code": "SPIRIT-7b",
+      "topic": "Conflicts",
+      "review_question": "Disclose relevant financial and nonfinancial conflicts.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "8",
+      "code": "SPIRIT-8",
+      "topic": "Dissemination",
+      "review_question": "Describe dissemination to participants, professionals and public.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "9a",
+      "code": "SPIRIT-9a",
+      "topic": "Background",
+      "review_question": "Give scientific rationale and existing benefits/harms evidence.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "9b",
+      "code": "SPIRIT-9b",
+      "topic": "Comparator rationale",
+      "review_question": "Justify selected comparison condition.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "10",
+      "code": "SPIRIT-10",
+      "topic": "Objectives",
+      "review_question": "State objectives regarding benefits and harms.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "11",
+      "code": "SPIRIT-11",
+      "topic": "Patient and public involvement",
+      "review_question": "Describe involvement or plans in trial design, conduct or reporting.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "12",
+      "code": "SPIRIT-12",
+      "topic": "Trial design",
+      "review_question": "Describe design, allocation ratio and trial framework.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "13",
+      "code": "SPIRIT-13",
+      "topic": "Setting",
+      "review_question": "Give settings and locations of participating sites.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "14a",
+      "code": "SPIRIT-14a",
+      "topic": "Participant eligibility",
+      "review_question": "Specify participant eligibility including inclusion and exclusion criteria.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "14b",
+      "code": "SPIRIT-14b",
+      "topic": "Site/staff eligibility",
+      "review_question": "Where relevant, specify sites and intervention-provider eligibility.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "15a",
+      "code": "SPIRIT-15a",
+      "topic": "Interventions",
+      "review_question": "Describe interventions/comparators sufficiently for replication.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "15b",
+      "code": "SPIRIT-15b",
+      "topic": "Stopping or modifications",
+      "review_question": "State criteria for changing/discontinuing assigned treatments.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "15c",
+      "code": "SPIRIT-15c",
+      "topic": "Adherence",
+      "review_question": "Describe adherence strategies and monitoring when relevant.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "15d",
+      "code": "SPIRIT-15d",
+      "topic": "Concomitant care",
+      "review_question": "Specify allowed and disallowed concomitant care.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "16",
+      "code": "SPIRIT-16",
+      "topic": "Outcomes",
+      "review_question": "Define primary and secondary outcomes with variable, metric, aggregation and time point.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "17",
+      "code": "SPIRIT-17",
+      "topic": "Harms",
+      "review_question": "Describe harms definitions and ascertainment.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "18",
+      "code": "SPIRIT-18",
+      "topic": "Timeline",
+      "review_question": "Specify schedule of enrolment, intervention, visits and measurements.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "19",
+      "code": "SPIRIT-19",
+      "topic": "Sample size",
+      "review_question": "Report sample-size rationale and assumptions.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "20",
+      "code": "SPIRIT-20",
+      "topic": "Recruitment",
+      "review_question": "Describe methods to reach planned sample.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "21a",
+      "code": "SPIRIT-21a",
+      "topic": "Sequence generation",
+      "review_question": "State who generates random allocation and how.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "21b",
+      "code": "SPIRIT-21b",
+      "topic": "Randomisation detail",
+      "review_question": "Describe type of randomisation and stratification; keep predictability-sensitive details restricted.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "22",
+      "code": "SPIRIT-22",
+      "topic": "Concealment",
+      "review_question": "Describe allocation-concealment mechanism.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "23",
+      "code": "SPIRIT-23",
+      "topic": "Assignment implementation",
+      "review_question": "Specify allocation-sequence access for enrolling and assigning staff.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "24a",
+      "code": "SPIRIT-24a",
+      "topic": "Blinded parties",
+      "review_question": "State who is blinded or explicitly state an open-label design.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "24b",
+      "code": "SPIRIT-24b",
+      "topic": "Masking implementation",
+      "review_question": "If blinded, describe how and intervention similarity.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "24c",
+      "code": "SPIRIT-24c",
+      "topic": "Unblinding",
+      "review_question": "If blinded, describe permissible unblinding and procedure.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "25a",
+      "code": "SPIRIT-25a",
+      "topic": "Data collection",
+      "review_question": "Describe measurements, instruments and data-quality safeguards.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "25b",
+      "code": "SPIRIT-25b",
+      "topic": "Retention / follow-up",
+      "review_question": "Describe retention and follow-up for discontinuers/deviations.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "26",
+      "code": "SPIRIT-26",
+      "topic": "Data management",
+      "review_question": "Describe data entry, coding, security, storage and quality controls.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "27a",
+      "code": "SPIRIT-27a",
+      "topic": "Main analyses",
+      "review_question": "Specify comparisons of primary/secondary outcomes and harms.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "27b",
+      "code": "SPIRIT-27b",
+      "topic": "Analysis populations",
+      "review_question": "Define analysis sets and treatment-group attribution.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "27c",
+      "code": "SPIRIT-27c",
+      "topic": "Missing data",
+      "review_question": "Explain handling of missing data in analysis.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "27d",
+      "code": "SPIRIT-27d",
+      "topic": "Additional analyses",
+      "review_question": "Describe any planned subgroup, sensitivity or other analyses.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "28a",
+      "code": "SPIRIT-28a",
+      "topic": "DMC",
+      "review_question": "Describe DMC oversight or justify no DMC.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "28b",
+      "code": "SPIRIT-28b",
+      "topic": "Interim/stopping",
+      "review_question": "Describe interim analyses, stopping and decision authority.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "29",
+      "code": "SPIRIT-29",
+      "topic": "Trial monitoring",
+      "review_question": "Describe monitoring frequency/methods or explain absence.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "30",
+      "code": "SPIRIT-30",
+      "topic": "Ethics review",
+      "review_question": "Describe ethics/IRB approval plans.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "31",
+      "code": "SPIRIT-31",
+      "topic": "Amendments",
+      "review_question": "Describe communication of protocol changes.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "32a",
+      "code": "SPIRIT-32a",
+      "topic": "Consent procedure",
+      "review_question": "Identify who obtains informed consent/assent and how.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "32b",
+      "code": "SPIRIT-32b",
+      "topic": "Optional further use",
+      "review_question": "Specify additional consent for ancillary data/specimens when relevant.",
+      "applicability": "if_relevant",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "33",
+      "code": "SPIRIT-33",
+      "topic": "Confidentiality",
+      "review_question": "Describe confidentiality protection throughout trial lifecycle.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    },
+    {
+      "id": "34",
+      "code": "SPIRIT-34",
+      "topic": "Post-trial care",
+      "review_question": "Specify ancillary/posttrial care and compensation for trial injury as relevant.",
+      "applicability": "randomized_trial",
+      "evidence_requirement": "Protocol quotation, page and contextual assessment; accept referenced supplements after human review",
+      "screening_only": true
+    }
+  ]
+}

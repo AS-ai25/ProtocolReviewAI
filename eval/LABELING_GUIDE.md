@@ -1,3 +1,5 @@
+> **SPIRIT 2025 migration:** New human labels must cite 2025 identifiers. Existing synthetic labels retain their historical version and must be migrated before pooling scores. Do not change blinded labels after viewing model output.
+
 # Labeling guide for the real-protocol test set (owner: Ron)
 
 Everything the evaluation needs from the data side, in the exact formats the scripts read.
@@ -63,7 +65,7 @@ Path: `eval/labeled_cases/<case_id>.json`. Copy `eval/labeled_cases/_TEMPLATE.js
     {
       "domain": "scientific",
       "category": "INCONSISTENT_SAMPLE_SIZE",
-      "guideline_ref": "SPIRIT-14",
+      "guideline_ref": "SPIRIT-19",
       "page": 47,
       "quote": "approximately 30,000 participants",
       "severity": "major",
@@ -79,7 +81,7 @@ Path: `eval/labeled_cases/<case_id>.json`. Copy `eval/labeled_cases/_TEMPLATE.js
 |---|---|---|
 | `domain` | yes | `administrative` or `scientific` |
 | `category` | yes | one canonical code from the list below (the alias map handles LLM wording) |
-| `guideline_ref` | yes | `ADMIN-CHK-01..15`, `SPIRIT-01..33` (with `a/b/c` where the item has sub-items), `GCP-01..12` |
+| `guideline_ref` | yes | `ADMIN-CHK-01..15`, `SPIRIT-1a..34` (with applicable sub-items a/b/c/d; refer to spirit_2025_items.json), `GCP-01..12` |
 | `page` | yes | 1-based page in the PDF where the problem is visible; `0` when the item is absent from the whole document |
 | `quote` | recommended | verbatim text from that page (helps the 30-finding check later) |
 | `severity` | yes | `critical`, `major`, `minor` |
@@ -112,7 +114,7 @@ score = 100 − 25 per critical − 10 per major − 3 per minor).
 3. Scientific pass: go through `knowledge_base/scientific/spirit_checklist.md` item by item. Every
    SPIRIT item not addressed, or addressed inconsistently in two places, = one finding.
 4. Registry pass: compare enrollment, phase, primary outcomes, interventions, conditions, sponsor
-   with the registry record. Every discrepancy = `REGISTRY_MISMATCH` with `SPIRIT-02`.
+   with the registry record. Every discrepancy = `REGISTRY_MISMATCH` with `SPIRIT-4`.
 5. Write the JSON, commit it. Only then may the system be run on that protocol.
 
 Label what a careful committee member would raise, not everything that could be said. When unsure
@@ -126,7 +128,7 @@ Two files, both currently drafts written from memory and marked as such:
 
 - `knowledge_base/scientific/spirit_checklist.md`: check every item and its numbering against the
   official SPIRIT 2025 statement (BMJ 2025). Fix wording, add missing items, keep the code format
-  `SPIRIT-nn` / `SPIRIT-nna` because findings cite it. If SPIRIT 2025 renumbers an item, keep our code
+  `SPIRIT-nn` / `SPIRIT-nna` because findings cite it. SPIRIT 2025 is now the code set; keep the locked matching algorithm
   and note the official number in the text.
 - `knowledge_base/administrative/admin_checklist.md`: check the 15 items against the committee SOP
   (or the Ministry of Health Helsinki procedure). Add or remove items; keep codes stable

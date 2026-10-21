@@ -38,7 +38,7 @@ def kb_text(domain: str, base: Path | None = None) -> str:
 
 
 _WORD = re.compile(r"[a-zA-Z][a-zA-Z\-]{2,}")
-_CODE = re.compile(r"\b(?:ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-c]?|GCP-\d{2})\b")
+_CODE = re.compile(r"\b(?:ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-d]?|GCP-\d{2})\b")
 
 
 def retrieve(query: str, domain: str | None = None, k: int = 5, base: Path | None = None) -> list[str]:

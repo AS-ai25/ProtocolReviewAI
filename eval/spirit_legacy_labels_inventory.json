@@ -1,0 +1,9 @@
+[
+  {
+    "path": "eval/labeled_cases/_TEMPLATE.json",
+    "historical_codes": [
+      "SPIRIT-14"
+    ],
+    "action": "Review and re-label only with blind independent provenance; do not edit historical golden cases in place."
+  }
+]

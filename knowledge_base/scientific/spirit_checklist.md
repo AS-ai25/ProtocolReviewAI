@@ -1,73 +1,87 @@
-# SPIRIT checklist - condensed working copy
+# SPIRIT 2025 — Scientific Protocol Review Knowledge Base
 
-Items a clinical trial protocol must address. Codes `SPIRIT-nn` follow the
-SPIRIT 2013 numbering, which the team uses as the stable reference; SPIRIT 2025
-(BMJ 2025) keeps the same content areas with some renumbering and additions
-(open science, patient involvement, harms). **Ron to replace this file with the
-verified SPIRIT 2025 item list before Checkpoint 2.**
+**Authority:** Chan et al., JAMA 2025;334:435–443 (SPIRIT 2025, 34 principal items).
+**Official table:** https://jamanetwork.com/journals/jama/fullarticle/2833408
 
-## Administrative information
-- SPIRIT-01 Title: descriptive, identifies design, population, interventions, acronym.
-- SPIRIT-02 Trial registration: registry name and identifier; registry data set consistent with the protocol (enrollment, phase, outcomes, interventions).
-- SPIRIT-03 Protocol version: identifier and date.
-- SPIRIT-04 Funding: sources and types of financial, material and other support.
-- SPIRIT-05 Roles and responsibilities: names, affiliations and roles of contributors; sponsor contact; sponsor/funder role in design, data, analysis, publication; coordinating centre, steering committee, endpoint adjudication, data management team.
+This knowledge base covers every official SPIRIT 2025 checklist identifier including sub-items. Wording below paraphrases the published checklist; use the original guidance for final assessment. Applicable principally to randomized trials. **A completed checklist is evidence of reporting completeness, not proof of high-quality scientific design.**
 
-## Introduction
-- SPIRIT-06 Background and rationale: scientific background, relevant studies (published and unpublished), justification for the trial, explanation for choice of comparators.
-- SPIRIT-07 Objectives: specific objectives or hypotheses.
-- SPIRIT-08 Trial design: type (parallel, crossover, factorial, single group), allocation ratio, framework (superiority, equivalence, non-inferiority, exploratory).
+## Core review rules
+- Screen each item in the full PDF, tables, appendices, and referenced documents; do not judge solely by an exact heading.
+- Separate *not located*, *ambiguous*, *not applicable* and *clearly documented*. Missing headings alone are not findings.
+- For each suggested deficiency, cite a precise page and real quote; if genuinely missing from the complete document, flag for human review without fabricating a quotation.
+- Inclusion and exclusion are independently checked under SPIRIT-14a.
+- If applicability is unclear or the file is an abridged synopsis, report insufficient evidence rather than scoring every unseen item as missing.
+- Keep the SPIRIT checklist dimension separate from independent medical/methodological quality judgement and ICH-GCP obligations.
 
-## Methods: participants, interventions, outcomes
-- SPIRIT-09 Study setting: countries, type of sites, list of sites.
-- SPIRIT-10 Eligibility criteria: inclusion and exclusion criteria for participants (age range, diagnosis, etc.) and, if applicable, for sites and investigators; criteria must be identical wherever they are repeated.
-- SPIRIT-11 Interventions: each arm with sufficient detail for replication; criteria for discontinuing or modifying interventions; adherence strategies; permitted/prohibited concomitant care.
-- SPIRIT-12 Outcomes: primary, secondary and other outcomes with the specific measurement variable, analysis metric, method of aggregation and time point; rationale for the primary outcome.
-- SPIRIT-13 Participant timeline: schedule of enrolment, interventions, assessments and visits (schematic diagram recommended).
-- SPIRIT-14 Sample size: estimated number of participants needed with the clinical and statistical assumptions supporting the calculation (effect size, variability, alpha, power, dropout). The number must be stated once and used consistently throughout the protocol.
-- SPIRIT-15 Recruitment: strategies to achieve adequate enrolment.
+## All 34 items and sub-items (2025)
+- **SPIRIT-1a — Protocol title**: Specify trial design, participant population and intervention in the title.
+- **SPIRIT-1b — Structured summary**: Provide a structured summary of trial design and methods.
+- **SPIRIT-2 — Protocol version**: Identify protocol version and date.
+- **SPIRIT-3a — Contributors**: Give contributor names, affiliations and roles.
+- **SPIRIT-3b — Sponsor**: Give sponsor name and contact.
+- **SPIRIT-3c — Sponsor influence**: Describe sponsor/funder responsibilities and authority.
+- **SPIRIT-3d — Oversight roles**: Describe coordinating and oversight groups when relevant. (*Conditional; check relevance.*)
+- **SPIRIT-4 — Registry**: Give registry, registration number, URL and registration date.
+- **SPIRIT-5 — Protocol / SAP access**: State where protocol and statistical analysis plan are accessible.
+- **SPIRIT-6 — Data sharing**: Explain access to de-identified data, code and related materials.
+- **SPIRIT-7a — Funding**: Identify support and funding sources.
+- **SPIRIT-7b — Conflicts**: Disclose relevant financial and nonfinancial conflicts.
+- **SPIRIT-8 — Dissemination**: Describe dissemination to participants, professionals and public.
+- **SPIRIT-9a — Background**: Give scientific rationale and existing benefits/harms evidence.
+- **SPIRIT-9b — Comparator rationale**: Justify selected comparison condition. (*Conditional; check relevance.*)
+- **SPIRIT-10 — Objectives**: State objectives regarding benefits and harms.
+- **SPIRIT-11 — Patient and public involvement**: Describe involvement or plans in trial design, conduct or reporting.
+- **SPIRIT-12 — Trial design**: Describe design, allocation ratio and trial framework.
+- **SPIRIT-13 — Setting**: Give settings and locations of participating sites.
+- **SPIRIT-14a — Participant eligibility**: Specify participant eligibility including inclusion and exclusion criteria.
+- **SPIRIT-14b — Site/staff eligibility**: Where relevant, specify sites and intervention-provider eligibility. (*Conditional; check relevance.*)
+- **SPIRIT-15a — Interventions**: Describe interventions/comparators sufficiently for replication.
+- **SPIRIT-15b — Stopping or modifications**: State criteria for changing/discontinuing assigned treatments. (*Conditional; check relevance.*)
+- **SPIRIT-15c — Adherence**: Describe adherence strategies and monitoring when relevant. (*Conditional; check relevance.*)
+- **SPIRIT-15d — Concomitant care**: Specify allowed and disallowed concomitant care. (*Conditional; check relevance.*)
+- **SPIRIT-16 — Outcomes**: Define primary and secondary outcomes with variable, metric, aggregation and time point.
+- **SPIRIT-17 — Harms**: Describe harms definitions and ascertainment.
+- **SPIRIT-18 — Timeline**: Specify schedule of enrolment, intervention, visits and measurements.
+- **SPIRIT-19 — Sample size**: Report sample-size rationale and assumptions.
+- **SPIRIT-20 — Recruitment**: Describe methods to reach planned sample.
+- **SPIRIT-21a — Sequence generation**: State who generates random allocation and how.
+- **SPIRIT-21b — Randomisation detail**: Describe type of randomisation and stratification; keep predictability-sensitive details restricted.
+- **SPIRIT-22 — Concealment**: Describe allocation-concealment mechanism.
+- **SPIRIT-23 — Assignment implementation**: Specify allocation-sequence access for enrolling and assigning staff.
+- **SPIRIT-24a — Blinded parties**: State who is blinded or explicitly state an open-label design.
+- **SPIRIT-24b — Masking implementation**: If blinded, describe how and intervention similarity. (*Conditional; check relevance.*)
+- **SPIRIT-24c — Unblinding**: If blinded, describe permissible unblinding and procedure. (*Conditional; check relevance.*)
+- **SPIRIT-25a — Data collection**: Describe measurements, instruments and data-quality safeguards.
+- **SPIRIT-25b — Retention / follow-up**: Describe retention and follow-up for discontinuers/deviations.
+- **SPIRIT-26 — Data management**: Describe data entry, coding, security, storage and quality controls.
+- **SPIRIT-27a — Main analyses**: Specify comparisons of primary/secondary outcomes and harms.
+- **SPIRIT-27b — Analysis populations**: Define analysis sets and treatment-group attribution.
+- **SPIRIT-27c — Missing data**: Explain handling of missing data in analysis.
+- **SPIRIT-27d — Additional analyses**: Describe any planned subgroup, sensitivity or other analyses. (*Conditional; check relevance.*)
+- **SPIRIT-28a — DMC**: Describe DMC oversight or justify no DMC.
+- **SPIRIT-28b — Interim/stopping**: Describe interim analyses, stopping and decision authority. (*Conditional; check relevance.*)
+- **SPIRIT-29 — Trial monitoring**: Describe monitoring frequency/methods or explain absence.
+- **SPIRIT-30 — Ethics review**: Describe ethics/IRB approval plans.
+- **SPIRIT-31 — Amendments**: Describe communication of protocol changes.
+- **SPIRIT-32a — Consent procedure**: Identify who obtains informed consent/assent and how.
+- **SPIRIT-32b — Optional further use**: Specify additional consent for ancillary data/specimens when relevant. (*Conditional; check relevance.*)
+- **SPIRIT-33 — Confidentiality**: Describe confidentiality protection throughout trial lifecycle.
+- **SPIRIT-34 — Post-trial care**: Specify ancillary/posttrial care and compensation for trial injury as relevant.
 
-## Methods: assignment of interventions (for controlled trials)
-- SPIRIT-16a Sequence generation: method (e.g. computer-generated random numbers), stratification factors, block size (kept hidden).
-- SPIRIT-16b Allocation concealment mechanism (central telephone/web randomisation, sequentially numbered opaque sealed envelopes).
-- SPIRIT-16c Implementation: who generates the sequence, who enrols, who assigns.
-- SPIRIT-17a Blinding (masking): who is blinded (participants, care providers, outcome assessors, analysts) and how; or explicit open-label statement.
-- SPIRIT-17b Circumstances and procedure for unblinding.
+## Legacy deterministic-check identifiers — compatibility ONLY
+The existing deterministic checks in `src/protocol_review/tools/checks.py` emit the following **project-internal 2013-era meanings**. Do not cite these bare codes as official 2025 item references; translate or migrate in a separate verified change with test updates.
+- `SPIRIT-02` (legacy check) → candidate SPIRIT 2025 item `4`; verify check semantics before migration.
+- `SPIRIT-08` (legacy check) → candidate SPIRIT 2025 item `12`; verify check semantics before migration.
+- `SPIRIT-10` (legacy check) → candidate SPIRIT 2025 item `14a`; verify check semantics before migration.
+- `SPIRIT-12` (legacy check) → candidate SPIRIT 2025 item `16`; verify check semantics before migration.
+- `SPIRIT-14` (legacy check) → candidate SPIRIT 2025 item `19`; verify check semantics before migration.
+- `SPIRIT-16` (legacy check) → candidate SPIRIT 2025 item `21a/21b`; verify check semantics before migration.
+- `SPIRIT-17` (legacy check) → candidate SPIRIT 2025 item `24a/24b`; verify check semantics before migration.
+- `SPIRIT-20` (legacy check) → candidate SPIRIT 2025 item `27a`; verify check semantics before migration.
+- `SPIRIT-21` (legacy check) → candidate SPIRIT 2025 item `28a`; verify check semantics before migration.
+- `SPIRIT-22` (legacy check) → candidate SPIRIT 2025 item `28b`; verify check semantics before migration.
 
-## Methods: data collection, management, analysis
-- SPIRIT-18a Data collection methods: plans for assessment and collection of outcome, baseline and other data; data quality (training, duplicate measurements); reference to data collection forms.
-- SPIRIT-18b Retention and follow-up: plans to promote retention and complete follow-up, including data to be collected for participants who discontinue.
-- SPIRIT-19 Data management: entry, coding, security, storage, range checks.
-- SPIRIT-20a Statistical methods for primary and secondary outcomes; reference to the statistical analysis plan.
-- SPIRIT-20b Methods for additional analyses (subgroup, adjusted).
-- SPIRIT-20c Analysis population definition (ITT, per-protocol) and handling of missing data.
-
-## Methods: monitoring
-- SPIRIT-21a Data monitoring committee: composition, role, independence; or explanation of why none is needed; interim analyses and stopping guidelines.
-- SPIRIT-21b Interim analyses and stopping guidelines, who decides to terminate the trial.
-- SPIRIT-22 Harms: plans for collecting, assessing, reporting and managing solicited and spontaneously reported adverse events.
-- SPIRIT-23 Auditing: frequency and procedures, independence from investigators and sponsor.
-
-## Ethics and dissemination
-- SPIRIT-24 Research ethics approval: plans for seeking REC/IRB approval.
-- SPIRIT-25 Protocol amendments: communication of modifications to relevant parties.
-- SPIRIT-26a Consent: who obtains consent and how.
-- SPIRIT-26b Additional consent for ancillary studies / biological specimens.
-- SPIRIT-27 Confidentiality: how personal information is collected, shared and maintained.
-- SPIRIT-28 Declaration of interests: financial and other competing interests.
-- SPIRIT-29 Access to data: who will have access to the final dataset.
-- SPIRIT-30 Ancillary and post-trial care; compensation for trial-related harm.
-- SPIRIT-31a Dissemination policy: results communication to participants, professionals, public; publication restrictions.
-- SPIRIT-31b Authorship eligibility guidelines.
-- SPIRIT-31c Plans for public access to protocol, dataset, statistical code.
-- SPIRIT-32 Informed consent materials: model consent form provided as appendix.
-- SPIRIT-33 Biological specimens: collection, evaluation, storage for future use.
-
-## How the Scientific Review Agent uses this list
-* Findings cite the item code (`SPIRIT-14`) in `guideline_ref`.
-* Severity guidance: missing primary outcome, unjustified sample size, undisclosed
-  randomisation in a randomised trial, contradictory eligibility criteria or a
-  protocol/registry contradiction are **major** or **critical**; missing minor
-  items (authorship, data access) are **minor**.
-* Internal contradictions (numbers, dates, criteria differing between sections)
-  are a distinct category `INTERNAL_CONTRADICTION` and must quote BOTH places.
+## Sources / limitations
+- https://www.bmj.com/content/389/bmj-2024-081477
+- https://jamanetwork.com/journals/jama/fullarticle/2833408
+- No local SOP has been incorporated. SPIRIT is a reporting guideline, not an Israeli legal submission checklist.

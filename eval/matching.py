@@ -56,7 +56,7 @@ def aliases() -> dict[str, set[str]]:
 
 
 def _refs(s: str) -> set[str]:
-    return set(re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-c]?|GCP-\d{2}", (s or "").upper()))
+    return set(re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[A-D]?|GCP-\d{2}", (s or "").upper()))
 
 
 def _pages(finding: dict) -> set[int]:

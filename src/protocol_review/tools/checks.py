@@ -210,34 +210,34 @@ def scientific_checks(pages: list[dict], meta: dict) -> list[dict]:
                 ev.append(Evidence(page=pg, quote=q))
         add("INCONSISTENT_SAMPLE_SIZE", Severity.MAJOR, "Sample size figures are inconsistent",
             f"Different totals appear in the document: {', '.join(str(n) for n in sizes)}. The planned sample size must be stated once and used consistently.",
-            "SPIRIT-14", evidence=ev, recommendation="Reconcile the sample size across the synopsis, design and statistics sections.")
+            "SPIRIT-19", evidence=ev, recommendation="Reconcile the sample size across the synopsis, design and statistics sections.")
     elif not sizes:
-        add("NO_SAMPLE_SIZE", Severity.MAJOR, "No explicit sample size", "No numeric sample size statement (n = ..., X participants) was found.", "SPIRIT-14")
+        add("NO_SAMPLE_SIZE", Severity.MAJOR, "No explicit sample size", "No numeric sample size statement (n = ..., X participants) was found.", "SPIRIT-19")
 
     if not re.search(r"\bsample\s+size\b[^.]{0,300}\b(power|alpha|significance|effect\s+size|standard\s+deviation|assum)", text, re.I | re.S):
         add("NO_SAMPLE_SIZE_JUSTIFICATION", Severity.MAJOR, "Sample size not justified",
-            "No power / effect-size assumptions accompany the sample size.", "SPIRIT-14",
+            "No power / effect-size assumptions accompany the sample size.", "SPIRIT-19",
             recommendation="State assumptions (effect size, SD, alpha, power, dropout) behind the sample size.")
 
     if re.search(r"\brandomi[sz]", text, re.I):
         if not re.search(r"\b(block|stratif|computer[- ]generated|random\s+number|allocation\s+(sequence|concealment)|sealed\s+envelope|central\s+randomi[sz]ation|IWRS|IVRS)\b", text, re.I):
             add("RANDOMIZATION_METHOD_UNSPECIFIED", Severity.MAJOR, "Randomisation method / allocation concealment not described",
-                "The trial is randomised but the sequence generation and concealment mechanism are not specified.", "SPIRIT-16",
+                "The trial is randomised but the sequence generation and concealment mechanism are not specified.", "SPIRIT-21a; SPIRIT-22",
                 recommendation="Describe sequence generation, allocation ratio, stratification and concealment.")
         if not re.search(r"\b(blind|mask)(ed|ing)?\b|\bopen[- ]label\b", text, re.I):
-            add("BLINDING_UNSPECIFIED", Severity.MAJOR, "Blinding not addressed", "Neither blinding nor an explicit open-label design is stated.", "SPIRIT-17")
+            add("BLINDING_UNSPECIFIED", Severity.MAJOR, "Blinding not addressed", "Neither blinding nor an explicit open-label design is stated.", "SPIRIT-24a")
 
     if not re.search(r"\bprimary\s+(outcome|endpoint)\b", text, re.I):
-        add("NO_PRIMARY_OUTCOME", Severity.CRITICAL, "Primary outcome not defined", "No primary outcome / endpoint statement was found.", "SPIRIT-12")
+        add("NO_PRIMARY_OUTCOME", Severity.CRITICAL, "Primary outcome not defined", "No primary outcome / endpoint statement was found.", "SPIRIT-16")
     if not re.search(r"\bstatistical\s+(analysis|methods?|plan)\b|\banalysis\s+plan\b", text, re.I):
-        add("NO_STATISTICAL_PLAN", Severity.MAJOR, "No statistical analysis plan", "The protocol lacks a statistical methods section.", "SPIRIT-20")
+        add("NO_STATISTICAL_PLAN", Severity.MAJOR, "No statistical analysis plan", "The protocol lacks a statistical methods section.", "SPIRIT-27a")
     if not re.search(r"\b(data\s+(safety\s+)?monitoring\s+(board|committee)|DSMB|DMC|independent\s+data\s+monitoring)\b", text, re.I):
         add("NO_DATA_MONITORING", Severity.MINOR, "No data monitoring committee statement",
-            "State whether a DMC is used and, if not, why.", "SPIRIT-21")
+            "State whether a DMC is used and, if not, why.", "SPIRIT-28a")
     if not re.search(r"\badverse\s+events?\b|\bharms?\b|\bsafety\s+reporting\b", text, re.I):
-        add("NO_HARMS_PLAN", Severity.MAJOR, "No adverse-event / harms reporting plan", "No plan for collecting and reporting harms was found.", "SPIRIT-22")
+        add("NO_HARMS_PLAN", Severity.MAJOR, "No adverse-event / harms reporting plan", "No plan for collecting and reporting harms was found.", "SPIRIT-17")
     if not re.search(r"\b(withdraw|discontinu|stopping\s+rules?|interim\s+analys)", text, re.I):
-        add("NO_STOPPING_RULES", Severity.MINOR, "No discontinuation / stopping criteria", "No participant withdrawal or trial stopping rules were found.", "SPIRIT-21")
+        add("NO_STOPPING_RULES", Severity.MINOR, "No discontinuation / stopping criteria", "No participant withdrawal or trial stopping rules were found.", "SPIRIT-15b")
 
     ages: set[tuple] = set()
     for rx in AGE_RES:
@@ -245,7 +245,7 @@ def scientific_checks(pages: list[dict], meta: dict) -> list[dict]:
             ages.add(tuple(int(g) for g in m.groups() if g is not None))
     if len(ages) > 1:
         add("INCONSISTENT_AGE_RANGE", Severity.MAJOR, "Age eligibility stated inconsistently",
-            f"Different age criteria appear: {sorted(ages)}.", "SPIRIT-10",
+            f"Different age criteria appear: {sorted(ages)}.", "SPIRIT-14a",
             recommendation="Use one age range throughout the protocol.")
 
     phases = phases_mentioned(text)
@@ -256,7 +256,7 @@ def scientific_checks(pages: list[dict], meta: dict) -> list[dict]:
             if pg:
                 ev.append(Evidence(page=pg, quote=q))
         add("INCONSISTENT_PHASE", Severity.MAJOR, "Trial phase stated inconsistently",
-            f"The protocol describes itself as phase {' and phase '.join(sorted(phases))} in different places.", "SPIRIT-08",
+            f"The protocol describes itself as phase {' and phase '.join(sorted(phases))} in different places.", "SPIRIT-8",
             evidence=ev, recommendation="State one trial phase consistently (title, synopsis, design).")
     return out
 
@@ -284,13 +284,13 @@ def registry_checks(pages: list[dict], meta: dict, registry: dict | None) -> lis
         out.append(_finding(i, Domain.SCIENTIFIC, "REGISTRY_MISMATCH", Severity.MAJOR,
                             "Enrollment differs from the registry record",
                             f"Protocol states {', '.join(map(str, sizes))} participants; ClinicalTrials.gov lists {enrol}.",
-                            "SPIRIT-02", evidence=ev, recommendation="Align the protocol and the registry entry."))
+                            "SPIRIT-4", evidence=ev, recommendation="Align the protocol and the registry entry."))
     reg_phases = {_norm_phase(p.strip().replace("PHASE", "").strip()) for p in (registry.get("phase") or "").split(",") if p.strip()}
     prot_phases = phases_mentioned(text) or ({_norm_phase(meta["phase"])} if meta.get("phase") else set())
     if reg_phases and prot_phases and not (reg_phases & prot_phases):
         i += 1
         out.append(_finding(i, Domain.SCIENTIFIC, "REGISTRY_MISMATCH", Severity.MAJOR, "Trial phase differs from the registry record",
-                            f"Protocol: phase {', '.join(sorted(prot_phases))}; registry: phase {', '.join(sorted(reg_phases))}.", "SPIRIT-02"))
+                            f"Protocol: phase {', '.join(sorted(prot_phases))}; registry: phase {', '.join(sorted(reg_phases))}.", "SPIRIT-4"))
     return out
 
 

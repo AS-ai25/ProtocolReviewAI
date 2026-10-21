@@ -21,7 +21,7 @@
     {
       "domain": "scientific",
       "category": "INCONSISTENT_SAMPLE_SIZE",
-      "guideline_ref": "SPIRIT-14",
+      "guideline_ref": "SPIRIT-19",
       "page": 47,
       "quote": "verbatim text from page 47",
       "severity": "major",

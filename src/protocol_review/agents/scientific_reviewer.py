@@ -9,6 +9,7 @@ from ..knowledge_base import kb_text, rule_codes
 from ..llm import LLMError
 from ..state import Domain, FindingStatus, ReviewState, ScientificReport, trace_event
 from ..tools import checks, clinicaltrials
+from ..tools.section_coverage import coverage_prompt
 from . import base
 from .prompts import SCIENTIFIC_REVIEW_SYSTEM
 
@@ -25,6 +26,7 @@ def _user_prompt(state: ReviewState, rule_findings: list[dict], previous: list[d
         "# Protocol metadata\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# " + clinicaltrials.registry_summary(state.get("registry") or {}),
         base.sections_block(state),
+        coverage_prompt(state.get("pages") or []),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
     ]
     if state.get("revise_rounds", 0) > 0:

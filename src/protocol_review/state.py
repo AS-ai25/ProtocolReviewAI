@@ -48,7 +48,7 @@ class Finding(BaseModel):
     description: str
     evidence: list[Evidence] = Field(default_factory=list)
     guideline_ref: str = Field(
-        default="", description="Reference to a knowledge-base rule, e.g. 'SPIRIT-14' or 'ADMIN-CHK-03'"
+        default="", description="Reference to a knowledge-base rule, e.g. 'SPIRIT-19' or 'ADMIN-CHK-03'"
     )
     recommendation: str = Field(default="", description="Required action: what the submitter must change or add")
     section: str = Field(default="", description="Protocol section heading where the issue is located, e.g. '8. Sample Size'; empty when the item is absent from the whole document")

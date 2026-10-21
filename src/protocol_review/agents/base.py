@@ -118,7 +118,7 @@ def verify_evidence(finding: dict, pages: list[dict], codes: set[str] | None = N
         ok, pg = quote_in_pages(e.get("quote", ""), pages, e.get("page") or None)
         results.append({"page": e.get("page"), "found": ok, "found_on_page": pg})
     ref = (finding.get("guideline_ref") or "").strip()
-    ref_codes = re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-c]?|GCP-\d{2}", ref)
+    ref_codes = re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[A-D]?|GCP-\d{2}", ref)
     ref_ok = bool(ref_codes) and all(c in codes for c in ref_codes)
     absence_claim = not ev or all((e.get("page") or 0) == 0 for e in ev)
     return {
