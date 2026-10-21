@@ -37,6 +37,7 @@ from .reports import run_dir
 from .scoring import compute_score
 from .state import Domain, FindingStatus, Severity, SingleAgentReport
 from .tools import checks, clinicaltrials
+from .tools.section_coverage import coverage_prompt
 
 log = logging.getLogger(__name__)
 AGENT = "single_agent"
@@ -59,13 +60,17 @@ def _memories_block(meta: dict) -> str:
     return "## Approved lessons from previous reviews (human-approved long-term memory)\n" + "\n".join(lines)
 
 
-def build_user_prompt(pdf_text: str, meta: dict, rule_findings: list[dict], registry: dict | None) -> str:
+def build_user_prompt(pdf_text: str, meta: dict, rule_findings: list[dict], registry: dict | None,
+                      pages: list[dict] | None = None) -> str:
+    """Same inputs as the multi-agent reviewer, including the advisory section-coverage
+    screen (equal-input rule for the ablation)."""
     return "\n\n".join(filter(None, [
         "# Administrative checklist (knowledge base)\n" + kb_text("administrative"),
         "# Scientific knowledge base (SPIRIT, ICH-GCP)\n" + kb_text("scientific"),
         _memories_block(meta),
         "# Metadata extracted from the PDF\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# " + clinicaltrials.registry_summary(registry or {}),
+        coverage_prompt(pages) if pages else "",
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
         "# Protocol text (with page markers)\n" + base.protocol_text({"pdf_text": pdf_text}),
         "Return the SingleAgentReport JSON now.",
@@ -136,7 +141,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
     report: SingleAgentReport | None = None
     try:
         report = llm.structured(agent=AGENT, system=SINGLE_AGENT_SYSTEM,
-                               user=build_user_prompt(parsed["pdf_text"], meta, rule_findings, registry),
+                               user=build_user_prompt(parsed["pdf_text"], meta, rule_findings, registry, pages=pages),
                                schema=SingleAgentReport)
     except LLMError as exc:
         log.error("single agent LLM failure: %s", exc)
