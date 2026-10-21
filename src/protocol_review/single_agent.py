@@ -94,9 +94,25 @@ def apply_evidence_verification(findings: list[dict], pages: list[dict], codes: 
     return out
 
 
+def apply_model_status(findings: list[dict]) -> list[dict]:
+    """Ablation (`verify=False`): no code check at all. The model's own claim stands: a finding it did
+    not explicitly mark otherwise (unverified / rejected ...) is reported as `verified`."""
+    out = []
+    for f in findings:
+        f = dict(f)
+        if f.get("status") in (FindingStatus.PROPOSED.value, None, ""):
+            f["status"] = FindingStatus.VERIFIED.value
+        f["critic_notes"] = "Single-agent claim; NO code verification (ablation: --no-verification)."
+        out.append(f)
+    return out
+
+
 def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None, run_id: str | None = None,
-                     llm=None, no_llm: bool | None = None, write: bool = True) -> dict:
-    """One LLM call over the whole review problem. Returns the `run_baseline` result shape."""
+                     llm=None, no_llm: bool | None = None, write: bool = True, verify: bool = True) -> dict:
+    """One LLM call over the whole review problem. Returns the `run_baseline` result shape.
+
+    `verify=False` is the ablation switch: the code-level evidence verification is skipped and the
+    findings keep the status the model gave them (unmarked ones count as verified)."""
     run_id = run_id or datetime.utcnow().strftime("single-%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
     pdf_path = str(pdf_path)
     memory.create_run(run_id, "single_agent", "", pdf_path)
@@ -134,7 +150,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
         sci = base.renumber([f for f in raw if f["domain"] == Domain.SCIENTIFIC.value], "SCI")
         for f in admin + sci:
             f["source"] = "llm"
-        llm_findings = apply_evidence_verification(admin + sci, pages, codes)
+        llm_findings = apply_evidence_verification(admin + sci, pages, codes) if verify else apply_model_status(admin + sci)
     base.attach_sections(rule_findings + llm_findings, build_protocol_json(pages, meta, pdf_path))
 
     findings = rule_findings + llm_findings
@@ -155,7 +171,7 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
 
     result = {
         "run_id": run_id,
-        "mode": "single_agent",
+        "mode": "single_agent" if verify else "single_agent_no_verification",
         "pdf_path": pdf_path,
         "protocol_meta": meta,
         "registry": registry,

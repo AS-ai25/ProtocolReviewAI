@@ -20,8 +20,16 @@ def new_run_id() -> str:
 
 
 def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = "", nct_id: str = "",
-               llm=None, registry_fetch=None, run_id: str | None = None, no_llm: bool | None = None) -> dict:
-    """Full multi-agent review. Returns the final state (without pdf text)."""
+               llm=None, registry_fetch=None, run_id: str | None = None, no_llm: bool | None = None,
+               force_scientific: bool = False, no_critic: bool = False) -> dict:
+    """Full multi-agent review. Returns the final state (without pdf text).
+
+    Evaluation switches (not for production runs):
+      force_scientific  run the scientific stage even when the administrative gate fails; the decision is
+                        still RETURNED_ADMIN, but the scientific findings are produced and reported.
+      no_critic         ablation: skip the Scientific Critic (and the revision round); the reviewer's
+                        findings are verified by code only, like the single agent's.
+    """
     run_id = run_id or new_run_id()
     pdf_path = str(pdf_path)
     memory.create_run(run_id, source, submitter, pdf_path)
@@ -31,7 +39,12 @@ def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = ""
         llm.on_interaction = memory.interaction_hook(run_id)  # historical memory for injected clients too
     graph = build_graph(llm, registry_fetch=registry_fetch)
     try:
-        final = graph.invoke({"run_id": run_id, "source": source, "submitter": submitter, "pdf_path": pdf_path, "nct_id": nct_id})
+        initial = {"run_id": run_id, "source": source, "submitter": submitter, "pdf_path": pdf_path, "nct_id": nct_id}
+        if force_scientific:
+            initial["force_scientific"] = True
+        if no_critic:
+            initial["no_critic"] = True
+        final = graph.invoke(initial)
     except Exception as exc:
         log.exception("run %s failed", run_id)
         memory.update_run(run_id, status="failed", finished_at=datetime.utcnow(), state={"error": str(exc)})

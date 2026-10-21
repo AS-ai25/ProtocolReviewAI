@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Project Charter v1.2 - ProtocolReviewAI</title><style>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Project Charter v1.4 - ProtocolReviewAI</title><style>
 @page { size: A4; margin: 18mm 16mm; }
 body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #1b2430; max-width: 100%; }
 h1 { font-size: 22pt; color: #1e3a6e; margin: 0 0 2px; }
@@ -17,7 +17,7 @@ strong { color: #1b2430; }
 <h2>Multi-Agent Clinical Trial Protocol Review System</h2>
 <p><strong>BIU DS23 Final Project</strong><br />
 <strong>Team:</strong> Amir Shmaryahu and Ron Levi<br />
-<strong>Date:</strong> 19 October 2026 | <strong>Version:</strong> 1.3 (Ron's revisions of 18 October implemented in code; supersedes v1.2 of 18 October 2026)<br />
+<strong>Date:</strong> 20 October 2026 | <strong>Version:</strong> 1.4 (mentor review of 20 October: locked primary metric, finding-matching rule, ablation plan, reduced scope corrected; supersedes v1.3 of 19 October 2026)<br />
 <strong>Repository:</strong> github.com/AS-ai25/ProtocolReviewAI (private)</p>
 <hr />
 <h2>1. Problem and Users</h2>
@@ -25,19 +25,54 @@ strong { color: #1b2430; }
 <p>The system supports, but does not replace, professional committee review. Its users are the committee coordinator ("the boss"), who receives every result by email, and committee members, who receive reports in which every finding is traceable to a page, a quote and a guideline item.</p>
 <h2>2. Success Criteria and Evaluation</h2>
 <p>The system is evaluated on a labeled test set that includes ordinary cases, conflicting information, and cases without a valid resolution.</p>
+<p><strong>Primary metric (locked, 20 October 2026).</strong> <em>Precision of verified findings against blind human labels on the real-protocol test set</em>: of the findings the system reports as <code>verified</code>, the share that a human labeler, working without seeing the system's output, also recorded as a genuine finding. Its companion metric is the <em>recall of labeled findings</em> (coverage): the share of human-labeled findings matched by any finding the system reported, verified or unverified. Unverified findings are the system's hand-offs to a human; they are counted separately and are never scored as claims. Rejected and withdrawn findings are not predictions.</p>
+<p><strong>Finding-matching rule (locked).</strong> A predicted finding matches a labeled finding when the domain (administrative / scientific) is the same <strong>and</strong> either (a) the categories are the same or aliases of each other in the team's category alias map (<code>eval/category_aliases.json</code>), <strong>or</strong> (b) the guideline reference (SPIRIT / ICH-GCP / ADMIN-CHK code) is the same and the cited page is within ±1 of the labeled page. The rule is implemented once (<code>eval/matching.py</code>) and used by every evaluation script.</p>
 <p><strong>Targets (planned, not yet measured on real protocols):</strong></p>
 <ul>
-<li>F1 score of at least 0.80 for finding detection.</li>
-<li>Improvement of at least 5 percentage points over the Single-Agent Baseline.</li>
-<li>Valid protocol or professional-guideline references for at least 95% of findings labeled as verified.</li>
+<li>Precision of verified findings of at least 0.80, with recall of labeled findings of at least 0.80, on the real-protocol test set.</li>
+<li>Improvement of at least 5 percentage points in precision of verified findings over the Single-Agent Baseline (row 2 of the ablation below) at equal or better recall.</li>
+<li>Human check of 30 verified findings, sampled across protocols: for each, the cited passage (page and quote) supports the finding. The result is reported as the share of the 30 that pass, with the failures listed.</li>
 </ul>
 <p><strong>Baselines.</strong> Two baselines are implemented in the same repository and emit the same finding format and decision vocabulary as the multi-agent system:</p>
 <ul>
 <li><em>Rule-Based Baseline:</em> the 29 deterministic checks alone (no LLM).</li>
 <li><em>Single-Agent Baseline:</em> one LLM call that receives everything the multi-agent system has (protocol text, both knowledge bases, rule findings, registry record), without a critic and without a revision round.</li>
 </ul>
-<p><strong>Metrics.</strong> Precision, recall and F1 on findings; runtime; cost (tokens per protocol); and the separate contribution of the critic (findings rejected or downgraded by the critic, and how many of those were indeed wrong).</p>
-<p><strong>Lessons from the first live comparison (16 October 2026, synthetic cases only).</strong> Matching findings by exact category string is too coarse: the LLM uses generic categories where the rules use specific ones, and many "extra" LLM findings were real but unlabeled. Before Checkpoint 2 the evaluation will (a) match findings on meaning (category alias map or guideline reference + page), (b) score verified findings as the system's claims and count unverified ones separately, and (c) label real protocols with all defensible findings, including those only an LLM can see.</p>
+<p><strong>Metrics.</strong> The primary metric and its companion (above); the unverified count per protocol; F1 for continuity with Checkpoint 1; runtime; cost (LLM calls and input / output tokens per protocol); and the separate contribution of the critic (findings rejected or downgraded by the critic, and how many of those were indeed wrong).</p>
+<p><strong>Evaluation gate bypass.</strong> In production the scientific agents do not run when the administrative gate fails. Public protocols almost never include consent forms, insurance certificates or signature pages, so nearly every real test protocol is RETURNED_ADMIN and the scientific findings would never be produced. The evaluation therefore runs with <code>force_scientific</code>: the scientific stage runs regardless of the administrative result, the findings are produced and scored, and the decision rule is unchanged (still RETURNED_ADMIN when the administrative part is incomplete). Reports mark such runs explicitly.</p>
+<p><strong>Ablation (same test set, same matching rule, all rows with the gate bypass).</strong> Each row reports precision of verified findings, recall of labeled findings, unverified count, LLM calls, input / output tokens and runtime (<code>eval/ablation.py</code> → <code>reports/results.md</code>):</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Configuration</th>
+<th>What it isolates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Single agent <strong>without</strong> code verification (the model's own status stands)</td>
+<td>how many of a single model's claims a human would have to re-check</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Single agent <strong>with</strong> the same code verification (quote located in the PDF, guideline code valid)</td>
+<td>the value of deterministic evidence verification alone (= Single-Agent Baseline)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Full system <strong>without</strong> the critic (administrative agent + scientific reviewer, code-only verification, no revision round)</td>
+<td>the value of splitting the review between specialised agents</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Full system (four agents, critic verdict per finding, one revision round)</td>
+<td>the critic's contribution (row 4 vs row 3)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Lessons from the first live comparison (16 October 2026, synthetic cases only).</strong> Matching findings by exact category string was too coarse: the LLM uses generic categories where the rules use specific ones, and many "extra" LLM findings were real but unlabeled. The matching rule above and the verified-only scoring answer (a) and (b); (c), labeling real protocols with all defensible findings, including those only an LLM can see, is Ron's Checkpoint 2 deliverable.</p>
 <h2>3. Data and Fallback Plan</h2>
 <p><strong>Sources.</strong> Publicly available English-language clinical trial protocol PDFs and structured study metadata from ClinicalTrials.gov (API v2), retrieved by NCT ID.</p>
 <p><strong>Planned scope.</strong> 10 to 15 initial protocols divided between development and evaluation; a labeled set of findings including documented synthetic test scenarios. Two synthetic protocols (one complete, one with ten documented injected deficiencies) already exist for development and tests.</p>
@@ -69,7 +104,7 @@ strong { color: #1b2430; }
 | 2 | <strong>Administrative Review Agent</strong> | Checks format and completeness against the administrative checklist and the human-approved lessons in memory; adds context findings the rules cannot see (version mismatch between pages, appendix referenced but missing, consent form in the wrong language). Evidence is verified in code. | AdminReport (accepted, checklist, findings) |
 | 3 | <strong>Scientific Review Agent</strong> | Fetches the ClinicalTrials.gov record and compares it with the protocol; reviews against SPIRIT / ICH-GCP; detects internal contradictions between sections. On a revision request it answers each critic point and re-emits its findings. | ScientificReport (findings, registry comparison, open questions) |
 | 4 | <strong>Scientific Critic Agent</strong> | Audits every reviewer finding. Code first (is the quote on that page? is the guideline code real?), then one verdict per finding: verified / revise / unverified / rejected, with optional severity change. Lists issues the reviewer missed. Proposes reusable lessons for human approval. | CriticReport (verdicts, missed issues, proposed memory) |</p>
-<p><strong>Flow.</strong> PDF arrives (Google Drive or email automation → FastAPI webhook, or IMAP poller) → Coordinator intake (structured protocol JSON) → JSON Validation Tool (invalid → RETURNED_ADMIN at once) → Administrative Review. If the administrative part is not 100% complete, the Coordinator finalizes immediately (decision RETURNED_ADMIN) and emails the boss; the scientific agents do not run. Otherwise Scientific Review → Scientific Critic, with at most one focused revision round, → Coordinator final → reports → email. The boss receives an email in every case.</p>
+<p><strong>Flow.</strong> PDF arrives (Google Drive or email automation → FastAPI webhook, or IMAP poller) → Coordinator intake (structured protocol JSON) → JSON Validation Tool (invalid → RETURNED_ADMIN at once) → Administrative Review. If the administrative part is not 100% complete, the Coordinator finalizes immediately (decision RETURNED_ADMIN) and emails the boss; the scientific agents do not run. Otherwise Scientific Review → Scientific Critic, with at most one focused revision round, → Coordinator final → reports → email. The boss receives an email in every case. Two evaluation-only switches exist in code and are never used in production runs: <code>force_scientific</code> (gate bypass, section 2) and <code>no_critic</code> (ablation row 3: the reviewer's findings go straight to finalisation with code-only verification).</p>
 <p><strong>Design change from v1.1.</strong> v1.1 listed a fifth agent, an Administrative Critic. The team decided to keep four agents: administrative completeness is a technical check, and automatic evidence verification in code (quote located in the PDF, guideline code valid) is deterministic, free and sufficient for it. An LLM critic is kept only for the scientific part, where judgement is needed.</p>
 <p><strong>Shared State / Blackboard.</strong> The Coordinator creates a structured, validated JSON representation of the protocol within the LangGraph ReviewState, including study metadata, original text organized by sections, and page-level references. This shared state accompanies the protocol throughout the workflow. Each agent reads the relevant information and appends its own structured review results (administrative findings, scientific findings, critic verdicts) without overwriting the original protocol data or previous agent outputs. Deterministic validation checks the JSON schema and source references before administrative review, while handoff validation checks required fields before subsequent stages. Findings include page references, verbatim quotes, guideline references, severity and verification status. The final Coordinator uses the accumulated state to determine the outcome and generate reports. The state and execution trace are persisted per run in SQLite. Implementation: findings a reviewer drops in a revision round are kept with status WITHDRAWN, every review round's report is appended to a list, and a code-level authority guard rejects any node that writes outside its permitted fields (the protocol data is writable only at intake).</p>
 <p><strong>Three-layer memory.</strong></p>
@@ -94,7 +129,7 @@ strong { color: #1b2430; }
 <li><strong>No measurable multi-agent benefit.</strong> The first synthetic comparison could not separate the single agent from the multi-agent system on F1; the multi-agent system costs about five times more (≈110k vs ≈20k tokens per protocol) and its added value is the verification layer. Mitigation: the Checkpoint 2 evaluation measures verified-only precision and the critic's contribution, not raw F1 alone.</li>
 <li><strong>Draft knowledge base.</strong> Mitigation: verification against SPIRIT 2025 and the committee SOP before Checkpoint 2.</li>
 </ul>
-<p><strong>If only two weeks remain:</strong> limit to three administrative and three scientific checks on fewer protocols, keep the four-agent architecture with one re-check round, defer knowledge-base expansion, email intake and interface work; retain findings reporting, both baselines and basic evaluation.</p>
+<p><strong>If only two weeks remain:</strong> keep the system as it is today (29 deterministic checks, four agents, one revision round, both baselines, reports and email) and reduce the <em>evaluation</em> instead: fewer real protocols (five instead of 10–15), labels for the scientific part only where the administrative documents are absent, the ablation on that smaller set, and the 30-finding human check reduced to 15. Deferred: knowledge-base expansion, interface work, the administrative critic. Nothing already built is removed.</p>
 <h2>7. Milestones and Team Hats</h2>
 <table>
 <thead>
@@ -126,8 +161,13 @@ strong { color: #1b2430; }
 <td>done</td>
 </tr>
 <tr>
+<td>20 Oct 2026</td>
+<td>Mentor review of v1.3 (Shlomit Levavi). Charter v1.4: primary metric and matching rule locked, ablation plan, reduced scope corrected. Code: evaluation gate bypass, critic / verification ablation switches, <code>eval/ablation.py</code> → <code>reports/results.md</code>, shared matching rule (31 automated tests).</td>
+<td>done</td>
+</tr>
+<tr>
 <td>30 Oct 2026</td>
-<td><strong>Checkpoint 2:</strong> verified knowledge base, real public protocols, labeled finding set, improved matching metric, one-minute recorded demo.</td>
+<td><strong>Checkpoint 2:</strong> verified knowledge base, real public protocols, blind labeled finding set (Ron), ablation table on the real set, 30-finding human check, one-minute recorded demo.</td>
 <td>planned</td>
 </tr>
 <tr>
@@ -220,10 +260,39 @@ strong { color: #1b2430; }
 <td>Markdown</td>
 <td>Markdown + PDF; each finding with section, page, quote, explanation, required action</td>
 </tr>
+<tr>
+<td>Primary metric (v1.4)</td>
+<td>F1 ≥ 0.80</td>
+<td>precision of verified findings against blind human labels, with recall of labeled findings; unverified counted separately</td>
+</tr>
+<tr>
+<td>Matching rule (v1.4)</td>
+<td>exact (domain, category)</td>
+<td>domain + (category alias map OR same guideline reference and page ±1)</td>
+</tr>
+<tr>
+<td>Reference target (v1.4)</td>
+<td>95% valid references</td>
+<td>human check of 30 verified findings: the cited passage supports the finding</td>
+</tr>
+<tr>
+<td>Evaluation runs (v1.4)</td>
+<td>production gate</td>
+<td>gate bypass for evaluation (<code>force_scientific</code>); four-row ablation (<code>eval/ablation.py</code>)</td>
+</tr>
+<tr>
+<td>Reduced scope (v1.4)</td>
+<td>"three checks"</td>
+<td>the built system stays (29 checks, four agents, one round); the evaluation breadth is reduced</td>
+</tr>
 </tbody>
 </table>
 <h2>9. Open Decisions</h2>
 <ol>
 <li>Whether the submitter receives a copy of the administrative report on RETURNED_ADMIN (today: coordinator only).</li>
 <li>Final list of administrative checklist items against the committee SOP. Owner: Ron.</li>
+<li>Labeling protocol for the real test set: who labels (Ron, blind to system output), how disagreements with a second reader are resolved, and whether labels carry a guideline reference and page (needed for branch (b) of the matching rule). Owner: Ron, before the first real-protocol run.</li>
+<li>Category alias map: initial map written by Amir from the deterministic check codes; Ron extends it while labeling. Aliases must stay specific (a generic alias such as MISSING_DOCUMENT would match several labels).</li>
+<li>Which model and effort setting the ablation is run with (today <code>claude-opus-5-5</code>, effort medium); the same setting must be used for all four rows.</li>
+<li>Whether the 30-finding human check is drawn only from the full system (row 4) or stratified across rows.</li>
 </ol></body></html>

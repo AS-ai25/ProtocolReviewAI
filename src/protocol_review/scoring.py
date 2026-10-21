@@ -28,8 +28,13 @@ WEIGHTS: dict[str, int] = {
 PENDING_STATUSES = (FindingStatus.UNVERIFIED.value, FindingStatus.REVISE.value, FindingStatus.PROPOSED.value)
 
 
-def compute_score(findings: list[dict], admin_ok: bool = True, weights: dict[str, int] | None = None) -> dict:
+def compute_score(findings: list[dict], admin_ok: bool = True, weights: dict[str, int] | None = None,
+                  scientific_ran: bool | None = None) -> dict:
+    """`scientific_ran` overrides the scope label: with the evaluation gate bypass the scientific
+    agents run although admin_ok is False, so the score then covers both parts."""
     w = weights or WEIGHTS
+    if scientific_ran is None:
+        scientific_ran = admin_ok
     deductions = []
     pending = 0
     for f in findings:
@@ -47,7 +52,7 @@ def compute_score(findings: list[dict], admin_ok: bool = True, weights: dict[str
         "deducted": total,
         "deductions": deductions,
         "pending_human_review": pending,
-        "scope": "full" if admin_ok else "administrative_only",
+        "scope": "full" if admin_ok else ("full_forced" if scientific_ran else "administrative_only"),
         "weights": dict(w),
         "thresholds": {"pass_min": settings.score_pass_min, "human_min": settings.score_human_min},
     }
@@ -90,4 +95,6 @@ def score_line(score: dict | None) -> str:
         s += f"; {score['pending_human_review']} finding(s) pending human review, not counted"
     if score.get("scope") == "administrative_only":
         s += "; administrative part only - scientific agents did not run"
+    elif score.get("scope") == "full_forced":
+        s += "; scientific stage forced for evaluation although the administrative gate failed"
     return s

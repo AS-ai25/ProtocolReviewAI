@@ -94,7 +94,7 @@ agents on the same labeled cases.
 ```
 src/protocol_review/
   api.py              FastAPI webhooks, run inspection, memory HITL endpoints
-  cli.py              review / baseline / serve / poll-mail / graph
+  cli.py              review [--force-scientific --no-critic] / baseline / single [--no-verification] / serve / poll-mail / graph
   graph.py            LangGraph wiring (nodes + conditional edges)
   pipeline.py         run_review(), run_baseline()
   baseline.py         rule-based baseline
@@ -111,8 +111,9 @@ src/protocol_review/
   ingest/imap_poller.py
 knowledge_base/       administrative/admin_checklist.md, scientific/spirit_checklist.md, ich_gcp_key_points.md
 samples/              make_sample_protocols.py -> two synthetic PDFs (good / flawed)
-eval/                 labeled_cases/*.json, evaluate.py (P/R/F1, runtime, tokens)
-tests/                15 pytest tests (MockLLM, no network)
+eval/                 labeled_cases/*.json, evaluate.py, matching.py (locked matching rule), category_aliases.json, ablation.py
+reports/results.md    4-row ablation table written by eval/ablation.py
+tests/                31 pytest tests (MockLLM, no network)
 outputs/<run_id>/     final_report.md/.pdf, administrative_report.md/.pdf, scientific_report.md/.pdf, protocol.json, findings.json, state.json, email.eml
 ```
 
@@ -150,7 +151,8 @@ refusal fallbacks are enabled (`LLM_FALLBACKS=true`); set `false` when running t
 
 # evaluation
 .venv/Scripts/python eval/evaluate.py --mode baseline
-.venv/Scripts/python eval/evaluate.py --mode agents
+.venv/Scripts/python eval/evaluate.py --mode agents --force-scientific
+.venv/Scripts/python eval/ablation.py --no-llm          # 4-row ablation table -> reports/results.md (see section 6)
 ```
 
 ### API
@@ -199,10 +201,37 @@ message with a PDF attachment starts a review (an NCT id in the subject is picke
 
 ## 6. Evaluation
 
-Labeled cases live in `eval/labeled_cases/*.json`: expected `(domain, category)` pairs plus the expected
-decision. `eval/evaluate.py` runs the baseline or the agents, scores precision / recall / F1 (critic-rejected
-findings are not counted), and records runtime and tokens. Current synthetic cases: one complete
-protocol (any finding = false positive) and one with ten documented injected deficiencies.
+Labeled cases live in `eval/labeled_cases/*.json`: expected findings (`domain`, `category`, optionally
+`guideline_ref` and `page`) plus the expected decision. `eval/evaluate.py` runs the baseline, the single agent
+or the agents, scores precision / recall / F1, precision of **verified** findings and the unverified count
+(critic-rejected and withdrawn findings are not predictions), and records runtime and tokens. Current synthetic
+cases: one complete protocol (any finding = false positive) and one with ten documented injected deficiencies.
+
+**Matching rule (charter v1.4, `eval/matching.py`).** A predicted finding matches a labeled one when the domain is
+the same and either the categories are the same or aliases (`eval/category_aliases.json`), or the guideline
+reference is the same and the page is within ±1.
+
+### Evaluation modes
+
+Public protocols rarely include consent forms or insurance certificates, so in production nearly every one is
+`RETURNED_ADMIN` and the scientific agents never run. Three switches exist for evaluation only:
+
+| Flag | Where | Effect |
+|---|---|---|
+| `--force-scientific` | `cli.py review`, `eval/evaluate.py --mode agents`, `run_review(force_scientific=True)` | gate bypass: the scientific stage runs even when the administrative gate fails; the decision is still `RETURNED_ADMIN`, the scientific findings are produced, scored and reported (score scope `full_forced`) |
+| `--no-critic` | `cli.py review`, `eval/evaluate.py --mode agents`, `run_review(no_critic=True)` | ablation: the Scientific Critic (and the revision round) is skipped; the reviewer's findings are verified by code only, exactly like the single agent's |
+| `--no-verification` | `cli.py single`, `eval/evaluate.py --mode single`, `run_single_agent(verify=False)` | ablation: no code-level evidence check; the model's own status stands (unmarked findings count as verified) |
+
+**Ablation runner.** `eval/ablation.py` runs the four Checkpoint 2 configurations on every labeled case (all with
+the gate bypass) and writes `reports/results.md`: single agent without code verification, single agent with it,
+full system without the critic, full system. Columns: precision of verified findings, recall (coverage) of
+labeled findings, unverified count, LLM calls, input / output tokens, runtime; a JSON copy goes to `eval/results/`.
+
+```bash
+.venv/Scripts/python eval/ablation.py                 # live (ANTHROPIC_API_KEY), 4 x N reviews
+.venv/Scripts/python eval/ablation.py --no-llm        # dry run with the MockLLM: harness check, no API calls
+.venv/Scripts/python eval/ablation.py --no-registry --only agents_full   # skip ClinicalTrials.gov / one row
+```
 
 Baseline on the synthetic cases (live ClinicalTrials.gov): flawed F1 = 1.00 (10/10 injected
 deficiencies found), good 0 false positives. These are development numbers, not the project's
@@ -241,7 +270,8 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
 ## 8. Roadmap (from the charter)
 
 - Checkpoint 1 (18 Oct): end-to-end pipeline + rule-based baseline - **this repository**.
+- 20 Oct (charter v1.4, mentor review): locked primary metric and matching rule, evaluation gate bypass,
+  ablation switches and runner (`eval/ablation.py` -> `reports/results.md`) - **done**.
 - Checkpoint 2 (30 Oct): verified SPIRIT 2025 / ICH-GCP E6(R3) knowledge base, real public protocols,
-  labeled findings, optional administrative critic, demo video.
-- Final (12 Nov): evaluation vs rule-based and single-agent baselines (add a `single_agent.py`
-  that gives one agent all tools), results and presentation.
+  blind labeled findings (Ron), ablation table on the real set, 30-finding human check, demo video.
+- Final (12 Nov): evaluation vs rule-based and single-agent baselines, results and presentation.

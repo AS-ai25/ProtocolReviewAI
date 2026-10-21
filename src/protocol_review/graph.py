@@ -9,6 +9,12 @@
           -> [admin_ok?] no  -> finalize
     finalize (coordinator) -> report -> notify (email to the boss) -> END
 
+Evaluation switches (never used in production runs):
+    force_scientific  -> the admin gate does not stop the run: scientific_reviewer runs even when
+                         admin_ok is False (decision stays RETURNED_ADMIN; findings are produced for scoring).
+    no_critic         -> scientific_reviewer -> finalize; reviewer findings get their status from the
+                         code-only evidence check (same as the single agent), no critic, no revision round.
+
 Authority guard (charter v1.3): every node may write only its permitted ReviewState
 keys. The protocol data (`protocol_json`, `pages`, `pdf_text`, `protocol_meta`) is
 written once by intake and is immutable afterwards. A violation raises
@@ -23,16 +29,17 @@ from langgraph.graph import END, START, StateGraph
 from . import notify, reports
 from .agents.administrative import administrative_node
 from .agents.coordinator import (bump_round_node, finalize_node, intake_node, route_after_admin, route_after_critic,
-                                 route_after_validation, validate_node)
+                                 route_after_reviewer, route_after_validation, validate_node)
 from .agents.scientific_critic import scientific_critic_node
 from .agents.scientific_reviewer import scientific_reviewer_node
 from .state import ReviewState, trace_event
 
 PROTOCOL_KEYS = {"pdf_text", "pages", "protocol_meta", "protocol_json", "pdf_path", "nct_id"}
+EVAL_SWITCHES = {"force_scientific", "no_critic"}   # set at intake from run_review() arguments, read-only afterwards
 COMMON = {"trace", "errors"}
 ALLOWED_WRITES: dict[str, set[str]] = {
-    "intake": PROTOCOL_KEYS | COMMON | {"rule_findings", "findings", "revise_rounds", "revise_requests", "registry",
-                                        "notifications", "scientific_reports", "critic_reports"},
+    "intake": PROTOCOL_KEYS | EVAL_SWITCHES | COMMON | {"rule_findings", "findings", "revise_rounds", "revise_requests", "registry",
+                                                        "notifications", "scientific_reports", "critic_reports"},
     "validate": COMMON | {"validation", "admin_ok", "findings", "admin_report"},
     "administrative": COMMON | {"admin_report", "admin_ok", "findings"},
     "scientific_reviewer": COMMON | {"registry", "scientific_report", "scientific_reports", "findings"},
@@ -87,7 +94,7 @@ def build_graph(llm, registry_fetch=None):
     g.add_edge("intake", "validate")
     g.add_conditional_edges("validate", route_after_validation, {"administrative": "administrative", "finalize": "finalize"})
     g.add_conditional_edges("administrative", route_after_admin, {"scientific_reviewer": "scientific_reviewer", "finalize": "finalize"})
-    g.add_edge("scientific_reviewer", "scientific_critic")
+    g.add_conditional_edges("scientific_reviewer", route_after_reviewer, {"scientific_critic": "scientific_critic", "finalize": "finalize"})
     g.add_conditional_edges("scientific_critic", route_after_critic, {"revise": "bump_round", "finalize": "finalize"})
     g.add_edge("bump_round", "scientific_reviewer")
     g.add_edge("finalize", "report")

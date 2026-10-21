@@ -158,6 +158,8 @@ class ReviewState(TypedDict, total=False):
     pdf_text: str               # full text with page markers
     pages: list[dict]           # [{page, text}]
     nct_id: str
+    force_scientific: bool      # evaluation only: run the scientific stage even when admin_ok is False
+    no_critic: bool             # ablation only: skip the Scientific Critic; reviewer findings verified by code only
     protocol_meta: dict         # title, version, date, sponsor, PI ... extracted deterministically
     protocol_json: dict         # structured protocol: metadata + sections (text, pages) - IMMUTABLE after intake
     validation: dict            # JSON Validation Tool result {valid, errors, warnings}

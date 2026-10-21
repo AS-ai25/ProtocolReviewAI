@@ -40,9 +40,18 @@ def intake_node(state: ReviewState) -> dict:
                         f"{len(protocol_json['sections'])} sections, NCT={nct or 'none'}. Running JSON validation.", role="system")
     trace = trace_event(state, AGENT, "intake", f"pages={meta.get('page_count')} sections={len(protocol_json['sections'])} "
                                                 f"nct={nct} rule_findings={len(rule_findings)}")
-    return {**parsed, "protocol_json": protocol_json, "nct_id": nct, "rule_findings": rule_findings, "findings": [],
-            "revise_rounds": 0, "revise_requests": [], "registry": None, "errors": [], "notifications": [],
-            "scientific_reports": [], "critic_reports": [], "trace": trace}
+    out = {**parsed, "protocol_json": protocol_json, "nct_id": nct, "rule_findings": rule_findings, "findings": [],
+           "revise_rounds": 0, "revise_requests": [], "registry": None, "errors": [], "notifications": [],
+           "scientific_reports": [], "critic_reports": [], "trace": trace}
+    if state.get("force_scientific"):
+        out["force_scientific"] = True
+        memory.post_message(run_id, AGENT, "EVALUATION MODE: the scientific stage will run even if the administrative "
+                            "gate fails (decision rule unchanged).", role="system")
+    if state.get("no_critic"):
+        out["no_critic"] = True
+        memory.post_message(run_id, AGENT, "ABLATION MODE: the Scientific Critic is skipped; reviewer findings are "
+                            "verified by code only.", role="system")
+    return out
 
 
 # ------------------------------------------------------- JSON validation tool
@@ -72,7 +81,18 @@ def route_after_validation(state: ReviewState) -> str:
 
 
 def route_after_admin(state: ReviewState) -> str:
-    return "scientific_reviewer" if state.get("admin_ok") else "finalize"
+    """Production: the scientific stage runs only when the administrative part is complete.
+    Evaluation gate bypass (`force_scientific`): run it anyway so the scientific findings can be
+    scored; the decision is still RETURNED_ADMIN when admin_ok is False (`hybrid_decision`)."""
+    if state.get("admin_ok") or state.get("force_scientific"):
+        return "scientific_reviewer"
+    return "finalize"
+
+
+def route_after_reviewer(state: ReviewState) -> str:
+    """Ablation (`no_critic`): the reviewer's findings go straight to finalisation,
+    verified by code only (quote located + guideline code valid), never by a critic."""
+    return "finalize" if state.get("no_critic") else "scientific_critic"
 
 
 def route_after_critic(state: ReviewState) -> str:
@@ -102,7 +122,9 @@ def _deterministic_summary(state: ReviewState, decision: Decision, rationale: st
            if f["status"] == FindingStatus.VERIFIED.value and f["severity"] in ("critical", "major")][:8]
     key += [f"{f['id']} [UNVERIFIED] {f['title']}" for f in fs if f["status"] == FindingStatus.UNVERIFIED.value][:4]
     rec = {
-        Decision.RETURNED_ADMIN: "Return the submission to the investigator with the administrative report; scientific review was not started.",
+        Decision.RETURNED_ADMIN: ("Return the submission to the investigator with the administrative report; the scientific findings "
+                                  "are attached for information (evaluation gate bypass)." if state.get("scientific_report") else
+                                  "Return the submission to the investigator with the administrative report; scientific review was not started."),
         Decision.MAJOR_CONCERNS: "Forward the report to the committee and ask the investigators to address the verified findings before the meeting.",
         Decision.NEEDS_HUMAN_REVIEW: "A committee member should check the flagged findings before the report is circulated.",
         Decision.PASS: "Circulate the report to the committee; no blocking issues were found by the automated review.",
@@ -123,8 +145,8 @@ def finalize_node(state: ReviewState, llm) -> dict:
             f["status"] = FindingStatus.UNVERIFIED.value
             f["critic_notes"] = (f.get("critic_notes") or "") + " [left unverified at finalisation]"
     if not state.get("admin_ok"):
-        # Scientific agents did not run, but the deterministic scientific checks cost nothing:
-        # include them so the submitter gets the full picture in one round trip.
+        # Scientific agents did not run (unless force_scientific), but the deterministic scientific checks
+        # cost nothing: include them so the submitter gets the full picture in one round trip.
         present = {f["id"] for f in findings}
         for f in state.get("rule_findings") or []:
             if f["domain"] == Domain.SCIENTIFIC.value and f["id"] not in present:
@@ -140,7 +162,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
 
     admin_ok = bool(state.get("admin_ok"))
     decision, rationale = hybrid_decision(findings, admin_ok)
-    score = compute_score(findings, admin_ok=admin_ok)
+    score = compute_score(findings, admin_ok=admin_ok, scientific_ran=state.get("scientific_report") is not None)
     trace = trace_event(state, AGENT, "decision", f"{decision.value} [{rationale}]; {score_line(score)}")
     errors = list(state.get("errors") or [])
 

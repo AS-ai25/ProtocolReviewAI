@@ -1,8 +1,9 @@
 """Command line:  python -m protocol_review.cli <command>
 
   review  <pdf> [--nct NCT...] [--no-llm] [--submitter x]   full multi-agent review
+          [--force-scientific] [--no-critic]                evaluation switches (gate bypass / critic ablation)
   baseline <pdf> [--nct NCT...]                             rule-based baseline only
-  single   <pdf> [--nct NCT...] [--no-llm]                  single-agent baseline (one LLM call, all tools)
+  single   <pdf> [--nct NCT...] [--no-llm] [--no-verification]  single-agent baseline (one LLM call, all tools)
   serve [--port 8040]                                       FastAPI webhook server
   poll-mail                                                 IMAP inbox poller (protocols by email)
   graph                                                     print the Mermaid diagram
@@ -23,15 +24,19 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("review"); r.add_argument("pdf"); r.add_argument("--nct", default=""); r.add_argument("--no-llm", action="store_true")
     r.add_argument("--submitter", default="cli-user")
+    r.add_argument("--force-scientific", action="store_true", help="evaluation: run the scientific stage even when the admin gate fails")
+    r.add_argument("--no-critic", action="store_true", help="ablation: skip the Scientific Critic (code-only verification)")
     b = sub.add_parser("baseline"); b.add_argument("pdf"); b.add_argument("--nct", default="")
     g = sub.add_parser("single"); g.add_argument("pdf"); g.add_argument("--nct", default=""); g.add_argument("--no-llm", action="store_true")
+    g.add_argument("--no-verification", action="store_true", help="ablation: skip the code-level evidence verification")
     s = sub.add_parser("serve"); s.add_argument("--port", type=int, default=8040); s.add_argument("--host", default="127.0.0.1")
     sub.add_parser("poll-mail"); sub.add_parser("graph"); sub.add_parser("purge-memory")
     a = p.parse_args(argv)
 
     if a.cmd == "review":
         from .pipeline import run_review
-        res = run_review(a.pdf, source="cli", submitter=a.submitter, nct_id=a.nct, no_llm=a.no_llm or None)
+        res = run_review(a.pdf, source="cli", submitter=a.submitter, nct_id=a.nct, no_llm=a.no_llm or None,
+                         force_scientific=a.force_scientific, no_critic=a.no_critic)
         print(json.dumps({"run_id": res["run_id"], "decision": res["decision"], "findings": len(res["findings"]),
                           "reports": res.get("report_paths"), "notifications": res.get("notifications"), "cost": res.get("cost")}, indent=1))
         print("\n" + res.get("final_summary", ""))
@@ -42,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
                           "paths": res.get("paths")}, indent=1))
     elif a.cmd == "single":
         from .pipeline import run_single_agent
-        res = run_single_agent(a.pdf, nct_id=a.nct, no_llm=a.no_llm or None)
+        res = run_single_agent(a.pdf, nct_id=a.nct, no_llm=a.no_llm or None, verify=not a.no_verification)
         print(json.dumps({"run_id": res["run_id"], "decision": res["decision"],
                           "findings": [(f["id"], f["category"], f["severity"], f["status"]) for f in res["findings"]],
                           "errors": res["errors"], "cost": res.get("cost"), "paths": res.get("paths")}, indent=1))

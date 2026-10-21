@@ -5,7 +5,7 @@ import json
 import logging
 
 from .. import memory
-from ..knowledge_base import kb_text
+from ..knowledge_base import kb_text, rule_codes
 from ..llm import LLMError
 from ..state import Domain, FindingStatus, ReviewState, ScientificReport, trace_event
 from ..tools import checks, clinicaltrials
@@ -75,6 +75,13 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
             llm_findings.append(f)
     elif previous_llm:
         llm_findings = previous_llm  # keep last round's findings if the revision call failed
+    if state.get("no_critic") and llm_findings:
+        # Ablation: no critic will audit these, so the status comes from the code-only evidence check
+        # (exactly the single agent's rule: unlocated quote or unknown guideline code -> unverified).
+        from ..single_agent import apply_evidence_verification
+        llm_findings = apply_evidence_verification(llm_findings, pages, rule_codes())
+        n_ok = sum(1 for f in llm_findings if f["status"] == FindingStatus.VERIFIED.value)
+        trace = trace_event({"trace": trace}, AGENT, "code_only_verification", f"no_critic: {n_ok}/{len(llm_findings)} verified by code")
 
     admin_findings = [f for f in state.get("findings") or [] if f["domain"] == Domain.ADMINISTRATIVE.value]
     withdrawn = already_withdrawn + (base.withdraw_missing(previous_llm, llm_findings) if report is not None else [])
