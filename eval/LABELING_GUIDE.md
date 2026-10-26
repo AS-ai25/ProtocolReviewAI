@@ -158,7 +158,11 @@ support it or is not on that page. The result is reported as yes / partly / no c
 
 ## Checklist before 30 October
 
-- [ ] `eval/protocols/*.pdf` + `SOURCES.md` committed
+- [x] `eval/protocols/SOURCES.md` + `protocol_sources.csv` committed (2026-10-26); the PDFs are not committed -
+      `python eval/protocols/fetch_protocols.py` rebuilds them from ClinicalTrials.gov
+- [ ] dev / eval split in `SOURCES.md` confirmed by Ron (before labeling)
+- [ ] rules-only drafts in `eval/labeled_cases/_drafts/` reviewed: every line confirmed or deleted, the blind
+      scientific pass added, file moved up as `<case_id>.json` with `blind: true`
 - [ ] `eval/labeled_cases/<case_id>.json` for every protocol, committed **before** any run
 - [ ] `eval/category_aliases.json` extended if you used a new category
 - [ ] knowledge base verified, banners removed

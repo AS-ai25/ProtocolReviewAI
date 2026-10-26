@@ -10,3 +10,6 @@ outputs/*
 data/uploads/
 eval/results/
 docs/MANUAL_HE.*
+
+# Real-protocol PDFs: public ClinicalTrials.gov documents with sponsor confidentiality headers; rebuilt by eval/protocols/fetch_protocols.py
+eval/protocols/*.pdf
