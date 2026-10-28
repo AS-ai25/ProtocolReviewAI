@@ -1,4 +1,9 @@
-# Israel Clinical Trial Protocol Candidate Dataset (17 studies)
+# Israel Clinical Trial Protocol Candidate Dataset (19 studies)
+
+**Updated: 27 October 2026**
+
+This package retains the original 17 locally downloaded PDF files and adds two publicly indexed protocol records to `protocol_sources.csv`. The two NEW PDFs are NOT INCLUDED because automatic download was blocked. Download these two URLs manually, verify their permitted use, and save the files at the locations below.
+
 
 **Project:** BIU DS23 – Multi-Agent Clinical Trial Protocol Review System  
 **Team:** Ron Levi and Amir Shmaryahu  
@@ -56,3 +61,11 @@ Start with several PDFs verified as full protocols, not necessarily recent or ac
 - Six additions: prior conversation findings (NCT04084990, NCT04202887, NCT04523324, NCT04179786, NCT03504189, NCT04348656).
 - All 17 URLs are **candidate links**, not independently verified downloads in this delivery.
 - Do not claim that 17 complete, presently active, reusable protocols have been obtained. Do not publish internal hospital records or identifiable patient information.
+
+
+## Two new protocols to download manually
+
+1. `NCT05698277.pdf` - https://cdn.clinicaltrials.gov/large-docs/77/NCT05698277/Prot_SAP_000.pdf - version 5 (2022-09-30), Sheba is explicitly named as an international participating center. Observational, SPIRIT 2025 randomized-trial checklist requires applicability assessment.
+2. `NCT01977547.pdf` - https://cdn.clinicaltrials.gov/large-docs/47/NCT01977547/Prot_SAP_000.pdf - amendment 2.1 (2017-03-13); contains CONFIDENTIAL marking, and clinical site participation by Sheba requires verification. Do not share/process without appropriate permission.
+
+Save both directly into `study protocols/`, alongside the 17 existing PDFs. Once verified, update CSV `PDF_downloaded`, `PDF_opened_and_checked`, and rights/permission fields. This candidate inventory is not automatically an approved evaluation set.
