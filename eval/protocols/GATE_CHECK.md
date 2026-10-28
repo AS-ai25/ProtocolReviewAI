@@ -1,8 +1,8 @@
 # Administrative-gate check on the real-protocol set
 
-Generated 2026-10-26 09:57 by `eval/gate_check.py` (deterministic rules only, no LLM, live ClinicalTrials.gov lookups).
+Generated 2026-10-27 21:18 by `eval/gate_check.py` (deterministic rules only, no LLM, live ClinicalTrials.gov lookups).
 
-**17 protocols. Administrative gate fails (RETURNED_ADMIN) on 16/17 = 94%.** Registry record found for 17/17.
+**19 protocols. Administrative gate fails (RETURNED_ADMIN) on 18/19 = 95%.** Registry record found for 19/19.
 
 Public ClinicalTrials.gov protocol documents are not Helsinki-committee submission packages: they carry no consent form, insurance statement, investigator CV / signature page or submission letter. The administrative gate therefore stops almost every one of them before the scientific stage, which is the production behaviour the charter asks for. For the evaluation the ablation runs with `force_scientific` (charter v1.4, mentor agreement 2026-10-20) so that the scientific reviewer and critic are measured on every protocol; the decision column stays RETURNED_ADMIN.
 
@@ -10,6 +10,7 @@ Public ClinicalTrials.gov protocol documents are not Helsinki-committee submissi
 
 | case_id | Pages | Chars | Version / date found | NCT in text | Registry | Decision | Blocking admin findings | Scientific rule hits |
 |---|---|---|---|---|---|---|---|---|
+| nct01977547 | 47 | 122,355 | 9.2 / March 13, 2017 | no | COMPLETED, phase 3, n=1538 | RETURNED_ADMIN | MISSING_SPONSOR(m), MISSING_CONSENT_FORM(c), MISSING_INSURANCE(c), MISSING_SIGNATURE_PAGE(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_SAMPLE_SIZE_JUSTIFICATION(m) |
 | nct03390257 | 29 | 53,120 | - / - | yes | COMPLETED, phase NA, n=14 | RETURNED_ADMIN | MISSING_VERSION(m), MISSING_DATE(m), MISSING_SPONSOR(m), MISSING_CONSENT_FORM(c), MISSING_INSURANCE(c), MISSING_CONTACT(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_SAMPLE_SIZE_JUSTIFICATION(m), RANDOMIZATION_METHOD_UNSPECIFIED(m), BLINDING_UNSPECIFIED(m), NO_PRIMARY_OUTCOME(c), NO_DATA_MONITORING(m), REGISTRY_MISMATCH(m) |
 | nct03503812 | 26 | 49,627 | 1.0 / 0 April 2018 | no | COMPLETED, phase NA, n=310 | RETURNED_ADMIN | MISSING_SPONSOR(m), MISSING_SIGNATURE_PAGE(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_SAMPLE_SIZE_JUSTIFICATION(m), BLINDING_UNSPECIFIED(m), NO_DATA_MONITORING(m), REGISTRY_MISMATCH(m) |
 | nct03504189 | 42 | 106,833 | - / 05 May 2018 | no | COMPLETED, phase NA, n=151 | RETURNED_ADMIN | MISSING_VERSION(m), MISSING_PI(m), MISSING_SPONSOR(m), MISSING_SECTION(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_DATA_MONITORING(m), REGISTRY_MISMATCH(m) |
@@ -21,6 +22,7 @@ Public ClinicalTrials.gov protocol documents are not Helsinki-committee submissi
 | nct04348656 | 78 | 191,311 | 8.0 / 15 January 2021 | yes | TERMINATED, phase 3, n=940 | RETURNED_ADMIN | MISSING_INSURANCE(c) | INCONSISTENT_SAMPLE_SIZE(m), INCONSISTENT_AGE_RANGE(m), INCONSISTENT_PHASE(m), REGISTRY_MISMATCH(m) |
 | nct04523324 | 30 | 66,324 | 3 / Dec 08, 2019 | yes | COMPLETED, phase 4, n=577 | RETURNED_ADMIN | MISSING_SPONSOR(m), MISSING_INSURANCE(c), MISSING_ETHICS_STATEMENT(m), MISSING_SIGNATURE_PAGE(m), MISSING_CONTACT(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_PRIMARY_OUTCOME(c), NO_DATA_MONITORING(m), INCONSISTENT_AGE_RANGE(m), INCONSISTENT_PHASE(m), REGISTRY_MISMATCH(m), REGISTRY_MISMATCH(m) |
 | nct05199324 | 34 | 103,932 | 10.0 / - | yes | COMPLETED, phase 4, n=720 | RETURNED_ADMIN | MISSING_DATE(m), MULTIPLE_REGISTRY_IDS(m), MISSING_SPONSOR(m), MISSING_INSURANCE(c) | INCONSISTENT_SAMPLE_SIZE(m), RANDOMIZATION_METHOD_UNSPECIFIED(m) |
+| nct05698277 | 20 | 62,614 | 5 / 30 September 2022 | no | RECRUITING, phase -, n=495 | RETURNED_ADMIN | MISSING_SPONSOR(m), MISSING_CONSENT_FORM(c), MISSING_INSURANCE(c), MISSING_ETHICS_STATEMENT(m), MISSING_SIGNATURE_PAGE(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_SAMPLE_SIZE_JUSTIFICATION(m), NO_DATA_MONITORING(m), NO_STOPPING_RULES(m), INCONSISTENT_PHASE(m) |
 | nct05796557 | 95 | 250,519 | 1.4 / April 22, 2024 | yes | COMPLETED, phase 4, n=50 | RETURNED_ADMIN | MISSING_SPONSOR(m), MISSING_CONSENT_FORM(c), MISSING_INSURANCE(c), MISSING_SIGNATURE_PAGE(m) | INCONSISTENT_SAMPLE_SIZE(m) |
 | nct06846736 | 6 | 19,743 | - / - | no | ENROLLING_BY_INVITATION, phase -, n=200 | RETURNED_ADMIN | MISSING_VERSION(m), MISSING_DATE(m), MULTIPLE_REGISTRY_IDS(m), MISSING_PI(m), MISSING_CONSENT_FORM(c), MISSING_INSURANCE(c), MISSING_SIGNATURE_PAGE(m), MISSING_CONTACT(m), MISSING_SECTION(m), MISSING_SECTION(m), MISSING_SECTION(m), MISSING_SECTION(m) | NO_PRIMARY_OUTCOME(c), NO_DATA_MONITORING(m), NO_HARMS_PLAN(m), NO_STOPPING_RULES(m) |
 | nct07095049 | 81 | 196,625 | 4.0 / - | no | ACTIVE_NOT_RECRUITING, phase 1, n=56 | RETURNED_ADMIN | MISSING_DATE(m) | INCONSISTENT_SAMPLE_SIZE(m), NO_PRIMARY_OUTCOME(c), REGISTRY_MISMATCH(m) |

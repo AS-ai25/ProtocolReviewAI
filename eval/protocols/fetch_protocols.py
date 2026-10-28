@@ -5,7 +5,7 @@
 
 The PDFs are not committed to the repository: they are public registry documents, but most carry a sponsor
 confidentiality header, so the repository keeps the links (protocol_sources.csv, SOURCES.md) and this script
-rebuilds `eval/protocols/<nct_id>.pdf` on demand. The expected byte sizes were recorded on 2026-10-26 when the
+rebuilds `eval/protocols/<nct_id>.pdf` on demand. The expected byte sizes were recorded on 2026-10-26/27 when the
 files were downloaded and compared with the copies the team received.
 """
 from __future__ import annotations
@@ -25,6 +25,8 @@ EXPECTED_SIZE = {
     "NCT04348656": 1266473, "NCT04523324": 440836, "NCT05199324": 595651, "NCT05796557": 2181984,
     "NCT06846736": 587133, "NCT07095049": 2859367, "NCT07183462": 186123, "NCT07199218": 1685885,
     "NCT07328308": 198399,
+    # added 2026-10-27 (Ron's second batch)
+    "NCT01977547": 1157550, "NCT05698277": 712639,
 }
 
 
