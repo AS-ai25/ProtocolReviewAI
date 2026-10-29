@@ -65,19 +65,37 @@ def _pages(finding: dict) -> set[int]:
     return {int(e["page"]) for e in finding.get("evidence") or [] if e.get("page")}
 
 
+# Categories that name a kind of problem rather than a specific one. Two findings sharing one of these
+# are the same finding only if they point at the same place, so for them the category branch of the
+# rule also requires the page within +-1 (charter v1.5 amendment, 2026-10-29: the real-protocol labels
+# use OTHER / INTERNAL_CONTRADICTION / METHOD_UNSPECIFIED for 60% of the findings; without the page
+# requirement one generic prediction would match every such label in the document at once).
+GENERIC_CATEGORIES = {"OTHER", "INTERNAL_CONTRADICTION", "METHOD_UNSPECIFIED", "SAFETY_GAP", "ETHICS_GAP",
+                      "CONSENT_GAP", "FORMAT_ISSUE", "MISSING_SECTION"}
+
+
+def _pages_close(pred: dict, label: dict) -> bool:
+    pp, lp = _pages(pred), _pages(label)
+    return bool(pp and lp and any(abs(a - b) <= 1 for a in pp for b in lp))
+
+
 def matches(pred: dict, label: dict, alias_map: dict[str, set[str]] | None = None) -> bool:
-    """The locked rule: same domain AND (category alias OR same guideline_ref with page within +-1)."""
+    """The locked rule: same domain AND (category alias OR same guideline_ref with page within +-1).
+
+    Generic categories (GENERIC_CATEGORIES) match by category only when the page is also within +-1
+    (labels that carry no page at all are matched by category alone, as before).
+    """
     if (pred.get("domain") or "") != (label.get("domain") or ""):
         return False
     pc, lc = _norm(pred.get("category", "")), _norm(label.get("category", ""))
     amap = alias_map if alias_map is not None else aliases()
     if pc and lc and (pc == lc or lc in amap.get(pc, set())):
-        return True
-    pr, lr = _refs(pred.get("guideline_ref", "")), _refs(label.get("guideline_ref", ""))
-    if pr and lr and pr & lr:
-        pp, lp = _pages(pred), _pages(label)
-        if pp and lp and any(abs(a - b) <= 1 for a in pp for b in lp):
+        # a label without any page (the synthetic cases) keeps the category-only behaviour
+        if lc not in GENERIC_CATEGORIES or not _pages(label) or _pages_close(pred, label):
             return True
+    pr, lr = _refs(pred.get("guideline_ref", "")), _refs(label.get("guideline_ref", ""))
+    if pr and lr and pr & lr and _pages_close(pred, label):
+        return True
     return False
 
 

@@ -43,9 +43,11 @@ CONFIGS: list[dict] = [
 ]
 
 
-def load_cases(cases_dir: Path) -> list[dict]:
+def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
+    """`pattern` selects the case files: `nct*.json` = the real-protocol test set only (the synthetic cases
+    `synthetic_*.json` are a harness check and are reported separately, never pooled with the real set)."""
     cases = []
-    for p in sorted(Path(cases_dir).glob("*.json")):
+    for p in sorted(Path(cases_dir).glob(pattern)):
         if p.name.startswith("_"):
             continue  # _TEMPLATE.json and other helper files are not cases
         c = json.loads(p.read_text(encoding="utf-8"))
@@ -139,12 +141,12 @@ def render_markdown(rows: list[dict], cases: list[dict], *, no_llm: bool, starte
 
 
 def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registry_fetch=None, llm_factory=None,
-                 results_dir: Path | None = None, only: list[str] | None = None) -> dict:
+                 results_dir: Path | None = None, only: list[str] | None = None, pattern: str = "*.json") -> dict:
     """Programmatic entry point (used by the pytest). `llm_factory()` -> fresh LLM client per configuration."""
     from protocol_review.config import settings
     started = datetime.now()
     stamp = started.strftime("%Y%m%d-%H%M%S")
-    cases = load_cases(Path(cases_dir))
+    cases = load_cases(Path(cases_dir), pattern)
     if not cases:
         raise SystemExit("no labeled cases with an existing PDF")
     rows = []
@@ -175,10 +177,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-llm", action="store_true", help="dry run with the MockLLM (no API calls)")
     ap.add_argument("--no-registry", action="store_true", help="do not call ClinicalTrials.gov (registry record = not available)")
     ap.add_argument("--only", nargs="*", choices=[c["key"] for c in CONFIGS], help="run a subset of the configurations")
+    ap.add_argument("--cases-glob", default="*.json",
+                    help="case files to load, e.g. 'nct*.json' for the real-protocol set only (default: all)")
     a = ap.parse_args(argv)
     registry_fetch = (lambda nct: {}) if a.no_registry else None
     run_ablation(Path(a.cases), Path(a.out), no_llm=a.no_llm, registry_fetch=registry_fetch,
-                 results_dir=Path(a.results_dir), only=a.only)
+                 results_dir=Path(a.results_dir), only=a.only, pattern=a.cases_glob)
     return 0
 
 

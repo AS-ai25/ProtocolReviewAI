@@ -10,90 +10,91 @@
   "expected_findings": [
     {
       "domain": "administrative",
-      "category": "MISSING_VERSION,SPIRIT-2",
-      "guideline_ref": "MISSING_VERSION,SPIRIT-2",
+      "category": "MISSING_VERSION",
+      "guideline_ref": "SPIRIT-2",
       "page": 1,
       "quote": "Version Date: July 21, 2021",
       "severity": "minor",
-      "note": "{\"note\": \"The protocol states a version date but does not provide a protocol version number.\"}"
+      "note": "The protocol states a version date but does not provide a protocol version number."
     },
     {
       "domain": "administrative",
-      "category": "MISSING_REGISTRY_ID,SPIRIT-4",
-      "guideline_ref": "MISSING_REGISTRY_ID,SPIRIT-4",
+      "category": "MISSING_REGISTRY_ID",
+      "guideline_ref": "SPIRIT-4",
       "page": 1,
       "quote": "Sleep Apnea and Fetal Growth Restriction (SAFER Study)",
       "severity": "minor",
-      "note": "{\"note\": \"The protocol does not state the NCT04084990 registration identifier.\"}"
+      "note": "The protocol does not state the NCT04084990 registration identifier."
     },
     {
       "domain": "scientific",
-      "category": "INCONSISTENT_SAMPLE_SIZE, SPIRIT-20",
-      "guideline_ref": "INCONSISTENT_SAMPLE_SIZE, SPIRIT-20",
+      "category": "INCONSISTENT_SAMPLE_SIZE",
+      "guideline_ref": "SPIRIT-20",
       "page": 2,
       "quote": "Page 2: 400 potential patients screened, with 104 evaluable patients enrolled” / Page 7, Figure 1: ~500-1000 patients needed",
       "severity": "minor",
-      "note": "{\"note\": \"The synopsis estimates 400 screened participants, whereas the flow diagram estimates 500–1,000; the screening target needs clarification.\"}",
+      "note": "The synopsis estimates 400 screened participants, whereas the flow diagram estimates 500–1,000; the screening target needs clarification.",
       "source_pages_original": "2,7"
     },
     {
       "domain": "scientific",
-      "category": "METHOD_UNSPECIFIED,SPIRIT-22, SPIRIT-23",
-      "guideline_ref": "METHOD_UNSPECIFIED,SPIRIT-22, SPIRIT-23",
+      "category": "METHOD_UNSPECIFIED",
+      "guideline_ref": "SPIRIT-22; SPIRIT-23",
       "page": 6,
       "quote": "Randomization is by computer generated 1:1 randomization, in randomized blocks of 2, or 4 patients and stratified by study site",
       "severity": "minor",
-      "note": "{\"note\": \"The randomization method is described, but responsibilities for sequence generation, allocation concealment, and access to the sequence are insufficiently detailed.\"}",
+      "note": "The randomization method is described, but responsibilities for sequence generation, allocation concealment, and access to the sequence are insufficiently detailed.",
       "source_pages_original": "6-7"
     },
     {
       "domain": "scientific",
-      "category": "METHOD_UNSPECIFIED,SPIRIT-24a, SPIRIT-24b",
-      "guideline_ref": "METHOD_UNSPECIFIED,SPIRIT-24a, SPIRIT-24b",
+      "category": "METHOD_UNSPECIFIED",
+      "guideline_ref": "SPIRIT-24a; SPIRIT-24b",
       "page": 7,
       "quote": "Clinical decision-making is performed by treating obstetricians who are also blinded to patient randomization status",
       "severity": "minor",
-      "note": "{\"note\": \"Treating obstetricians are described as blinded, but how blinding is maintained when one arm uses an aPAP device and the other does not is unclear.\"}",
+      "note": "Treating obstetricians are described as blinded, but how blinding is maintained when one arm uses an aPAP device and the other does not is unclear.",
       "source_pages_original": "7, 9–10"
     },
     {
       "domain": "administrative",
-      "category": "OTHER,SPIRIT-26, SPIRIT-33",
-      "guideline_ref": "OTHER,SPIRIT-26, SPIRIT-33",
+      "category": "OTHER",
+      "guideline_ref": "SPIRIT-26; SPIRIT-33",
       "page": 9,
       "quote": "Data will be stored on ResMed’s secure, cloud-based patient management system (https://airview.resmed.com/login), and downloaded to a secure WU network.",
       "severity": "minor",
-      "note": "{\"note\": \"The protocol describes secure cloud and university-network storage, but does not fully detail access permissions and transfer procedures across systems and sites.\"}",
+      "note": "The protocol describes secure cloud and university-network storage, but does not fully detail access permissions and transfer procedures across systems and sites.",
       "source_pages_original": "9,12-13,17"
     },
     {
       "domain": "scientific",
-      "category": "OTHER,SPIRIT-27b, SPIRIT-27c",
-      "guideline_ref": "OTHER,SPIRIT-27b, SPIRIT-27c",
+      "category": "OTHER",
+      "guideline_ref": "SPIRIT-27b; SPIRIT-27c",
       "page": 14,
       "quote": "If a patient withdraws from the study after randomization but before initiation of aPAP, the patient will be replaced in order to provide the required number of evaluable patients",
       "severity": "major",
-      "note": "{\"note\": \"Participants withdrawing after randomization but before starting aPAP may be replaced; the handling of their data in the ITT analysis and the impact on the analysis population are unclear.\"}"
+      "note": "Participants withdrawing after randomization but before starting aPAP may be replaced; the handling of their data in the ITT analysis and the impact on the analysis population are unclear."
     },
     {
       "domain": "scientific",
-      "category": "INTERNAL_CONTRADICTION,SPIRIT-28a",
-      "guideline_ref": "INTERNAL_CONTRADICTION,SPIRIT-28a",
+      "category": "INTERNAL_CONTRADICTION",
+      "guideline_ref": "SPIRIT-28a",
       "page": 16,
       "quote": "Page 16: Any adverse events that are considered related to the trial, will also be reported to IRBs at other participating sites and to the chairperson of the DSMB. / Page 17: only a third person (the colleague), rather than a full Data Safety Monitoring Board will be used.",
       "severity": "major",
-      "note": "{\"note\": \"The protocol refers to a DSMB chair for adverse-event reporting but elsewhere describes oversight by an independent colleague instead of a full DSMB; oversight responsibilities require clarification.\"}",
+      "note": "The protocol refers to a DSMB chair for adverse-event reporting but elsewhere describes oversight by an independent colleague instead of a full DSMB; oversight responsibilities require clarification.",
       "source_pages_original": "16-17"
     },
     {
       "domain": "scientific",
-      "category": "METHOD_UNSPECIFIED,SPIRIT-28b",
-      "guideline_ref": "METHOD_UNSPECIFIED,SPIRIT-28b",
-      "page": 16,
+      "category": "METHOD_UNSPECIFIED",
+      "guideline_ref": "SPIRIT-28b",
+      "page": 5,
       "quote": "The absence of 2 minor or 1 major markers of aneuploidy",
       "severity": "minor",
-      "note": "{\"note\": \"Eligibility excludes specified numbers of minor or major aneuploidy markers, but the markers and their classification criteria are not defined.\"}",
+      "note": "Eligibility excludes specified numbers of minor or major aneuploidy markers, but the markers and their classification criteria are not defined.",
       "source_pages_original": "16-17"
     }
-  ]
+  ],
+  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff."
 }

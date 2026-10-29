@@ -11,83 +11,87 @@
     {
       "domain": "administrative",
       "category": "MISSING_VERSION",
-      "guideline_ref": "MISSING_VERSION",
+      "guideline_ref": "",
       "page": 1,
       "quote": "30th Sept 2024",
       "severity": "minor",
-      "note": "{\"note\": \"The document has a date but no explicit protocol version number.\"}"
+      "note": "The document has a date but no explicit protocol version number."
     },
     {
       "domain": "administrative",
       "category": "MISSING_REGISTRY_ID",
-      "guideline_ref": "MISSING_REGISTRY_ID",
+      "guideline_ref": "",
       "page": 1,
       "quote": "ALK Digital Pathology outcome prediction Study Protocol",
       "severity": "minor",
-      "note": "{\"note\": \"The NCT06846736 registration identifier is not shown in the protocol.\"}"
+      "note": "The NCT06846736 registration identifier is not shown in the protocol."
     },
     {
       "domain": "administrative",
       "category": "MISSING_CONTACT",
-      "guideline_ref": "MISSING_CONTACT",
+      "guideline_ref": "",
       "page": 1,
       "quote": "P.I.: Jair Bar, MD-PhD, Sheba Medical Center, Ramat Gan, Israel” / “Sponsor: Institute of Oncology, Sheba MC, Ramat Gan, Israel",
       "severity": "minor",
-      "note": "{\"note\": \"The PI and sponsor are named, but direct research-team contact details are not provided.\"}"
+      "note": "The PI and sponsor are named, but direct research-team contact details are not provided."
     },
     {
       "domain": "administrative",
       "category": "MISSING_SIGNATURE_PAGE",
-      "guideline_ref": "MISSING_SIGNATURE_PAGE",
-      "page": 46028,
+      "guideline_ref": "",
+      "page": 0,
       "quote": "ALK Digital Pathology outcome prediction Study Protocol",
       "severity": "minor",
-      "note": "{\"note\": \"No protocol signature page was identified in the six-page file.\"}"
+      "note": "No protocol signature page was identified in the six-page file.",
+      "source_pages_original": "46028"
     },
     {
       "domain": "administrative",
       "category": "OTHER",
-      "guideline_ref": "OTHER",
-      "page": 46085,
+      "guideline_ref": "",
+      "page": 3,
       "quote": "Page 3: Secondary use and analysis of data / Page 4: Lack of general or specific consent for this study",
       "severity": "minor",
-      "note": "{\"note\": \"The retrospective secondary-use study excludes patients lacking consent, but the protocol does not explain how consent is checked or obtained for data extraction.\"}"
+      "note": "The retrospective secondary-use study excludes patients lacking consent, but the protocol does not explain how consent is checked or obtained for data extraction.",
+      "source_pages_original": "46085"
     },
     {
       "domain": "scientific",
       "category": "INTERNAL_CONTRADICTION",
-      "guideline_ref": "INTERNAL_CONTRADICTION",
-      "page": 46085,
+      "guideline_ref": "",
+      "page": 3,
       "quote": "Page 3: Considering most patients would be on alectinib as first-line ALK inhibitor, we expect about 32% of the samples to belong to the NR group /Page 4: Approximately 20% of patients are fast progressors (PD within first year of treatment",
       "severity": "minor",
-      "note": "{\"note\": \"The study anticipates 32% nonresponders in one section and 20% rapid progressors in sample-size assumptions; the differing assumptions are not explained.\"}"
+      "note": "The study anticipates 32% nonresponders in one section and 20% rapid progressors in sample-size assumptions; the differing assumptions are not explained.",
+      "source_pages_original": "46085"
     },
     {
       "domain": "administrative",
       "category": "OTHER",
-      "guideline_ref": "OTHER",
+      "guideline_ref": "",
       "page": 3,
       "quote": "No identifying information regarding participating patients will leave each of the centers / The scanning of pathology slides will be performed; alternatively, the option of sending the image files instead of the slides themselves is available",
       "severity": "minor",
-      "note": "{\"note\": \"De-identified slides or image files may be sent between centers, but secure transfer methods, permissions, and protections are not specified in detail.\"}"
+      "note": "De-identified slides or image files may be sent between centers, but secure transfer methods, permissions, and protections are not specified in detail."
     },
     {
       "domain": "scientific",
       "category": "OTHER",
-      "guideline_ref": "OTHER",
+      "guideline_ref": "",
       "page": 5,
       "quote": "Each of these additional clinical / molecular parameters will be utilized if available for more than 70% of the cohort",
       "severity": "minor",
-      "note": "{\"note\": \"Clinical or molecular parameters are considered if available for over 70% of participants, but handling of their remaining missing values is not explained.\"}"
+      "note": "Clinical or molecular parameters are considered if available for over 70% of participants, but handling of their remaining missing values is not explained."
     },
     {
       "domain": "scientific",
       "category": "OTHER",
-      "guideline_ref": "OTHER",
+      "guideline_ref": "",
       "page": 5,
       "quote": "technical parameters such as precise fixation technique, width of sections, type of scanner and similar factors may have significant influence of the image analysis",
       "severity": "minor",
-      "note": "{\"note\": \"The protocol recognizes center-related technical image variation but does not fully specify standardized image quality controls across centers.\"}"
+      "note": "The protocol recognizes center-related technical image variation but does not fully specify standardized image quality controls across centers."
     }
-  ]
+  ],
+  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff."
 }

@@ -105,7 +105,7 @@ def test_matching_rule_domain_alias_or_ref_and_page():
 def test_ablation_dry_run_writes_four_row_table(tmp_path, registry_fetch):
     out = tmp_path / "results.md"
     summary = ablation.run_ablation(ROOT / "eval" / "labeled_cases", out, no_llm=True, registry_fetch=registry_fetch,
-                                    results_dir=tmp_path / "results")
+                                    results_dir=tmp_path / "results", pattern="synthetic_*.json")
     assert [r["key"] for r in summary["rows"]] == ["single_no_verification", "single_verified", "agents_no_critic", "agents_full"]
     md = out.read_text(encoding="utf-8")
     table = md.split("## Ablation table")[1].split("## Per case")[0]
@@ -118,5 +118,5 @@ def test_ablation_dry_run_writes_four_row_table(tmp_path, registry_fetch):
     assert list((tmp_path / "results").glob("ablation-nollm-*.json"))
     # the CLI entry point accepts the documented flags
     assert ablation.main(["--no-llm", "--no-registry", "--out", str(tmp_path / "cli.md"), "--results-dir", str(tmp_path / "r2"),
-                          "--only", "single_verified"]) == 0
+                          "--only", "single_verified", "--cases-glob", "synthetic_*.json"]) == 0
     assert (tmp_path / "cli.md").exists()
