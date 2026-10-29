@@ -1,0 +1,97 @@
+{
+  "case_id": "nct05199324",
+  "pdf": "eval/protocols/nct05199324.pdf",
+  "nct_id": "NCT05199324",
+  "labeler": "Ron Levi",
+  "labeled_on": "2026-10-28",
+  "blind": true,
+  "description": "INVEST",
+  "expected_decision": "RETURNED_ADMIN",
+  "expected_findings": [
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-29",
+      "guideline_ref": "OTHER,SPIRIT-29",
+      "page": 26,
+      "quote": "Clinical record forms will be monitored by an independent monitoring team to ensure data quality and accuracy",
+      "severity": "minor",
+      "note": "{\"note\": \"Independent monitoring is planned, but its frequency, scope, and operational procedures are not specified in the protocol.\"}",
+      "source_pages_original": "26-27"
+    },
+    {
+      "domain": "scientific",
+      "category": "NO_DATA_MONITORING,SPIRIT-28a, SPIRIT-28b",
+      "guideline_ref": "NO_DATA_MONITORING,SPIRIT-28a, SPIRIT-28b",
+      "page": 26,
+      "quote": "“A DSMB Charter detailing the required interim analysis will be prepared at the beginning of the trial.”",
+      "severity": "minor",
+      "note": "{\"note\": \"The protocol refers to a separate DSMB Charter for interim-analysis details, which cannot be checked in the protocol file alone.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-31",
+      "guideline_ref": "OTHER,SPIRIT-31",
+      "page": 29,
+      "quote": "The site PI must also obtain approval for any amendments to the protocol or participant information sheet and ICF",
+      "severity": "minor",
+      "note": "{\"note\": \"Amendment approval is described, but dissemination and implementation of approved versions across sites are not detailed.\"}",
+      "source_pages_original": "29-30"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-26",
+      "guideline_ref": "OTHER,SPIRIT-26",
+      "page": 27,
+      "quote": "A trial database using the REDCap data management system will be developed with a secured web hosting facility",
+      "severity": "minor",
+      "note": "{\"note\": \"Secure REDCap hosting is described, but role-based access, permissions management, and access to identifiable data are not specified in detail.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-26, SPIRIT-33",
+      "guideline_ref": "OTHER,SPIRIT-26, SPIRIT-33",
+      "page": 27,
+      "quote": "Trial data will be stored in a re-identifiable manner in the database using a unique screening number for each participant",
+      "severity": "minor",
+      "note": "{\"note\": \"Trial data are re-identifiable through unique screening numbers, but storage and permissions for the re-identification key are not described.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-26, SPIRIT-33",
+      "guideline_ref": "OTHER,SPIRIT-26, SPIRIT-33",
+      "page": 33,
+      "quote": "The data obtained from all participating sites will be pooled and analysed together as soon as possible after trial completion",
+      "severity": "minor",
+      "note": "{\"note\": \"Data from international sites will be pooled, but methods and access controls for secure transfer and consolidation are not described.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-26, SPIRIT-33",
+      "guideline_ref": "OTHER,SPIRIT-26, SPIRIT-33",
+      "page": 27,
+      "quote": "An audit trail will be maintained for tracking purposes",
+      "severity": "minor",
+      "note": "{\"note\": \"An audit trail is mentioned, but its content, responsible reviewer, and review frequency are not specified.\"}",
+      "source_pages_original": "27,33"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-32b",
+      "guideline_ref": "OTHER,SPIRIT-32b",
+      "page": 23,
+      "quote": "These bacterial isolates may be retrieved at a later stage for confirmatory antibiotic susceptibility testing and genetic analysis of resistance mechanisms",
+      "severity": "minor",
+      "note": "{\"note\": \"Stored bacterial isolates may be used in future susceptibility and genetic tests; arrangements for consent to future use should be checked.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "INTERNAL_CONTRADICTION",
+      "guideline_ref": "INTERNAL_CONTRADICTION",
+      "page": 7,
+      "quote": "Page 7: “Exclusion criteria: Polymicrobial bacteraemia” Page 18: “Polymicrobial bacteraemia involving Gram-positive pathogens or anaerobes”",
+      "severity": "major",
+      "note": "{\"note\": \"The summary excludes all polymicrobial bacteraemia, whereas the detailed criteria specify involvement of Gram-positive organisms or anaerobes, creating uncertainty about multiple Gram-negative pathogens.\"}",
+      "source_pages_original": "7,18"
+    }
+  ]
+}

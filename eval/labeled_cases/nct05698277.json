@@ -1,0 +1,107 @@
+{
+  "case_id": "nct05698277",
+  "pdf": "eval/protocols/nct05698277.pdf",
+  "nct_id": "NCT05698277",
+  "labeler": "Ron Levi",
+  "labeled_on": "2026-10-28",
+  "blind": true,
+  "description": "Automated Fetal Cardiac Function",
+  "expected_decision": "RETURNED_ADMIN",
+  "expected_findings": [
+    {
+      "domain": "administrative",
+      "category": "INTERNAL_CONTRADICTION",
+      "guideline_ref": "INTERNAL_CONTRADICTION",
+      "page": 1,
+      "quote": "Page 1: Automated fetal cardiac function evaluation in pregnancy affected by congenital heart disease / Page 3: Automated Fetal Cardiac Function Parameters in Congenital Heart Diseases",
+      "severity": "minor",
+      "note": "{\"note\": \"The title on the cover differs from the title in the study synopsis.\"}",
+      "source_pages_original": "1,3"
+    },
+    {
+      "domain": "administrative",
+      "category": "MISSING_REGISTRY_ID",
+      "guideline_ref": "MISSING_REGISTRY_ID",
+      "page": 1,
+      "quote": "Protocol Title: Automated fetal cardiac function evaluation in pregnancy affected by congenital heart disease Version Number: 5 Date of Protocol: 30 September 2022 HREC Reference: 2022/ETH00943",
+      "severity": "minor",
+      "note": "{\"note\": \"The protocol does not include the NCT05698277 registration identifier.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "METHOD_UNSPECIFIED",
+      "guideline_ref": "METHOD_UNSPECIFIED",
+      "page": 46211,
+      "quote": "Each study site will perform the same procedures as internationally published literature (34-57) to ensure uniformity",
+      "severity": "minor",
+      "note": "{\"note\": \"Sites are expected to follow published procedures, but the protocol does not fully describe standardization, equipment calibration, or inter-observer assessment.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER",
+      "guideline_ref": "OTHER",
+      "page": 9,
+      "quote": "Page 9: De-identification will be undertaken at image acquisition by the RHW doctors prior to image review by the engineers / Page 13: Patient privacy will be protected by deidentifying data once initial data abstraction has occurred",
+      "severity": "minor",
+      "note": "{\"note\": \"Two passages refer to de-identification at image acquisition and after initial data abstraction; it is unclear how the timing applies to each data type.\"}",
+      "source_pages_original": "9,13"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER",
+      "guideline_ref": "OTHER",
+      "page": 9,
+      "quote": "Ultrasound images will be saved locally in the ultrasound machine by the same assigned patient’s study number and uploaded to a specific onedrive folder created in Sydney",
+      "severity": "minor",
+      "note": "{\"note\": \"Ultrasound images are uploaded to a Sydney OneDrive folder; permissions, cross-site access, and download/transfer controls are not described in detail.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "OTHER",
+      "guideline_ref": "OTHER",
+      "page": 10,
+      "quote": "Fetal cardiac volumes and 2D images with inadequate quality due to fetal movements, presence of acoustic shadows of fetal ribs or spine, and maternal breathing will be excluded",
+      "severity": "minor",
+      "note": "{\"note\": \"Images of inadequate quality are excluded, but explicit, uniform image-quality acceptance criteria are not detailed.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "INTERNAL_CONTRADICTION",
+      "guideline_ref": "INTERNAL_CONTRADICTION",
+      "page": 10,
+      "quote": "Page 10: Patients’ information will be collected anonymously / Page 13: Identified data will only be accessible to Professor Welsh and Dr Erenbourg.",
+      "severity": "minor",
+      "note": "{\"note\": \"The text describes data as collected anonymously but elsewhere identifies access to identifiable data; the terminology and sequence of de-identification need clarification.\"}",
+      "source_pages_original": "10,13"
+    },
+    {
+      "domain": "scientific",
+      "category": "INTERNAL_CONTRADICTION",
+      "guideline_ref": "INTERNAL_CONTRADICTION",
+      "page": 11,
+      "quote": "Table 1, Heart size (HA/CA): “> 0.2 and ≤ 0.35” / “0.35 - 0.5”",
+      "severity": "minor",
+      "note": "{\"note\": \"Cardiovascular profile scoring ranges may overlap at an HA/CA value of 0.35, creating ambiguity in scoring.\"}"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER",
+      "guideline_ref": "OTHER",
+      "page": 8,
+      "quote": "Page 8: They will be approached by a member of the research team (Dr Erenbourg) and not by their treating doctor / Page 12: Each participating centre will have a site researcher, a fetal cardiologist who will discuss and sign consent form, collect ultrasound images and relevant patients’ data",
+      "severity": "minor",
+      "note": "{\"note\": \"The recruitment paragraph names Dr Erenbourg, while the responsibilities paragraph assigns consent discussions and signatures to local site researchers; site-specific roles should be clarified.\"}",
+      "source_pages_original": "8,12"
+    },
+    {
+      "domain": "scientific",
+      "category": "OTHER",
+      "guideline_ref": "OTHER",
+      "page": 6,
+      "quote": "Page 6: More specifically the aim is to estimate whether there is a significant difference in each parameter between fetuses with CHD overall compared to healthy fetuses and then by subgroups of different CHDs / Page 12: Secondary outcomes comparing cases and controls at a single time point will be analysed in a similar way to the primary outcome, subject to checks of assumptions",
+      "severity": "minor",
+      "note": "{\"note\": \"Multiple cardiac-function parameters and disease subgroups are compared, but the handling of multiple statistical comparisons is not described.\"}",
+      "source_pages_original": "6,12"
+    }
+  ]
+}

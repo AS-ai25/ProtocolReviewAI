@@ -1,0 +1,98 @@
+{
+  "case_id": "nct01977547",
+  "pdf": "eval/protocols/nct01977547.pdf",
+  "nct_id": "NCT01977547",
+  "labeler": "Ron Levi",
+  "labeled_on": "2026-10-28",
+  "blind": true,
+  "description": "ABC PICU",
+  "expected_decision": "RETURNED_ADMIN",
+  "expected_findings": [
+    {
+      "domain": "scientific",
+      "category": "INTERNAL_CONTRADICTION,SPIRIT-27b",
+      "guideline_ref": "INTERNAL_CONTRADICTION,SPIRIT-27b",
+      "page": 11,
+      "quote": "Page 11: All participants randomized will be analyzed according to the intervention to which they were allocated, regardless of whether they received it or not / Page 37: Patients will be excluded from the ITT analysis if the factor that leads to non-transfusion occurred before randomization and our masked treatment allocation was not compromised",
+      "severity": "major",
+      "note": "{\"note\": \"The protocol states that all randomized participants are analyzed under ITT, while Appendix 4 allows some post-randomization exclusions; the analysis population needs clarification.\"}",
+      "source_pages_original": "11,37"
+    },
+    {
+      "domain": "scientific",
+      "category": "OTHER,SPIRIT-16",
+      "guideline_ref": "OTHER,SPIRIT-16",
+      "page": 3,
+      "quote": "We are not requesting to add this secondary outcome at Canadian sites due to the reduced reimbursement per patient in Canada",
+      "severity": "minor",
+      "note": "{\"note\": \"The CAPD delirium outcome will not be collected at Canadian sites, requiring clarification of how site-dependent outcome availability will be handled.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "OTHER,SPIRIT-14a",
+      "guideline_ref": "OTHER,SPIRIT-14a",
+      "page": 7,
+      "quote": "Eligible critically ill pediatric patients who have an expected length of stay after transfusion in the ICU > 24 hours based on the best judgment of the attending ICU staff",
+      "severity": "minor",
+      "note": "{\"note\": \"Eligibility depends on a clinician’s judgment of anticipated ICU stay, without uniform criteria for this judgment.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "METHOD_UNSPECIFIED,SPIRIT-14a",
+      "guideline_ref": "METHOD_UNSPECIFIED,SPIRIT-14a",
+      "page": 7,
+      "quote": "16. Refusal by physician",
+      "severity": "minor",
+      "note": "{\"note\": \"Physician refusal is an exclusion criterion, but the reasons or circumstances for refusal are not specified.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "METHOD_UNSPECIFIED,SPIRIT-17",
+      "guideline_ref": "METHOD_UNSPECIFIED,SPIRIT-17",
+      "page": 16,
+      "quote": "Serious Adverse Event (SAE) – an adverse event or suspected adverse reaction is considered serious if ... it results in a Grade 4 or 5 adverse reaction",
+      "severity": "minor",
+      "note": "{\"note\": \"The principal SAE definition emphasizes grade 4–5 events; reporting of other clinically important events should be reviewed in light of the additional specified-event list.\"}",
+      "source_pages_original": "16-17"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-4",
+      "guideline_ref": "OTHER,SPIRIT-4",
+      "page": 1,
+      "quote": "Protocol Date: 13- Mar-2017",
+      "severity": "minor",
+      "note": "{\"note\": \"The NCT01977547 registration identifier is not shown in the protocol.\"}"
+    },
+    {
+      "domain": "scientific",
+      "category": "OTHER,SPIRIT-16",
+      "guideline_ref": "OTHER,SPIRIT-16",
+      "page": 3,
+      "quote": "Page 3: NPMODS will be monitored up to 28 calendar days or PICU discharge / Page 8: NPMODS will be monitored daily for the first seven days following randomization and then weekly until 28 calendar days or ICU discharge and through ICU stay",
+      "severity": "minor",
+      "note": "{\"note\": \"The wording of NPMODS follow-up differs between sections and should clarify the precise stopping point for outcome monitoring.\"}",
+      "source_pages_original": "3,8"
+    },
+    {
+      "domain": "administrative",
+      "category": "INTERNAL_CONTRADICTION,SPIRIT-17",
+      "guideline_ref": "INTERNAL_CONTRADICTION,SPIRIT-17",
+      "page": 16,
+      "quote": "The 11 events listed below will be considered reportable if they are diagnosed after an RBC transfusion regardless of grade",
+      "severity": "minor",
+      "note": "{\"note\": \"The reporting section refers to 11 listed adverse events, while the numbered list appears to contain 12.\"}",
+      "source_pages_original": "16-17"
+    },
+    {
+      "domain": "administrative",
+      "category": "OTHER,SPIRIT-26",
+      "guideline_ref": "OTHER,SPIRIT-26",
+      "page": 19,
+      "quote": "daily back-up of the full database and storage at 2 different locations will be made",
+      "severity": "minor",
+      "note": "{\"note\": \"Daily database backups in two locations are described, but their retention and deletion policy is not specified.\"}",
+      "source_pages_original": "19-20"
+    }
+  ]
+}
