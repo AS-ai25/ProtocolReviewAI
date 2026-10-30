@@ -31,6 +31,9 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--no-verification", action="store_true", help="ablation: skip the code-level evidence verification")
     s = sub.add_parser("serve"); s.add_argument("--port", type=int, default=8040); s.add_argument("--host", default="127.0.0.1")
     sub.add_parser("poll-mail"); sub.add_parser("graph"); sub.add_parser("purge-memory")
+    st = sub.add_parser("stats", help="LLM calls, tokens and runtime from the historical memory")
+    st.add_argument("--run", default="", help="run id or prefix, e.g. abl-agents_full- (default: all runs)")
+    st.add_argument("--by", default="agent", choices=["agent", "run", "model"])
     a = p.parse_args(argv)
 
     if a.cmd == "review":
@@ -64,6 +67,9 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "purge-memory":
         from .memory import purge_short_memory
         print(f"purged {purge_short_memory()} messages")
+    elif a.cmd == "stats":
+        from .stats import format_usage, usage
+        print(format_usage(usage(a.run, a.by)))
     return 0
 
 
