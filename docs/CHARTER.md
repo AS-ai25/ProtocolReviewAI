@@ -4,7 +4,7 @@
 
 **BIU DS23 Final Project**  
 **Team:** Amir Shmaryahu and Ron Levi  
-**Date:** 20 October 2026 | **Version:** 1.4 (mentor review of 20 October: locked primary metric, finding-matching rule, ablation plan, reduced scope corrected; supersedes v1.3 of 19 October 2026)  
+**Date:** 30 October 2026 | **Version:** 1.5 (Checkpoint 2: real-protocol test set, blind labels, matching-rule amendment for generic categories, evaluation scope under the reduced-scope plan; supersedes v1.4 of 20 October 2026)  
 **Repository:** github.com/AS-ai25/ProtocolReviewAI (private)
 
 ---
@@ -23,7 +23,13 @@ The system is evaluated on a labeled test set that includes ordinary cases, conf
 
 **Finding-matching rule (locked).** A predicted finding matches a labeled finding when the domain (administrative / scientific) is the same **and** either (a) the categories are the same or aliases of each other in the team's category alias map (`eval/category_aliases.json`), **or** (b) the guideline reference (SPIRIT / ICH-GCP / ADMIN-CHK code) is the same and the cited page is within ±1 of the labeled page. The rule is implemented once (`eval/matching.py`) and used by every evaluation script.
 
-**Targets (planned, not yet measured on real protocols):**
+*Amendment (v1.5, 29 October 2026).* For the generic categories (`OTHER`, `INTERNAL_CONTRADICTION`, `METHOD_UNSPECIFIED`, `SAFETY_GAP`, `ETHICS_GAP`, `CONSENT_GAP`, `FORMAT_ISSUE`, `MISSING_SECTION`) branch (a) also requires the page within ±1. The real-protocol labels use these categories for about 60% of the findings, and without the page requirement a single generic prediction would match every such label in the document. Labels that carry no page (the synthetic cases) keep the category-only behaviour. The amendment makes the scores more conservative, never more generous.
+
+**Evaluation scope (v1.5, reduced-scope plan applied).** Internal committee comments from Sheba could not be obtained and no clinical expert was available to adjudicate labels before Checkpoint 2. The team therefore applied the reduced-scope plan of section 6: five real protocols labeled blind by Ron (46 findings), restricted to **objective findings verifiable directly against the protocol text and SPIRIT 2025** (missing items, internal contradictions between sections, unspecified methods). Findings that require clinical judgement are not labeled and, when the system reports them, are presented as "requires expert verification" rather than as verified claims. Scores are reported on this set, with the synthetic cases shown separately as a harness check and never pooled with the real set.
+
+**Checkpoint 2 result (29 October 2026, `reports/results.md`, reading in `reports/CP2_SUMMARY.md`).** Scientific view: full system precision of verified findings 29% (32/112), recall 90% (19/21); single-agent baseline 16% / 62%. All-domain view: 22% / 61% vs 12% / 37%. The recall target and the +5 pp margin over the baseline are met; the precision target is not. Precision against the labels is a lower bound: the system verifies about four times as many findings as the labeler recorded, and package-completeness findings on public protocols are true but outside the label scope. The 30-finding human check is the complementary measure (pending).
+
+**Targets (planned, measured on the five-protocol real set in `reports/results.md`):**
 
 - Precision of verified findings of at least 0.80, with recall of labeled findings of at least 0.80, on the real-protocol test set.
 - Improvement of at least 5 percentage points in precision of verified findings over the Single-Agent Baseline (row 2 of the ablation below) at equal or better recall.
@@ -55,9 +61,11 @@ The system is evaluated on a labeled test set that includes ordinary cases, conf
 
 **Planned scope.** 10 to 15 initial protocols divided between development and evaluation; a labeled set of findings including documented synthetic test scenarios. Two synthetic protocols (one complete, one with ten documented injected deficiencies) already exist for development and tests.
 
-**Knowledge base.** SPIRIT checklist, ICH-GCP E6(R3) key points, and an administrative intake checklist (15 items, ADMIN-CHK-01 to 15). The current files are working drafts compiled by the team; Ron verifies them against SPIRIT 2025 and the committee's official SOP before Checkpoint 2.
+**Real-protocol set (v1.5).** 19 public protocol PDFs sourced by Ron, all "Study Documents" attached to ClinicalTrials.gov records with an Israeli site or investigator (`eval/protocols/SOURCES.md`, `protocol_sources.csv`). Each file was compared byte-for-byte with the registry's copy. Split: 3 development protocols (smoke test on real documents, not prompt tuning) and 16 evaluation protocols; the administrative gate returns 18 of 19 (`eval/protocols/GATE_CHECK.md`), which is why the evaluation runs with the gate bypass. Five evaluation protocols are labeled for Checkpoint 2 (`nct01977547`, `nct04084990`, `nct05199324`, `nct05698277`, `nct06846736`; one of them, `nct05698277`, is an observational study to which the randomisation items of SPIRIT do not apply). Rules-only label drafts (`eval/labeled_cases/_drafts/`) helped with the administrative part; the scientific pass was done blind against the PDF.
 
-**Availability and permissions.** PDF availability and terms of use are checked per document. Source access is recorded with a link, study ID and document version. This verification is not yet complete.
+**Knowledge base.** SPIRIT 2025 checklist (`spirit_2025_items.json`, 34 items with sub-items), ICH-GCP E6(R3) key points, and an administrative intake checklist (15 items, ADMIN-CHK-01 to 15). Ron is verifying the files against SPIRIT 2025 and the committee's official SOP; the verification banners are removed file by file as each is confirmed.
+
+**Availability and permissions.** All documents are public registry uploads; 16 of 19 nevertheless carry a sponsor confidentiality header. The repository therefore stores links, the source table and a download script (`eval/protocols/fetch_protocols.py`), not the PDFs. Evaluation outputs quote at most short passages.
 
 **Fallback.** If suitable documents are insufficient, use publicly accessible protocols from PubMed Central and guideline-based synthetic cases, limiting evaluation to verifiable findings.
 
@@ -117,6 +125,8 @@ The system has **four agents** on LangGraph with a shared state ("Blackboard"):
 - **Incorrect or unsupported findings.** LLMs may misinterpret documents or invent details. Mitigation: required citations verified in code, knowledge-base codes validated, independent scientific critic, human review of unverified conclusions.
 - **No measurable multi-agent benefit.** The first synthetic comparison could not separate the single agent from the multi-agent system on F1; the multi-agent system costs about five times more (≈110k vs ≈20k tokens per protocol) and its added value is the verification layer. Mitigation: the Checkpoint 2 evaluation measures verified-only precision and the critic's contribution, not raw F1 alone.
 - **Draft knowledge base.** Mitigation: verification against SPIRIT 2025 and the committee SOP before Checkpoint 2.
+- **No clinical expert for the labels (materialised, October 2026).** Sheba's internal committee comments were not released and the research-authority professor was unavailable. Mitigation applied: labels restricted to objective, text-verifiable findings (section 2); findings needing clinical judgement are reported as "requires expert verification"; the limitation is stated in every results table.
+- **Small labeled set (five protocols, 46 findings).** Scores are reported per protocol as well as pooled; differences of a few points between ablation rows are not claimed as significant.
 
 **If only two weeks remain:** keep the system as it is today (29 deterministic checks, four agents, one revision round, both baselines, reports and email) and reduce the *evaluation* instead: fewer real protocols (five instead of 10–15), labels for the scientific part only where the administrative documents are absent, the ablation on that smaller set, and the 30-finding human check reduced to 15. Deferred: knowledge-base expansion, interface work, the administrative critic. Nothing already built is removed.
 
@@ -129,7 +139,7 @@ The system has **four agents** on LangGraph with a shared state ("Blackboard"):
 | 18 Oct 2026 | **Checkpoint 1:** end-to-end pipeline (intake, extraction, checks, reports, email), Rule-Based Baseline; in addition the full four-agent workflow, Single-Agent Baseline, evaluation harness, automated tests, first live runs. Charter v1.2. | done |
 | 19 Oct 2026 | Charter v1.3 implemented: structured protocol JSON + JSON Validation Tool, append-only state, PDF reports with section/page/quote/action per finding, agent authority guard, hybrid decision rule (26 automated tests). | done |
 | 20 Oct 2026 | Mentor review of v1.3 (Shlomit Levavi). Charter v1.4: primary metric and matching rule locked, ablation plan, reduced scope corrected. Code: evaluation gate bypass, critic / verification ablation switches, `eval/ablation.py` → `reports/results.md`, shared matching rule (31 automated tests). | done |
-| 30 Oct 2026 | **Checkpoint 2:** verified knowledge base, real public protocols, blind labeled finding set (Ron), ablation table on the real set, 30-finding human check, one-minute recorded demo. | planned |
+| 30 Oct 2026 | **Checkpoint 2:** 19 real public protocols wired in (source table, gate check, download script); five blind-labeled protocols (46 findings, Ron); live four-row ablation on that set (`reports/results.md`); 30-finding human-check sheet generated (Ron fills it for the mentoring session); charter v1.5 (45 automated tests). Knowledge-base verification in progress (Ron); one-minute recorded demo pending. | done (demo + KB sign-off pending) |
 | 1 Nov 2026 | Pre-mentoring submission: freeze the repository, draft presentation. | planned |
 | 4 Nov 2026 | Mentoring session: working system, preliminary results, feedback, gaps. | planned |
 | 12 Nov 2026 | Final submission: evaluation versus both baselines, README, documented results, presentation. | planned |
@@ -161,13 +171,17 @@ The system has **four agents** on LangGraph with a shared state ("Blackboard"):
 | Reference target (v1.4) | 95% valid references | human check of 30 verified findings: the cited passage supports the finding |
 | Evaluation runs (v1.4) | production gate | gate bypass for evaluation (`force_scientific`); four-row ablation (`eval/ablation.py`) |
 | Reduced scope (v1.4) | "three checks" | the built system stays (29 checks, four agents, one round); the evaluation breadth is reduced |
+| Test set (v1.5) | planned 10-15 | 19 public protocols sourced and verified; 3 dev / 16 eval; five labeled blind (46 findings) under the reduced-scope plan |
+| Matching rule (v1.5) | category alias alone | generic categories also need the page within ±1; labels without a page unchanged |
+| Label scope (v1.5) | all defensible findings | objective, text-verifiable findings only; clinical-judgement findings reported as "requires expert verification" |
 
 
 ## 9. Open Decisions
 
 1. Whether the submitter receives a copy of the administrative report on RETURNED_ADMIN (today: coordinator only).
 2. Final list of administrative checklist items against the committee SOP. Owner: Ron.
-3. Labeling protocol for the real test set: who labels (Ron, blind to system output), how disagreements with a second reader are resolved, and whether labels carry a guideline reference and page (needed for branch (b) of the matching rule). Owner: Ron, before the first real-protocol run.
-4. Category alias map: initial map written by Amir from the deterministic check codes; Ron extends it while labeling. Aliases must stay specific (a generic alias such as MISSING_DOCUMENT would match several labels).
-5. Which model and effort setting the ablation is run with (today `claude-opus-5-5`, effort medium); the same setting must be used for all four rows.
-6. Whether the 30-finding human check is drawn only from the full system (row 4) or stratified across rows.
+3. ~~Labeling protocol for the real test set~~ Decided (v1.5): Ron labels alone, blind, with page and quote for every finding and a SPIRIT 2025 reference where one applies; no second reader was available, so there is no adjudication step and the labels are reported as single-annotator labels.
+4. Category alias map: initial map written by Amir from the deterministic check codes; Ron extends it while labeling. Aliases must stay specific (a generic alias such as MISSING_DOCUMENT would match several labels). Ron's labels used only canonical categories, so no alias was added for Checkpoint 2.
+5. Which model and effort setting the ablation is run with (today `claude-opus-5-5`, effort medium); the same setting must be used for all four rows. Applied: all four rows of `reports/results.md` ran with the same model and settings in one session.
+6. ~~Whether the 30-finding human check is drawn only from the full system (row 4) or stratified across rows.~~ Decided (v1.5): drawn from the full system (row 4) only, stratified across the five protocols (`eval/make_human_check.py`).
+7. Whether to extend the labeled set beyond five protocols before the final submission (Ron's remaining time) or to keep five and spend the time on the human check and the knowledge-base sign-off.

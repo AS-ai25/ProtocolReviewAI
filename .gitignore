@@ -8,8 +8,13 @@ outputs/*
 .pytest_cache/
 *.egg-info/
 data/uploads/
-eval/results/
+eval/results/*
 docs/MANUAL_HE.*
 
 # Real-protocol PDFs: public ClinicalTrials.gov documents with sponsor confidentiality headers; rebuilt by eval/protocols/fetch_protocols.py
 eval/protocols/*.pdf
+
+# keep the live ablation summaries (small JSON, needed to re-score without new LLM calls)
+!eval/results/ablation-2*.json
+!eval/results/rescore-*.json
+!eval/results/results_live_raw_*.md

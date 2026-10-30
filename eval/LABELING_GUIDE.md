@@ -160,9 +160,13 @@ support it or is not on that page. The result is reported as yes / partly / no c
 
 - [x] `eval/protocols/SOURCES.md` + `protocol_sources.csv` committed (2026-10-26); the PDFs are not committed -
       `python eval/protocols/fetch_protocols.py` rebuilds them from ClinicalTrials.gov
-- [ ] dev / eval split in `SOURCES.md` confirmed by Ron (before labeling)
-- [ ] rules-only drafts in `eval/labeled_cases/_drafts/` reviewed: every line confirmed or deleted, the blind
-      scientific pass added, file moved up as `<case_id>.json` with `blind: true`
+- [x] dev / eval split in `SOURCES.md` (3 dev / 16 eval); Ron's five labeled protocols are all evaluation protocols
+- [x] five blind label files committed 2026-10-29 (`nct01977547`, `nct04084990`, `nct05199324`, `nct05698277`,
+      `nct06846736`; 46 findings) - reduced-scope plan, objective text-level findings only
+- [x] live ablation run 2026-10-29 (`reports/results.md`, `reports/CP2_SUMMARY.md`)
+- [x] `eval/human_check/verified_findings_check.csv` generated (30 rows, full system) - Ron fills the last two columns
+- [ ] domain correction of the 16 data-management / monitoring / confidentiality labels (proposed to Ron 2026-10-29);
+      afterwards `python eval/rescore.py`
 - [ ] `eval/labeled_cases/<case_id>.json` for every protocol, committed **before** any run
 - [ ] `eval/category_aliases.json` extended if you used a new category
 - [ ] knowledge base verified, banners removed
