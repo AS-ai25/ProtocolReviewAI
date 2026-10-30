@@ -78,25 +78,28 @@
       "source_pages_original": "3,8"
     },
     {
-      "domain": "administrative",
+      "domain": "scientific",
       "category": "INTERNAL_CONTRADICTION",
       "guideline_ref": "SPIRIT-17",
       "page": 20,
       "quote": "The 11 events listed below will be considered reportable if they are diagnosed after an RBC transfusion regardless of grade",
       "severity": "minor",
       "note": "The reporting section refers to 11 listed adverse events, while the numbered list appears to contain 12.",
-      "source_pages_original": "16-17"
+      "source_pages_original": "16-17",
+      "domain_original": "administrative"
     },
     {
-      "domain": "administrative",
+      "domain": "scientific",
       "category": "OTHER",
       "guideline_ref": "SPIRIT-26",
       "page": 23,
       "quote": "daily back-up of the full database and storage at 2 different locations will be made",
       "severity": "minor",
       "note": "Daily database backups in two locations are described, but their retention and deletion policy is not specified.",
-      "source_pages_original": "19-20"
+      "source_pages_original": "19-20",
+      "domain_original": "administrative"
     }
   ],
-  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff."
+  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff.",
+  "domain_correction": "2026-10-30, approved by Ron Levi in writing: 16 findings on data management, monitoring, amendments, confidentiality and consent process moved from administrative to scientific (the system raises these through the Scientific Reviewer with SPIRIT codes). Only the domain field changed; the original value is kept in domain_original. Decided before any system output was read by the labeler; the untouched files are commit 545a516."
 }

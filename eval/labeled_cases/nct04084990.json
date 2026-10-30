@@ -57,14 +57,15 @@
       "source_pages_original": "7, 9–10"
     },
     {
-      "domain": "administrative",
+      "domain": "scientific",
       "category": "OTHER",
       "guideline_ref": "SPIRIT-26; SPIRIT-33",
       "page": 9,
       "quote": "Data will be stored on ResMed’s secure, cloud-based patient management system (https://airview.resmed.com/login), and downloaded to a secure WU network.",
       "severity": "minor",
       "note": "The protocol describes secure cloud and university-network storage, but does not fully detail access permissions and transfer procedures across systems and sites.",
-      "source_pages_original": "9,12-13,17"
+      "source_pages_original": "9,12-13,17",
+      "domain_original": "administrative"
     },
     {
       "domain": "scientific",
@@ -96,5 +97,6 @@
       "source_pages_original": "16-17"
     }
   ],
-  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff."
+  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff.",
+  "domain_correction": "2026-10-30, approved by Ron Levi in writing: 16 findings on data management, monitoring, amendments, confidentiality and consent process moved from administrative to scientific (the system raises these through the Scientific Reviewer with SPIRIT codes). Only the domain field changed; the original value is kept in domain_original. Decided before any system output was read by the labeler; the untouched files are commit 545a516."
 }

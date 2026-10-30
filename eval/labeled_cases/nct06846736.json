@@ -46,14 +46,15 @@
       "source_pages_original": "46028"
     },
     {
-      "domain": "administrative",
+      "domain": "scientific",
       "category": "OTHER",
       "guideline_ref": "",
       "page": 3,
       "quote": "Page 3: Secondary use and analysis of data / Page 4: Lack of general or specific consent for this study",
       "severity": "minor",
       "note": "The retrospective secondary-use study excludes patients lacking consent, but the protocol does not explain how consent is checked or obtained for data extraction.",
-      "source_pages_original": "46085"
+      "source_pages_original": "46085",
+      "domain_original": "administrative"
     },
     {
       "domain": "scientific",
@@ -66,13 +67,14 @@
       "source_pages_original": "46085"
     },
     {
-      "domain": "administrative",
+      "domain": "scientific",
       "category": "OTHER",
       "guideline_ref": "",
       "page": 3,
       "quote": "No identifying information regarding participating patients will leave each of the centers / The scanning of pathology slides will be performed; alternatively, the option of sending the image files instead of the slides themselves is available",
       "severity": "minor",
-      "note": "De-identified slides or image files may be sent between centers, but secure transfer methods, permissions, and protections are not specified in detail."
+      "note": "De-identified slides or image files may be sent between centers, but secure transfer methods, permissions, and protections are not specified in detail.",
+      "domain_original": "administrative"
     },
     {
       "domain": "scientific",
@@ -93,5 +95,6 @@
       "note": "The protocol recognizes center-related technical image variation but does not fully specify standardized image quality controls across centers."
     }
   ],
-  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff."
+  "normalised": "2026-10-29 (Amir): format only - category/guideline_ref split, notes unwrapped, page = PDF page where the quote is located (Excel serials and printed page numbers converted; originals in source_pages_original). Findings, wording and severities unchanged from Ron's handoff.",
+  "domain_correction": "2026-10-30, approved by Ron Levi in writing: 16 findings on data management, monitoring, amendments, confidentiality and consent process moved from administrative to scientific (the system raises these through the Scientific Reviewer with SPIRIT codes). Only the domain field changed; the original value is kept in domain_original. Decided before any system output was read by the labeler; the untouched files are commit 545a516."
 }
