@@ -21,3 +21,5 @@ eval/protocols/*.pdf
 
 # demo page embeds rendered protocol pages; rebuilt by demo/build_demo.py
 demo/index.html
+docs/DASHBOARD_HE.*
+docs/img/
