@@ -66,9 +66,12 @@ Against the charter targets:
   withdrew 3; the matched share is 34% among verified vs 21% among unverified. The critic's filtering is in the right
   direction but weak on this set; its clearer contribution is the 36 *critic-raised* issues (always routed to a human,
   never scored) and the revision round that lifted scientific recall from 57% (row 3) to 78% (row 4).
-* **Verification layer.** Row 1 -> row 2 shows what code verification does to a single model: 21 of its findings
-  (17%) could not be located in the PDF or cited an invalid guideline code and were demoted to unverified. Those are
-  exactly the findings a committee member would otherwise have to re-check by hand.
+* **Verification layer.** In row 2, 21 of the single agent's 123 findings (17%) could not be located in the PDF or
+  cited an invalid guideline code and were demoted to unverified. Those are exactly the findings a committee member
+  would otherwise accept as checked. Rows 1 and 2 are two separate model calls, not one output scored twice, so the
+  difference between them (precision 29% -> 18%, recall 57% -> 46%) mixes the effect of verification with run-to-run
+  variation of the model; a 10-point gap between adjacent rows is within that noise, the 32-point recall gap between
+  rows 2 and 4 is not.
 * **Recommendation (tiered).** Default: single agent + code verification (row 2) for triage at ~1/6 of the cost;
   full system with the critic for protocols that reach the committee (anything not RETURNED_ADMIN, or on request),
   where recall matters more than cost. The administrative gate stays deterministic in both tiers.
