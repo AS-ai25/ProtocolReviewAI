@@ -11,10 +11,10 @@ from pathlib import Path
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, HttpUrl
 
-from . import memory
+from . import memory, stats
 from .config import PROJECT_ROOT, settings
 from .pipeline import new_run_id, run_baseline, run_review
 
@@ -40,9 +40,12 @@ def _save_upload(run_id: str, data: bytes, original_name: str) -> Path:
     return target
 
 
-def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str, nct_id: str):
+def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str, nct_id: str,
+                       force_scientific: bool = False):
     try:
-        run_review(pdf_path, source=source, submitter=submitter, nct_id=nct_id, run_id=run_id)
+        memory.update_run(run_id, status="running")
+        run_review(pdf_path, source=source, submitter=submitter, nct_id=nct_id, run_id=run_id,
+                   force_scientific=force_scientific)
     except Exception:
         log.exception("background review failed for %s", run_id)
 
@@ -50,12 +53,16 @@ def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str,
 # ----------------------------------------------------------------- webhooks
 @app.post("/webhook/protocol", dependencies=[Depends(require_secret)])
 async def webhook_protocol(background: BackgroundTasks, file: UploadFile = File(...), nct_id: str = Form(""),
-                           submitter: str = Form(""), source: str = Form("webhook")):
-    """Multipart upload (Make/n8n 'HTTP request' module with the Drive file as binary)."""
+                           submitter: str = Form(""), source: str = Form("webhook"),
+                           force_scientific: bool = Form(False)):
+    """Multipart upload (Make/n8n 'HTTP request' module with the Drive file as binary).
+
+    `force_scientific` is the evaluation gate bypass (charter section 2): the scientific stage runs even when
+    the administrative gate fails; the decision is unchanged. Used by the dashboard for demonstrations."""
     run_id = new_run_id()
     path = _save_upload(run_id, await file.read(), file.filename or "protocol.pdf")
     memory.create_run(run_id, source, submitter, str(path))
-    background.add_task(_background_review, run_id, path, source, submitter, nct_id)
+    background.add_task(_background_review, run_id, path, source, submitter, nct_id, force_scientific)
     return {"run_id": run_id, "status": "queued", "status_url": f"/runs/{run_id}"}
 
 
@@ -126,6 +133,62 @@ def run_messages(run_id: str):
 @app.get("/runs/{run_id}/cost")
 def run_cost(run_id: str):
     return memory.run_cost_summary(run_id)
+
+
+@app.get("/runs/{run_id}/summary")
+def run_summary(run_id: str):
+    """Compact end-of-run view for the dashboard: decision, score, finding counts, summary text, reports, cost."""
+    run = memory.get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    st = run.get("state") or {}
+    findings = st.get("findings") or []
+
+    def count(key):
+        out: dict[str, int] = {}
+        for f in findings:
+            out[f.get(key) or "-"] = out.get(f.get(key) or "-", 0) + 1
+        return out
+    score = st.get("score")
+    return {
+        "run_id": run_id, "status": run["status"], "decision": run.get("decision") or st.get("decision") or "",
+        "decision_rationale": st.get("decision_rationale", ""), "nct_id": run.get("nct_id") or st.get("nct_id", ""),
+        "score": score.get("score") if isinstance(score, dict) else score,
+        "pending_human_review": score.get("pending_human_review") if isinstance(score, dict) else None,
+        "n_findings": len(findings), "by_status": count("status"), "by_severity": count("severity"), "by_domain": count("domain"),
+        "revise_rounds": st.get("revise_rounds", 0), "force_scientific": bool(st.get("force_scientific")),
+        "final_summary": st.get("final_summary", ""), "error": st.get("error"),
+        "reports": {k: f"/runs/{run_id}/report?kind={k}" for k, key in
+                    (("final", "final_report"), ("admin", "administrative_report"), ("scientific", "scientific_report"))
+                    if (st.get("report_paths") or {}).get(key)},
+        "cost": memory.run_cost_summary(run_id), "created_at": run.get("created_at"), "finished_at": run.get("finished_at"),
+        "protocol_meta": {k: v for k, v in (st.get("protocol_meta") or {}).items() if k in
+                          ("title", "nct_id", "version", "date", "principal_investigator", "sponsor", "phase", "page_count")},
+    }
+
+
+# ------------------------------------------------------------- statistics
+@app.get("/stats/usage")
+def stats_usage(run: str = "", contains: str = "", by: str = "agent"):
+    if by not in ("agent", "run", "model", "config"):
+        raise HTTPException(status_code=400, detail="by must be agent, run, model or config")
+    return stats.usage(run, by, contains)
+
+
+@app.get("/stats/communications")
+def stats_communications(run: str = "", contains: str = ""):
+    return stats.communications(run, contains)
+
+
+@app.get("/stats/trace/{run_id}")
+def stats_trace(run_id: str):
+    return [{**e, "t": e["t"].isoformat() if e["t"] else None} for e in stats.trace(run_id)]
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """Live view: the agents' process on the left, tokens and statistics on the right, the summary at the end."""
+    return (Path(__file__).parent / "dashboard.html").read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------- long-term memory HITL
