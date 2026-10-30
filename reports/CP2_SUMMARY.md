@@ -57,6 +57,10 @@ Against the charter targets:
 
 ## 3. What the multi-agent design buys (mentor question: "5x cost for a few points - what do you recommend?")
 
+![The four configurations](../docs/ablation_configs.png)
+
+*`docs/ablation_configs.png` (source `docs/ablation_configs.html`): the same pipeline in the four rows of the ablation; grey dashed boxes are absent in that configuration; the red dashed path is the production behaviour of the administrative gate, which the evaluation bypasses with `force_scientific`.*
+
 * **Recall.** On the scientific view the full system reaches 78% of the labeled findings (29/37) against 46% for the
   single agent with the same verification. Per protocol: ABC PICU 7/8, SAFER 7/7, INVEST 7/9, fetal cardiac 5/8,
   ALK 3/5. All eight misses are generic `OTHER` labels (data-transfer controls, de-identification timing, consent-role

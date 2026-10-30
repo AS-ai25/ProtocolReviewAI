@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>The four review configurations</title>
+<style>
+body{margin:0;background:#ffffff;font-family:"Segoe UI",Arial,sans-serif;color:#1b2430}
+#wrap{width:1600px;padding:24px 28px;box-sizing:border-box}
+h1{font-size:22px;margin:0 0 2px}p.sub{margin:0 0 10px;color:#55637a;font-size:13px}
+svg{display:block}
+</style></head><body><div id="wrap">
+<h1>Multi-Agent Clinical Trial Protocol Review - the four configurations of the ablation (charter v1.5)</h1>
+<p class="sub">Same PDF, same deterministic checks, same registry record, same matching rule and model in every row. Blue = LLM call · green = code / tool · grey dashed = not present in this configuration · diamond = routing decision. Costs and scores: five real protocols, run of 29 Oct 2026 (scientific view, re-scored 30 Oct).</p>
+<svg id="d" xmlns="http://www.w3.org/2000/svg" width="1544" height="1030"></svg>
+</div>
+<script>
+const S=document.getElementById('d'),NS='http://www.w3.org/2000/svg';
+function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+function text(x,y,lines,opt={}){const g=el('g',{});lines.forEach((l,i)=>{g.appendChild(el('text',{x,y:y+i*(opt.lh||14),'text-anchor':opt.anchor||'middle','font-size':opt.size||12,'font-weight':i===0&&opt.boldFirst?700:400,fill:opt.fill||'#1b2430','font-family':opt.mono?'Consolas,monospace':'inherit'},l));});return g;}
+const C={llm:{fill:'#dbeafe',stroke:'#1d4ed8'},code:{fill:'#dcfce7',stroke:'#15803d'},off:{fill:'#f3f4f6',stroke:'#9ca3af'},io:{fill:'#fef3c7',stroke:'#b45309'}};
+function box(g,x,y,w,h,kind,lines,off){const k=off?C.off:C[kind];g.appendChild(el('rect',{x,y,width:w,height:h,rx:8,fill:k.fill,stroke:k.stroke,'stroke-width':off?1.2:1.6,'stroke-dasharray':off?'5 4':'none'}));
+  g.appendChild(text(x+w/2,y+17,off?lines.slice(0,2):lines,{boldFirst:true,fill:off?'#9ca3af':'#1b2430',size:11.5}));if(off)g.appendChild(text(x+w/2,y+h-9,['not in this configuration'],{size:9.5,fill:'#9ca3af'}));}
+function diamond(g,cx,cy,r,lines,off){g.appendChild(el('path',{d:`M${cx},${cy-r} L${cx+r},${cy} L${cx},${cy+r} L${cx-r},${cy} Z`,fill:off?C.off.fill:'#fff7ed',stroke:off?C.off.stroke:'#c2410c','stroke-width':1.5,'stroke-dasharray':off?'5 4':'none'}));g.appendChild(text(cx,cy-3+(lines.length>1?-3:0),lines,{size:10.5,fill:off?'#9ca3af':'#1b2430',lh:12}));}
+function arrow(g,x1,y1,x2,y2,opt={}){const id='a'+Math.random().toString(36).slice(2,7);const m=el('marker',{id,markerWidth:8,markerHeight:8,refX:7,refY:4,orient:'auto'});m.appendChild(el('path',{d:'M0,0 L8,4 L0,8 Z',fill:opt.color||'#374151'}));S.appendChild(m);
+  g.appendChild(el('path',{d:opt.d||`M${x1},${y1} L${x2},${y2}`,fill:'none',stroke:opt.color||'#374151','stroke-width':opt.w||1.5,'stroke-dasharray':opt.dash?'5 4':'none','marker-end':`url(#${id})`}));if(opt.label)g.appendChild(text(opt.lx??(x1+x2)/2,opt.ly??(y1-6),[opt.label],{size:10,fill:opt.color||'#374151'}));}
+
+const ROWS=[
+ {n:1,title:'Single agent, no code verification',kind:'single',verify:false,cost:'1 LLM call · ~41k tokens in · ~110 s per protocol',score:'precision 29% · recall 57%',note:'the model\'s own status stands: every finding it does not mark otherwise counts as verified'},
+ {n:2,title:'Single agent + code verification  (= Single-Agent Baseline)',kind:'single',verify:true,cost:'1 LLM call · ~41k tokens in · ~113 s per protocol',score:'precision 18% · recall 46%',note:'quote not located in the PDF or unknown guideline code -> unverified (routed to a human)'},
+ {n:3,title:'Full system without the critic',kind:'multi',critic:false,cost:'3 LLM calls · ~91k tokens in · ~180 s per protocol',score:'precision 26% · recall 57%',note:'administrative agent + scientific reviewer; the reviewer\'s findings are verified by code only; no revision round'},
+ {n:4,title:'Full system: four agents, critic, one revision round',kind:'multi',critic:true,cost:'4-6 LLM calls · ~256k tokens in · ~470 s per protocol',score:'precision 34% · recall 78%',note:'critic verdict per finding (verified / revise / unverified / rejected), critic-raised issues go to a human, at most one revision round'},
+];
+const H=240;
+ROWS.forEach((r,i)=>{const y0=i*H+6,g=el('g',{});S.appendChild(g);
+  g.appendChild(el('rect',{x:0,y:y0,width:1544,height:H-10,rx:12,fill:i%2?'#fbfcfe':'#ffffff',stroke:'#e5e7eb'}));
+  g.appendChild(el('text',{x:14,y:y0+24,'font-size':16,'font-weight':700,fill:'#1e3a6e'},`${r.n}.  ${r.title}`));
+  g.appendChild(el('text',{x:14,y:y0+44,'font-size':11.5,fill:'#55637a'},r.note));
+  g.appendChild(el('text',{x:1530,y:y0+24,'font-size':12.5,'text-anchor':'end',fill:'#374151','font-weight':600},r.cost));
+  g.appendChild(el('text',{x:1530,y:y0+44,'font-size':12.5,'text-anchor':'end',fill:'#15803d','font-weight':700},r.score));
+  const by=y0+70,bh=66,yc=by+bh/2;
+  // common: PDF -> intake
+  box(g,14,by,74,bh,'io',['PDF','protocol','(+ NCT id)']);arrow(g,88,yc,104,yc);
+  box(g,104,by,150,bh,'code',['Coordinator intake','parse pages · JSON by','sections · validation','29 deterministic rules']);arrow(g,254,yc,270,yc);
+  box(g,270,by,112,bh,'code',['Registry','ClinicalTrials.gov','record by NCT id']);arrow(g,382,yc,398,yc);
+  if(r.kind==='single'){
+    box(g,398,by,150,bh,'llm',['Administrative','Review Agent','checklist ADMIN-CHK'],true);
+    diamond(g,606,yc,34,['admin','gate'],true);
+    box(g,660,by,176,bh,'llm',['SINGLE AGENT (one call)','protocol text + both KBs +','rule findings + registry;','admin + scientific findings']);arrow(g,836,yc,852,yc);
+    box(g,852,by,136,bh,'code',['Code verification','quote located in PDF?','guideline code valid?','else -> unverified'],!r.verify);arrow(g,988,yc,1004,yc);
+    box(g,1004,by,136,bh,'llm',['Scientific Critic','verdict per finding','missed issues'],true);
+    diamond(g,1198,yc,34,['revise?','≤ 1 round'],true);
+    box(g,1252,by,150,bh,'code',['Decision rule + score','RETURNED_ADMIN if any','admin finding; hybrid rule','summary from the model']);arrow(g,1402,yc,1418,yc);
+    box(g,1418,by,112,bh,'io',['Reports','findings JSON','result JSON']);
+    // single path arrows: registry -> single agent (skipping greyed admin + gate)
+    arrow(g,398,yc,660,yc,{d:`M398,${yc} C480,${yc-50} 580,${yc-50} 660,${yc}`});
+    if(r.verify){arrow(g,988,yc,1252,yc,{d:`M988,${yc} C1080,${yc-50} 1160,${yc-50} 1252,${yc}`});}
+    else{arrow(g,836,yc,1252,yc,{d:`M836,${yc} C980,${yc-62} 1110,${yc-62} 1252,${yc}`,label:'model status stands',lx:1044,ly:yc-54});}
+  }else{
+    box(g,398,by,150,bh,'llm',['Administrative','Review Agent','15 checklist items,','evidence verified in code']);arrow(g,548,yc,572,yc);
+    diamond(g,606,yc,34,['admin','100%?']);
+    arrow(g,640,yc,660,yc,{label:'yes',lx:650,ly:yc-8});
+    // fail -> finalize (production) and bypass (evaluation)
+    arrow(g,606,yc+34,1252,by+bh+2,{d:`M606,${yc+34} C606,${yc+84} 1120,${yc+84} 1252,${by+bh+2}`,dash:true,color:'#b91c1c',label:'no -> RETURNED_ADMIN at once, the scientific agents do not run (production behaviour)',lx:930,ly:yc+88});
+    g.appendChild(text(930,yc+104,['Evaluation runs (this ablation) set force_scientific: the scientific stage runs even when the gate fails; the decision is unchanged (still RETURNED_ADMIN).'],{size:10,fill:'#15803d'}));
+    box(g,660,by,176,bh,'llm',['Scientific Reviewer','SPIRIT 2025 · ICH-GCP ·','registry comparison ·','contradictions between sections']);arrow(g,836,yc,852,yc);
+    box(g,852,by,136,bh,'code',['Code verification','quote located in PDF?','guideline code valid?','else -> unverified']);arrow(g,988,yc,1004,yc,{});
+    box(g,1004,by,136,bh,'llm',['Scientific Critic','verdict per finding ·','severity change ·','missed issues -> human'],!r.critic);
+    diamond(g,1198,yc,34,['revise?','≤ 1 round'],!r.critic);
+    if(r.critic){arrow(g,1140,yc,1164,yc);arrow(g,1232,yc,1252,yc,{label:'no',lx:1242,ly:yc-8});
+      arrow(g,1198,yc-34,748,by-2,{d:`M1198,${yc-34} C1198,${by-28} 760,${by-28} 748,${by-2}`,color:'#1d4ed8',dash:true,label:'yes: focused re-check, the reviewer answers each request',lx:980,ly:by-30});}
+    else{arrow(g,988,yc,1252,yc,{d:`M988,${yc} C1080,${yc-50} 1160,${yc-50} 1252,${yc}`});}
+    box(g,1252,by,150,bh,'llm',['Coordinator final','decision rule + score (code)','executive summary (LLM)','authority guard on state']);arrow(g,1402,yc,1418,yc);
+    box(g,1418,by,112,bh,'io',['Reports','final · admin · scientific','Markdown + PDF','email to coordinator']);
+  }
+});
+// legend
+const L=el('g',{});S.appendChild(L);const ly=ROWS.length*H+2;
+[['llm','LLM call (claude-opus-5-5)'],['code','code / deterministic tool'],['io','input / output'],['off','not present in this configuration']].forEach((k,i)=>{const x=14+i*300;const c=C[k[0]];L.appendChild(el('rect',{x,y:ly,width:22,height:14,rx:3,fill:c.fill,stroke:c.stroke,'stroke-dasharray':k[0]==='off'?'5 4':'none'}));L.appendChild(el('text',{x:x+28,y:ly+11,'font-size':12},k[1]));});
+L.appendChild(el('text',{x:14,y:ly+32,'font-size':11,fill:'#55637a'},'Rows 1-2: eval/ablation.py single_* (run_single_agent, verify on/off) · rows 3-4: run_review(no_critic / full) · gate bypass: force_scientific · numbers: reports/results.md, eval/results/ablation-20261029-205913.json'));
+</script></body></html>
