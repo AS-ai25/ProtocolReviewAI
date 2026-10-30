@@ -3,24 +3,27 @@
 Companion to `reports/results.md` (generated) - this file is the team's reading of the run of 29 October 2026
 (`eval/results/ablation-20261029-205913.json`, model `claude-opus-5-5`, five blind-labeled public protocols,
 46 labels, all four ablation rows with the gate bypass). Re-scored views are produced by `eval/rescore.py` from
-the saved findings; the LLM outputs were produced once.
+the saved findings; the LLM outputs were produced once. The tables below are the re-score of 30 October after the
+labeler's domain correction (section 2.3); the raw table of the live run, scored with the labels as first delivered,
+is kept in `eval/results/results_live_raw_20261029-205913.md`.
 
 ## 1. Headline numbers
 
 | View | Row | Precision of verified | Recall of labels | Unverified | Tokens in | Runtime |
 |---|---|---|---|---|---|---|
-| charter (all domains) | 2 Single agent + verification (baseline) | 12% (12/102) | 37% (17/46) | 21 | 207k | 568 s |
-| charter (all domains) | 4 Full system | 22% (40/184) | 61% (28/46) | 51 | 1,280k | 2,372 s |
-| scientific only | 2 Single agent + verification (baseline) | 16% (8/50) | 62% (13/21) | 18 | - | - |
-| scientific only | 4 Full system | **29% (32/112)** | **90% (19/21)** | 50 | - | - |
+| charter (all domains) | 2 Single agent + verification (baseline) | 13% (13/102) | 46% (21/46) | 21 | 207k | 568 s |
+| charter (all domains) | 4 Full system | 23% (43/184) | 74% (34/46) | 51 | 1,280k | 2,372 s |
+| scientific only (37 labels) | 2 Single agent + verification (baseline) | 18% (9/50) | 46% (17/37) | 18 | - | - |
+| scientific only (37 labels) | 4 Full system | **34% (38/112)** | **78% (29/37)** | 50 | - | - |
 
 Against the charter targets:
 
-* **Recall of labeled findings >= 0.80: met** on the scientific view (90%), not on the all-domain view (61%).
-* **Precision of verified findings >= 0.80: not met** (22% / 29%). See section 2 for why this number is a lower bound
+* **Recall of labeled findings >= 0.80: narrowly missed** on the scientific view (78%, 29 of 37; one more match would
+  reach it); 74% on the all-domain view. The eight misses are all generic `OTHER` labels (section 3).
+* **Precision of verified findings >= 0.80: not met** (23% / 34%). See section 2 for why this number is a lower bound
   and what the 30-finding human check adds.
-* **+5 pp precision over the Single-Agent Baseline at equal or better recall: met** (+10 pp all-domain, +13 pp scientific;
-  recall +24 pp / +28 pp).
+* **+5 pp precision over the Single-Agent Baseline at equal or better recall: met** (+10 pp all-domain, +16 pp scientific;
+  recall +28 pp / +32 pp).
 * **Cost:** the full system uses ~6x the input tokens and ~4x the runtime of the single agent per protocol.
 
 ## 2. Why precision is low, and what it does and does not mean
@@ -36,27 +39,33 @@ Against the charter targets:
    (verified by construction) and the labeler, by the reduced-scope plan, did not label them: 28 of the 72 verified
    administrative findings are of this kind (consent, insurance, signature page, sponsor, ethics statement, referenced
    documents). The scientific-only view removes this artefact.
-3. **Domain classification of 16 labels.** Sixteen labels on data management, monitoring, amendments and
-   confidentiality (SPIRIT-26/29/31/32/33) are recorded as *administrative*; the system raises the same issues through
-   the scientific reviewer (e.g. INVEST: `SCI-L015` "Monitoring plan and amendment communication lack detail",
-   SPIRIT-29/31, page 27, is label #1 + #3 of that protocol), so they cannot match under the domain-first rule. A
-   domain-only correction has been proposed to the labeler (29 October, before anyone read the system output); if
-   accepted, the table is rebuilt with `eval/rescore.py` and this section is updated.
+3. **Domain classification of 16 labels (corrected 30 October).** Sixteen labels on data management, monitoring,
+   amendments, confidentiality and the consent process (SPIRIT-26/29/31/32/33) were first recorded as *administrative*;
+   the system raises the same issues through the scientific reviewer (e.g. INVEST: `SCI-L015` "Monitoring plan and
+   amendment communication lack detail", SPIRIT-29/31, page 27, is label #1 + #3 of that protocol), so under the
+   domain-first rule they could not match. The labeler agreed in writing to move the domain of those 16 findings to
+   *scientific* - the domain field only; text, quote, category, severity and page untouched, the original value kept
+   in `domain_original`, the untouched files in commit `545a516`. The decision was taken before the labeler saw any
+   system output; the tables were rebuilt with `eval/rescore.py` (no new LLM calls). Effect on the full system:
+   all-domain recall 61% -> 74%, scientific recall 90% (19/21) -> 78% (29/37) because the scientific label set grew
+   from 21 to 37 and the system missed 8 of the 16 moved labels' neighbours. The `expected_decision` stays
+   RETURNED_ADMIN for every protocol: the decision is the production rule applied to the real document (which lacks
+   consent, insurance and signature documents), not a function of the labels.
 4. **Generic-category labels.** 60% of the labels are OTHER / INTERNAL_CONTRADICTION / METHOD_UNSPECIFIED. The v1.5
    matching amendment (page required for generic categories) keeps one generic prediction from matching every such
    label at once; it makes the scores more conservative.
 
 ## 3. What the multi-agent design buys (mentor question: "5x cost for a few points - what do you recommend?")
 
-* **Recall.** On the scientific view the full system reaches 90% of the labeled findings (19/21) against 62% for the
-  single agent with the same verification. The two misses are both in the six-page ALK protocol (`nct06846736`,
-  two `OTHER` labels on page 5: handling of missing values in optional parameters, and image-quality standardisation
-  across centres) - methodological gaps the reviewer did not raise. The other four protocols are at 100% recall on
-  this view.
-* **Critic.** Per protocol the critic verified 112 reviewer findings, sent 14 to a human and rejected or withdrew 3;
-  the matched share is 29% among verified vs 21% among unverified. The critic's filtering is in the right direction
-  but weak on this set; its clearer contribution is the 36 *critic-raised* issues (always routed to a human, never
-  scored) and the revision round that lifted recall from 81% (row 3) to 90% (row 4).
+* **Recall.** On the scientific view the full system reaches 78% of the labeled findings (29/37) against 46% for the
+  single agent with the same verification. Per protocol: ABC PICU 7/8, SAFER 7/7, INVEST 7/9, fetal cardiac 5/8,
+  ALK 3/5. All eight misses are generic `OTHER` labels (data-transfer controls, de-identification timing, consent-role
+  wording, missing-value handling, image standardisation): the reviewer either did not raise them or raised them from
+  a different page than the labeler quoted (the v1.5 page requirement then counts a miss).
+* **Critic.** Across the five protocols the critic verified 112 reviewer findings, sent 14 to a human and rejected or
+  withdrew 3; the matched share is 34% among verified vs 21% among unverified. The critic's filtering is in the right
+  direction but weak on this set; its clearer contribution is the 36 *critic-raised* issues (always routed to a human,
+  never scored) and the revision round that lifted scientific recall from 57% (row 3) to 78% (row 4).
 * **Verification layer.** Row 1 -> row 2 shows what code verification does to a single model: 21 of its findings
   (17%) could not be located in the PDF or cited an invalid guideline code and were demoted to unverified. Those are
   exactly the findings a committee member would otherwise have to re-check by hand.
@@ -81,6 +90,8 @@ another agent (one revision round). We say so in the presentation rather than in
   is pending (Ron, before the mentoring session).
 * One run per configuration (no repeats); differences of a few points between rows are not significant.
 * The matching rule was amended for generic categories on 29 October before the run (documented, conservative).
+* The domain of 16 labels was corrected after the run but before the labeler saw any output (section 2.3); the raw
+  table with the labels as first delivered is kept next to the re-scored one.
 
 ## 6. Reproducing
 

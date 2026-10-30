@@ -27,11 +27,14 @@ def test_rescore_reproduces_the_live_table_and_the_scientific_view(tmp_path):
     cases = rescore.load_cases(ROOT / "eval" / "labeled_cases", "nct*.json")
     rows = rescore.rescore(summary, cases, STAMP, outputs=OUTPUTS)
     assert [r["key"] for r in rows] == [r["key"] for r in summary["rows"]]
-    for new, old in zip(rows, summary["rows"]):          # same labels -> same numbers as the live run
-        assert (new["matched_verified"], new["n_verified"], new["tp"], new["labels"]) == \
-               (old["matched_verified"], old["n_verified"], old["tp"], old["labels"])
+    for new, old in zip(rows, summary["rows"]):
+        # the predictions are the saved ones: verified / unverified counts, cost and runtime never change;
+        # the matches may (the labels were corrected after the live run - see domain_correction in the files)
+        assert (new["n_verified"], new["n_unverified"], new["labels"], new["llm_calls"], new["input_tokens"]) == \
+               (old["n_verified"], old["n_unverified"], old["labels"], old["llm_calls"], old["input_tokens"])
     sci = rescore.rescore(summary, cases, STAMP, domain="scientific", outputs=OUTPUTS)
-    assert all(r["labels"] == 21 for r in sci)
+    n_sci = sum(1 for c in cases for x in c["expected_findings"] if x["domain"] == "scientific")
+    assert all(r["labels"] == n_sci for r in sci) and n_sci == 37
     assert rescore.main(["--stamp", STAMP, "--out", str(tmp_path / "r.md"), "--note", "test", "--outputs", str(OUTPUTS)]) == 0
     md = (tmp_path / "r.md").read_text(encoding="utf-8")
     assert "Scientific domain only" in md and "Critic contribution" in md
