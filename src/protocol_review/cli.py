@@ -33,7 +33,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("poll-mail"); sub.add_parser("graph"); sub.add_parser("purge-memory")
     st = sub.add_parser("stats", help="LLM calls, tokens and runtime from the historical memory")
     st.add_argument("--run", default="", help="run id or prefix, e.g. abl-agents_full- (default: all runs)")
-    st.add_argument("--by", default="agent", choices=["agent", "run", "model"])
+    st.add_argument("--by", default="agent", choices=["agent", "run", "model", "config"],
+                    help="config = compare the four ablation review types (abl-<config>-... runs)")
+    st.add_argument("--contains", default="", help="only runs whose id contains this, e.g. the stamp of one ablation session")
+    st.add_argument("--trace", default="", metavar="RUN_ID", help="print the chronological messages + LLM calls of one run")
     a = p.parse_args(argv)
 
     if a.cmd == "review":
@@ -68,8 +71,12 @@ def main(argv: list[str] | None = None) -> int:
         from .memory import purge_short_memory
         print(f"purged {purge_short_memory()} messages")
     elif a.cmd == "stats":
-        from .stats import format_usage, usage
-        print(format_usage(usage(a.run, a.by)))
+        from .stats import communications, format_communications, format_trace, format_usage, trace, usage
+        if a.trace:
+            print(format_trace(a.trace, trace(a.trace)))
+        else:
+            print(format_usage(usage(a.run, a.by, a.contains)))
+            print(format_communications(communications(a.run, a.contains)))
     return 0
 
 
