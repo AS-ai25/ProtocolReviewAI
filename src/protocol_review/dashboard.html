@@ -74,7 +74,11 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 </main>
 <script>
 const $=s=>document.querySelector(s);
+// one colour per stage; the same colour is used for the agent's rows in the timeline
+const STAGE_COLOR={intake:"#5eead4",administrative:"#ffc857",scientific_reviewer:"#5cc8ff",scientific_critic:"#b89cff",revision:"#fb923c",final:"#7bd389"};
+const AGENT_STAGE={coordinator:"intake",administrative:"administrative",scientific_reviewer:"scientific_reviewer",scientific_critic:"scientific_critic",single_agent:"scientific_reviewer"};
 const STEPS=[["intake","Intake + validation"],["administrative","Administrative gate"],["scientific_reviewer","Scientific reviewer"],["scientific_critic","Critic"],["revision","Revision round"],["final","Final + reports"]];
+function colorOf(e){const t=(e.text||"").toLowerCase();if(e.agent==="coordinator"){if(t.includes("re-check"))return STAGE_COLOR.revision;if(t.startsWith("final decision")||e.kind==="llm_call")return STAGE_COLOR.final;return STAGE_COLOR.intake;}return STAGE_COLOR[AGENT_STAGE[e.agent]]||"#9fb0c6";}
 let current=null,timer=null,lastStatus="";
 const fmt=n=>(n==null?"-":Number(n).toLocaleString());
 const hhmm=iso=>iso?new Date(iso).toLocaleTimeString([], {hour12:false}):"--:--:--";
@@ -98,12 +102,13 @@ function stageOf(events){let stage="intake",done=new Set();for(const e of events
   return {stage,done};}
 
 function renderSteps(events,status){const {stage,done}=stageOf(events);const finished=status==="done"||status==="failed";
-  $("#steps").innerHTML=STEPS.map(([k,l])=>{const cls=finished?(done.has(k)||k===stage?"done":""):(k===stage?"now":(done.has(k)?"done":""));return `<div class="step ${cls}">${l}</div>`;}).join("");}
+  $("#steps").innerHTML=STEPS.map(([k,l])=>{const cls=finished?(done.has(k)||k===stage?"done":""):(k===stage?"now":(done.has(k)?"done":""));const c=STAGE_COLOR[k];
+    const st=cls?`border-color:${c};color:${c};${cls==="now"?`background:${c}22;box-shadow:0 0 0 0 ${c}66`:""}`:"";return `<div class="step ${cls}" style="${st}">${l}</div>`;}).join("");}
 
 function renderTimeline(events){const el=$("#timeline");if(!events.length){el.innerHTML='<div class="empty">no events yet</div>';return;}
-  el.innerHTML=events.map(e=>e.kind==="llm_call"
-    ?`<div class="ev llm"><span class="t">${hhmm(e.t)}</span><span class="a">${e.agent}</span><span>LLM call · <span class="tok">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""}</span></div>`
-    :`<div class="ev ${e.role==="agent"?"msg":"sys"}"><span class="t">${hhmm(e.t)}</span><span class="a">${e.agent}</span><span>${(e.text||"").replace(/</g,"&lt;").slice(0,260)}</span></div>`).join("");
+  el.innerHTML=events.map(e=>{const c=colorOf(e);return e.kind==="llm_call"
+    ?`<div class="ev llm" style="border-left-color:${c};background:${c}14"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>LLM call · <span class="tok" style="color:${c}">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""}</span></div>`
+    :`<div class="ev ${e.role==="agent"?"msg":"sys"}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>${(e.text||"").replace(/</g,"&lt;").slice(0,260)}</span></div>`;}).join("");
   el.scrollTop=el.scrollHeight;}
 
 function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm_call");const by={};let tin=0,tout=0,dur=0;
@@ -112,7 +117,7 @@ function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm
   const t0=events[0]?new Date(events[0].t):null,t1=events.length?new Date(events[events.length-1].t):null;const wall=t0&&t1?Math.round((t1-t0)/1000):0;
   $("#kpis").innerHTML=[["LLM calls",calls.length],["tokens in",fmt(tin)],["tokens out",fmt(tout)],["LLM time",dur.toFixed(0)+" s"],["wall clock",wall+" s"],["revision rounds",summary?summary.revise_rounds:"-"]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
   const max=Math.max(1,...Object.values(by).map(b=>b.in+b.out));
-  $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>`<div class="bar"><span>${a} <span class="mut">×${b.calls}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>`).join("")||'<div class="empty">no LLM calls yet</div>';}
+  $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>`<div class="bar"><span style="color:${STAGE_COLOR[AGENT_STAGE[a]]||(a==="coordinator"?STAGE_COLOR.final:"inherit")}">${a} <span class="mut">×${b.calls}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>`).join("")||'<div class="empty">no LLM calls yet</div>';}
 
 async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
 
