@@ -18,6 +18,8 @@ import sys
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):          # Windows consoles default to cp1252; traces contain unicode
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     p = argparse.ArgumentParser(prog="protocol_review")
     sub = p.add_subparsers(dest="cmd", required=True)
