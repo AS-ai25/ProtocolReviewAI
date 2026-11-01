@@ -54,7 +54,7 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
         except LLMError as exc:
             log.error("scientific critic LLM failure: %s", exc)
             errors.append(f"scientific_critic: {exc}")
-            trace = trace_event({"trace": trace}, AGENT, "llm_error", str(exc))
+            trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "llm_error", str(exc))
 
     verdicts = {v.finding_id: v for v in (report.verdicts if report else [])}
     by_id = {v["finding_id"]: v for v in verifications}
@@ -121,7 +121,7 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
     }
     memory.post_message(run_id, AGENT, f"Critic round {rounds}: {len(verdicts)} verdicts, "
                         f"{len(revise_requests)} revision requests. {critic_dict['summary'][:800]}")
-    trace = trace_event({"trace": trace}, AGENT, "done",
+    trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "done",
                         f"verdicts={len(verdicts)} revise={len(revise_requests)} missed={len(missed)} memories_proposed={len(proposed_ids)}")
     return {"critic_report": critic_dict, "critic_reports": list(state.get("critic_reports") or []) + [critic_dict],
             "findings": findings, "revise_requests": revise_requests, "trace": trace, "errors": errors}

@@ -23,6 +23,16 @@ section h2{margin:0 0 10px;font-size:15px;color:var(--acc);text-transform:upperc
 .ev{display:grid;grid-template-columns:62px 150px 1fr;gap:10px;padding:6px 8px;border-radius:7px;background:#0e1420;border-left:4px solid var(--line)}
 .ev .t{color:var(--mut);font-family:Consolas,monospace}.ev .a{font-weight:600}.ev.llm{border-left-color:var(--vio)}.ev.msg{border-left-color:var(--acc)}.ev.sys{border-left-color:var(--line);color:var(--mut)}
 .ev .tok{color:var(--vio);font-family:Consolas,monospace}
+.ev{cursor:pointer}.ev:hover{filter:brightness(1.15)}.ev.step{font-size:12.5px;color:#c9d4e3}.ev.step .k{color:var(--mut);margin-right:6px}
+.ev .det{grid-column:1 / -1;cursor:default;border-top:1px solid var(--line);margin-top:4px;padding-top:6px;font-size:12.5px}
+.det pre{white-space:pre-wrap;word-break:break-word;background:#0a0f18;border-radius:6px;padding:8px 10px;margin:4px 0 8px;max-height:320px;overflow:auto;font:12px Consolas,monospace;color:#d7e0ec}
+.det .mut{display:block;margin:2px 0}
+.bar{cursor:pointer}.bar:hover .n{color:var(--fg)}.calls{margin:-2px 0 6px 10px;border-left:2px solid var(--line);padding-left:10px;display:flex;flex-direction:column;gap:4px}
+.call{display:grid;grid-template-columns:62px 1fr;gap:10px;font:12.5px Consolas,monospace;color:#c9d4e3;cursor:pointer;padding:3px 6px;border-radius:6px;background:#0e1420}.call:hover{filter:brightness(1.2)}.call .det{grid-column:1 / -1}
+#logs{grid-column:1 / span 2;min-height:0}#logs h2 label,#logs h2 input{text-transform:none;letter-spacing:0;font-size:12px;color:var(--mut);font-weight:400}
+#logs h2 input[type=text]{background:#0e1420;border:1px solid var(--line);border-radius:6px;color:var(--fg);padding:2px 6px}
+#loglines{max-height:300px;overflow:auto;background:#0e1420;border-radius:8px;padding:10px 12px;font:12px Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0;color:#c9d4e3}
+#loglines .lw{color:var(--amb)}#loglines .le{color:var(--red)}#loglines .lt{color:var(--mut)}
 .bars{display:flex;flex-direction:column;gap:8px}.bar{display:grid;grid-template-columns:150px 1fr 150px;align-items:center;gap:10px;font-size:13.5px}
 .bar .track{height:14px;background:#0e1420;border-radius:7px;overflow:hidden;display:flex}.bar .in{background:var(--acc);height:100%}.bar .out{background:var(--vio);height:100%}
 .bar .n{font-family:Consolas,monospace;color:var(--mut);text-align:right}
@@ -59,6 +69,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
   <section id="process">
     <h2>Process · agents on the blackboard</h2>
     <div class="steps" id="steps"></div>
+    <div class="mut" style="font-size:12px;margin:-6px 0 8px">click an event for its details: the full message, the step detail, or the LLM call's prompt and answer</div>
     <div class="timeline" id="timeline"><div class="empty">select a run</div></div>
   </section>
   <section id="tokens">
@@ -66,7 +77,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
     <div id="confline" class="mut" style="margin:-4px 0 8px;font-size:13px"></div>
     <div class="kpis" id="kpis"></div>
     <div class="bars" id="bars"></div>
-    <div class="mut" style="font-size:12px;margin-top:8px"><span style="display:inline-block;width:12px;height:10px;background:var(--acc);border-radius:2px"></span> tokens in (prompt: protocol text, knowledge base, rule findings) &nbsp; <span style="display:inline-block;width:12px;height:10px;background:var(--vio);border-radius:2px"></span> tokens out (the model's answer) &nbsp;·&nbsp; ×N = LLM calls by that agent</div>
+    <div class="mut" style="font-size:12px;margin-top:8px"><span style="display:inline-block;width:12px;height:10px;background:var(--acc);border-radius:2px"></span> tokens in (prompt: protocol text, knowledge base, rule findings) &nbsp; <span style="display:inline-block;width:12px;height:10px;background:var(--vio);border-radius:2px"></span> tokens out (the model's answer) &nbsp;·&nbsp; ×N = LLM calls by that agent &nbsp;·&nbsp; click an agent for its calls</div>
     <h2 style="margin-top:16px">This protocol · the four review types</h2>
     <div class="mut" style="font-size:12px;margin-bottom:6px" id="cmpmeta">runs of the same protocol (latest per configuration) · upload the same PDF with another configuration to fill the missing rows</div>
     <table id="cmp"><thead><tr><th>Review type</th><th>run</th><th>calls</th><th>tokens in</th><th>tokens out</th><th>s</th><th>findings</th><th>verified</th><th>→ human</th><th>decision</th></tr></thead><tbody></tbody></table>
@@ -74,6 +85,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
   <section id="summary">
     <h2>Summary</h2>
     <div id="sum" class="empty">the summary appears when the run is done</div>
+  </section>
+  <section id="logs">
+    <h2>Logs · server &nbsp;<label><input type="checkbox" id="logrun" checked> this run only</label> &nbsp; <input type="text" id="logfilter" placeholder="filter text…"> &nbsp; <span id="logfile" class="mut" style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400"></span></h2>
+    <pre id="loglines" class="empty">no log lines yet</pre>
   </section>
   <section id="results">
     <h2>Results · the four configurations against the blind labels</h2>
@@ -97,7 +112,11 @@ const $=s=>document.querySelector(s);
 const STAGE_COLOR={intake:"#5eead4",administrative:"#ffc857",scientific_reviewer:"#5cc8ff",scientific_critic:"#b89cff",revision:"#ff6b6b",final:"#7bd389"};
 const AGENT_STAGE={coordinator:"intake",administrative:"administrative",scientific_reviewer:"scientific_reviewer",scientific_critic:"scientific_critic",single_agent:"scientific_reviewer"};
 const STEPS=[["intake","Intake + validation"],["administrative","Administrative gate"],["scientific_reviewer","Scientific reviewer"],["scientific_critic","Critic"],["revision","Revision round"],["final","Final + reports"]];
-function colorOf(e){const t=(e.text||"").toLowerCase();if(e.agent==="coordinator"){if(t.includes("re-check"))return STAGE_COLOR.revision;if(t.startsWith("final decision")||e.kind==="llm_call")return STAGE_COLOR.final;return STAGE_COLOR.intake;}return STAGE_COLOR[AGENT_STAGE[e.agent]]||"#9fb0c6";}
+function colorOf(e){const t=(e.text||"").toLowerCase();if(e.agent==="coordinator"){if(e.kind==="step"){if(e.event==="revise_round")return STAGE_COLOR.revision;if(/final|decision|reports_written|notified/.test(e.event))return STAGE_COLOR.final;return STAGE_COLOR.intake;}
+  if(t.includes("re-check"))return STAGE_COLOR.revision;if(t.startsWith("final decision")||e.kind==="llm_call")return STAGE_COLOR.final;return STAGE_COLOR.intake;}return STAGE_COLOR[AGENT_STAGE[e.agent]]||"#9fb0c6";}
+const esc=x=>String(x??"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const keyOf=e=>`${e.kind}|${e.t}|${e.agent}|${e.id||""}`;
+const open=new Set(),openCalls=new Set(),openAgents=new Set(),inter={};let lastEvents=[];
 let current=null,timer=null,lastStatus="";
 const fmt=n=>(n==null?"-":Number(n).toLocaleString());
 const hhmm=iso=>iso?new Date(iso).toLocaleTimeString([], {hour12:false}):"--:--:--";
@@ -110,7 +129,8 @@ async function loadRuns(keep){const runs=await j("/runs?limit=60");const sel=$("
   for(const r of runs){const o=document.createElement("option");o.value=r.id;o.textContent=`${r.id}  ·  ${r.status}${r.decision?" · "+r.decision:""}${r.nct_id?" · "+r.nct_id:""}`;sel.appendChild(o);}
   if(prev&&[...sel.options].some(o=>o.value===prev))sel.value=prev;current=sel.value||null;}
 
-function stageOf(events){let stage="intake",done=new Set();for(const e of events){if(e.kind!=="message")continue;const t=(e.text||"").toLowerCase();
+function stageOf(events){let stage="intake",done=new Set();for(const e of events){if(e.kind==="llm_call")continue;const t=(e.text||"").toLowerCase();
+  if(e.kind==="step"&&e.agent==="coordinator"){if(e.event==="revise_round"){done.add("scientific_critic");stage="revision";}else if(/reports_written|notified/.test(e.event)){STEPS.forEach(s=>done.add(s[0]));stage="final";}continue;}
   if(e.agent==="coordinator"&&t.includes("forwarding to the administrative")){done.add("intake");stage="administrative";}
   else if(e.agent==="administrative"){done.add("intake");stage="administrative";}
   else if(e.agent==="scientific_reviewer"){done.add("intake");done.add("administrative");stage="scientific_reviewer";}
@@ -124,11 +144,24 @@ function renderSteps(events,status){const {stage,done}=stageOf(events);const fin
   $("#steps").innerHTML=STEPS.map(([k,l])=>{const cls=finished?(done.has(k)||k===stage?"done":""):(k===stage?"now":(done.has(k)?"done":""));const c=STAGE_COLOR[k];
     const st=cls?`border-color:${c};color:${c};${cls==="now"?`background:${c}22;box-shadow:0 0 0 0 ${c}66`:""}`:"";return `<div class="step ${cls}" style="${st}">${l}</div>`;}).join("");}
 
-function renderTimeline(events){const el=$("#timeline");if(!events.length){el.innerHTML='<div class="empty">no events yet</div>';return;}
-  el.innerHTML=events.map(e=>{const c=colorOf(e);return e.kind==="llm_call"
-    ?`<div class="ev llm" style="border-left-color:${c};background:${c}14"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>LLM call · <span class="tok" style="color:${c}">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""}</span></div>`
-    :`<div class="ev ${e.role==="agent"?"msg":"sys"}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>${(e.text||"").replace(/</g,"&lt;").slice(0,260)}</span></div>`;}).join("");
-  el.scrollTop=el.scrollHeight;}
+function detailHtml(e){
+  if(e.kind==="llm_call"){const d=inter[e.id];if(!d)return `<div class="det"><span class="mut">loading the call…</span></div>`;
+    return `<div class="det"><span class="mut">model <b>${esc(d.model)}</b> · tokens in ${fmt(d.input_tokens)} / out ${fmt(d.output_tokens)} · ${Number(d.duration_s).toFixed(1)} s${d.fallback?" · FALLBACK model":""} · interaction #${d.id}</span>
+      <span class="mut">prompt (excerpt of what the agent was asked)</span><pre>${esc(d.prompt_excerpt||"(not stored)")}</pre>
+      <span class="mut">answer (the structured output the model returned)</span><pre>${esc(typeof d.output==="string"?d.output:JSON.stringify(d.output,null,1))}</pre></div>`;}
+  if(e.kind==="step")return `<div class="det"><span class="mut">pipeline step <b>${esc(e.event)}</b> by ${esc(e.agent)} at ${hhmm(e.t)}</span><pre>${esc(e.detail||"(no detail)")}</pre></div>`;
+  return `<div class="det"><span class="mut">${e.role==="agent"?"message posted by":"system note from"} ${esc(e.agent)} at ${hhmm(e.t)} · full text</span><pre>${esc(e.text)}</pre></div>`;}
+async function ensureInteraction(e){if(e.kind!=="llm_call"||inter[e.id])return;try{inter[e.id]=await j(`/stats/interaction/${e.id}`);}catch(err){inter[e.id]={model:"?",prompt_excerpt:"",output:"error: "+err.message};}}
+function eventHtml(e,set){const c=colorOf(e),k=keyOf(e),isOpen=set.has(k);const det=isOpen?detailHtml(e):"";
+  if(e.kind==="llm_call")return `<div class="ev llm" data-k="${k}" style="border-left-color:${c};background:${c}14"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>LLM call · <span class="tok" style="color:${c}">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""} <span class="mut">${isOpen?"▾":"▸"}</span></span>${det}</div>`;
+  if(e.kind==="step")return `<div class="ev step" data-k="${k}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span><span class="k">step</span>${esc(e.event)} <span class="mut">${esc((e.detail||"").slice(0,200))}</span></span>${det}</div>`;
+  return `<div class="ev ${e.role==="agent"?"msg":"sys"}" data-k="${k}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>${esc((e.text||"").slice(0,260))}${(e.text||"").length>260?"…":""}</span>${det}</div>`;}
+function renderTimeline(events){const el=$("#timeline");lastEvents=events;if(!events.length){el.innerHTML='<div class="empty">no events yet</div>';return;}
+  const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-30;
+  el.innerHTML=events.map(e=>eventHtml(e,open)).join("");
+  if(atBottom&&!open.size)el.scrollTop=el.scrollHeight;}
+$("#timeline").addEventListener("click",async ev=>{if(ev.target.closest(".det"))return;const box=ev.target.closest(".ev");if(!box)return;const k=box.dataset.k;
+  if(open.has(k))open.delete(k);else{open.add(k);const e=lastEvents.find(x=>keyOf(x)===k);if(e){renderTimeline(lastEvents);await ensureInteraction(e);}}renderTimeline(lastEvents);});
 
 function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm_call");const by={};let tin=0,tout=0,dur=0;
   $("#confline").innerHTML=summary&&summary.configuration?`Configuration: <b style="color:var(--fg)">${summary.configuration}</b>${summary.force_scientific?" · gate bypass (evaluation)":""}`:"";
@@ -136,7 +169,21 @@ function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm
   const t0=events[0]?new Date(events[0].t):null,t1=events.length?new Date(events[events.length-1].t):null;const wall=t0&&t1?Math.round((t1-t0)/1000):0;
   $("#kpis").innerHTML=[["LLM calls",calls.length],["tokens in",fmt(tin)],["tokens out",fmt(tout)],["LLM time",dur.toFixed(0)+" s"],["wall clock",wall+" s"],["revision rounds",summary?summary.revise_rounds:"-"]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
   const max=Math.max(1,...Object.values(by).map(b=>b.in+b.out));
-  $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>`<div class="bar"><span style="color:${STAGE_COLOR[AGENT_STAGE[a]]||(a==="coordinator"?STAGE_COLOR.final:"inherit")}">${a} <span class="mut">×${b.calls}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>`).join("")||'<div class="empty">no LLM calls yet</div>';}
+  $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>{const col=STAGE_COLOR[AGENT_STAGE[a]]||(a==="coordinator"?STAGE_COLOR.final:"inherit");
+    const list=openAgents.has(a)?`<div class="calls">${calls.filter(c=>c.agent===a).map((c,i)=>{const k=keyOf(c);return `<div class="call" data-k="${k}"><span class="mut">${hhmm(c.t)}</span><span>call ${i+1} · ${esc(c.model)} · <span style="color:${col}">in ${fmt(c.input_tokens)} / out ${fmt(c.output_tokens)}</span> · ${Number(c.duration_s).toFixed(1)} s${c.fallback?" · FALLBACK":""} <span class="mut">${openCalls.has(k)?"▾":"▸"}</span></span>${openCalls.has(k)?detailHtml(c):""}</div>`;}).join("")}</div>`:"";
+    return `<div class="bar" data-agent="${a}"><span style="color:${col}">${a} <span class="mut">×${b.calls} ${openAgents.has(a)?"▾":"▸"}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>${list}`;}).join("")||'<div class="empty">no LLM calls yet</div>';}
+$("#bars").addEventListener("click",async ev=>{if(ev.target.closest(".det"))return;const call=ev.target.closest(".call");const bar=ev.target.closest(".bar");
+  if(call){const k=call.dataset.k;if(openCalls.has(k))openCalls.delete(k);else{openCalls.add(k);const e=lastEvents.find(x=>keyOf(x)===k);if(e)await ensureInteraction(e);}}
+  else if(bar){const a=bar.dataset.agent;if(openAgents.has(a))openAgents.delete(a);else openAgents.add(a);}else return;
+  renderTokens(lastEvents,lastSummary);});
+let lastSummary=null;
+async function loadLogs(){try{const run=$("#logrun").checked&&current?current:"";const r=await j(`/logs?lines=300&run=${encodeURIComponent(run)}&contains=${encodeURIComponent($("#logfilter").value.trim())}`);
+  $("#logfile").textContent=r.file;const el=$("#loglines");if(!r.lines.length){el.className="empty";el.textContent=run?"no log lines for this run yet":"no log lines";return;}
+  const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-30;el.className="";
+  el.innerHTML=r.lines.map(l=>{const cls=l.includes(" ERROR ")||l.includes(" CRITICAL ")?"le":l.includes(" WARNING ")?"lw":"";const m=l.match(/^(\S+ \S+) (\w+) (\[[^\]]*\]) (.*)$/);
+    return m?`<span class="${cls}"><span class="lt">${esc(m[1])}</span> ${esc(m[2])} <span class="lt">${esc(m[3])}</span> ${esc(m[4])}</span>`:`<span class="${cls}">${esc(l)}</span>`;}).join("\n");
+  if(atBottom)el.scrollTop=el.scrollHeight;}catch(e){$("#loglines").textContent="logs unavailable: "+e.message;}}
+$("#logrun").addEventListener("change",loadLogs);$("#logfilter").addEventListener("input",loadLogs);
 
 async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${current}/compare`);$("#cmpmeta").innerHTML=`protocol <b style="color:var(--fg)">${c.protocol||"?"}</b> · latest finished run per configuration · upload the same PDF with another configuration to fill the missing rows`;
   const have=new Map(c.rows.map(r=>[r.configuration,r]));const order=["1 single agent, no verification","2 single agent + code verification","3 full system without critic","4 full system (4 agents, critic)"];const short={"1 single agent, no verification":"1 · single, no verification","2 single agent + code verification":"2 · single + code verification","3 full system without critic":"3 · full, no critic","4 full system (4 agents, critic)":"4 · full system"};
@@ -176,12 +223,12 @@ function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#
   </div><div class="summary-text">${(s.final_summary||"(no summary)").replace(/</g,"&lt;")}</div></div>`;}
 
 async function tick(){if(!current)return;try{const [events,summary]=await Promise.all([j(`/stats/trace/${current}`),j(`/runs/${current}/summary`)]);
-  renderSteps(events,summary.status);renderTimeline(events);renderTokens(events,summary);renderSummary(summary);
+  lastSummary=summary;renderSteps(events,summary.status);renderTimeline(events);renderTokens(events,summary);renderSummary(summary);loadLogs();
   if(summary.status!==lastStatus){lastStatus=summary.status;loadRuns(current);}
   if(summary.status==="done"||summary.status==="failed"){clearInterval(timer);timer=null;loadConfigTable();loadCompare();}
   }catch(e){$("#msg").textContent=e.message;}}
 
-function watch(){if(timer)clearInterval(timer);lastStatus="";tick();loadCompare();markLabeled();timer=setInterval(tick,2000);}
+function watch(){if(timer)clearInterval(timer);lastStatus="";open.clear();openCalls.clear();openAgents.clear();tick();loadCompare();markLabeled();timer=setInterval(tick,2000);}
 
 $("#runs").addEventListener("change",()=>{current=$("#runs").value;watch();});
 $("#cfgscope").addEventListener("change",loadConfigTable);
@@ -191,5 +238,5 @@ $("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#
   try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
   catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
 
-(async()=>{await loadHealth();await loadRuns(new URLSearchParams(location.search).get("run")||undefined);loadConfigTable();loadResults();if(current)watch();})();
+(async()=>{await loadHealth();await loadRuns(new URLSearchParams(location.search).get("run")||undefined);loadConfigTable();loadResults();if(current)watch();else loadLogs();})();
 </script></body></html>

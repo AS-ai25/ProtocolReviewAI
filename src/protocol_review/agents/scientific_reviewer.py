@@ -47,7 +47,7 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     if registry is None:
         nct = state.get("nct_id") or meta.get("nct_id", "")
         registry = clinicaltrials.lookup(nct, fetch=registry_fetch).model_dump(mode="json")
-        trace = trace_event({"trace": trace}, AGENT, "registry_lookup", f"{nct}: found={registry.get('found')} {registry.get('error', '')}")
+        trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "registry_lookup", f"{nct}: found={registry.get('found')} {registry.get('error', '')}")
 
     rule_sci = [f for f in state.get("rule_findings") or [] if f["domain"] == Domain.SCIENTIFIC.value]
     rule_sci += checks.registry_checks(pages, meta, registry)
@@ -65,7 +65,7 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     except LLMError as exc:
         log.error("scientific reviewer LLM failure: %s", exc)
         errors.append(f"scientific_reviewer: {exc}")
-        trace = trace_event({"trace": trace}, AGENT, "llm_error", str(exc))
+        trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "llm_error", str(exc))
 
     llm_findings: list[dict] = []
     if report is not None:
@@ -83,7 +83,7 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
         from ..single_agent import apply_evidence_verification
         llm_findings = apply_evidence_verification(llm_findings, pages, rule_codes())
         n_ok = sum(1 for f in llm_findings if f["status"] == FindingStatus.VERIFIED.value)
-        trace = trace_event({"trace": trace}, AGENT, "code_only_verification", f"no_critic: {n_ok}/{len(llm_findings)} verified by code")
+        trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "code_only_verification", f"no_critic: {n_ok}/{len(llm_findings)} verified by code")
 
     admin_findings = [f for f in state.get("findings") or [] if f["domain"] == Domain.ADMINISTRATIVE.value]
     withdrawn = already_withdrawn + (base.withdraw_missing(previous_llm, llm_findings) if report is not None else [])
@@ -97,7 +97,7 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     }
     memory.post_message(run_id, AGENT, f"Scientific review round {state.get('revise_rounds', 0)} done: "
                         f"{len(sci_findings)} findings. {report_dict['summary'][:800]}")
-    trace = trace_event({"trace": trace}, AGENT, "done", f"findings={len(sci_findings)} (llm={len(llm_findings)})")
+    trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "done", f"findings={len(sci_findings)} (llm={len(llm_findings)})")
     return {"registry": registry, "scientific_report": report_dict,
             "scientific_reports": list(state.get("scientific_reports") or []) + [report_dict],
             "findings": admin_findings + sci_findings, "trace": trace, "errors": errors}

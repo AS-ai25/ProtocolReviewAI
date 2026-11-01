@@ -6,6 +6,7 @@ a status that the critic / coordinator move through PASS / REVISE / UNVERIFIED.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, TypedDict
@@ -185,6 +186,8 @@ class ReviewState(TypedDict, total=False):
 
 
 def trace_event(state: ReviewState, agent: str, event: str, detail: str = "") -> list[dict]:
+    """Append a step event to the state's trace; also log it and, when the run id is known, persist it at once
+    as a `step` row in the short-term memory so the dashboard shows the step while the run is still going."""
     items = list(state.get("trace") or [])
     items.append({
         "ts": datetime.utcnow().isoformat(timespec="seconds"),
@@ -192,4 +195,8 @@ def trace_event(state: ReviewState, agent: str, event: str, detail: str = "") ->
         "event": event,
         "detail": detail[:500],
     })
+    logging.getLogger("protocol_review.trace").info("[%s] %s %s", agent, event, detail[:300])
+    if state.get("run_id"):
+        from . import memory      # local import: memory imports the state models
+        memory.post_message(state["run_id"], agent, f"{event}: {detail[:500]}" if detail else event, role="step")
     return items

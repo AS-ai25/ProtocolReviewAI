@@ -18,6 +18,7 @@ os.environ.update({
     "WEBHOOK_SECRET": "test-secret",
     "ANTHROPIC_API_KEY": "sk-test-not-used",
     "MAX_REVISE_ROUNDS": "1",
+    "LOG_FILE": str(_TMP / "server.log"),
 })
 
 import pytest  # noqa: E402

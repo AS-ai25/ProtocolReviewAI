@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import memory
+from .logs import current_run_id
 from .baseline import run_baseline
 from .graph import build_graph
 from .llm import make_llm
@@ -31,7 +32,17 @@ def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = ""
                         findings are verified by code only, like the single agent's.
     """
     run_id = run_id or new_run_id()
+    token = current_run_id.set(run_id)
+    try:
+        return _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic)
+    finally:
+        current_run_id.reset(token)
+
+
+def _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic) -> dict:
     pdf_path = str(pdf_path)
+    log.info("run %s started: %s (source=%s, force_scientific=%s, no_critic=%s)", run_id, Path(pdf_path).name, source,
+             force_scientific, no_critic)
     memory.create_run(run_id, source, submitter, pdf_path)
     if llm is None:
         llm = make_llm(on_interaction=memory.interaction_hook(run_id), no_llm=no_llm)
@@ -53,6 +64,8 @@ def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = ""
     slim["cost"] = memory.run_cost_summary(run_id)
     memory.update_run(run_id, status="done", decision=final.get("decision", ""), nct_id=final.get("nct_id", ""),
                       finished_at=datetime.utcnow(), state=slim)
+    log.info("run %s done: decision=%s findings=%d llm_calls=%d", run_id, final.get("decision", ""),
+             len(final.get("findings") or []), slim["cost"]["llm_calls"])
     return slim
 
 

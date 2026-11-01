@@ -45,7 +45,7 @@ def administrative_node(state: ReviewState, llm) -> dict:
     except LLMError as exc:
         log.error("administrative agent LLM failure: %s", exc)
         errors.append(f"administrative: {exc}")
-        trace = trace_event({"trace": trace}, AGENT, "llm_error", str(exc))
+        trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "llm_error", str(exc))
 
     llm_findings: list[dict] = []
     if report is not None:
@@ -84,5 +84,5 @@ def administrative_node(state: ReviewState, llm) -> dict:
     }
     memory.post_message(run_id, AGENT, f"Administrative review done. accepted={admin_ok}. "
                         f"{len(admin_findings)} findings ({len(blocking)} blocking). {report_dict['summary'][:800]}")
-    trace = trace_event({"trace": trace}, AGENT, "done", f"accepted={admin_ok}, findings={len(admin_findings)}, blocking={len(blocking)}")
+    trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "done", f"accepted={admin_ok}, findings={len(admin_findings)}, blocking={len(blocking)}")
     return {"admin_report": report_dict, "admin_ok": admin_ok, "findings": admin_findings, "trace": trace, "errors": errors}

@@ -26,6 +26,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import memory
+from .logs import current_run_id
 from .agents import base
 from .agents.coordinator import decide
 from .agents.prompts import SINGLE_AGENT_SYSTEM
@@ -119,7 +120,16 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
     `verify=False` is the ablation switch: the code-level evidence verification is skipped and the
     findings keep the status the model gave them (unmarked ones count as verified)."""
     run_id = run_id or datetime.utcnow().strftime("single-%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
+    token = current_run_id.set(run_id)
+    try:
+        return _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify)
+    finally:
+        current_run_id.reset(token)
+
+
+def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify) -> dict:
     pdf_path = str(pdf_path)
+    log.info("run %s started (single agent, verify=%s): %s", run_id, verify, Path(pdf_path).name)
     memory.create_run(run_id, "single_agent", "", pdf_path)
     if llm is None:
         llm = make_llm(on_interaction=memory.interaction_hook(run_id), no_llm=no_llm)

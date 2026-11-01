@@ -74,9 +74,13 @@ def post_message(run_id: str, agent: str, content: str, role: str = "agent") -> 
         db.commit()
 
 
-def get_messages(run_id: str) -> list[dict]:
+def get_messages(run_id: str, include_steps: bool = False) -> list[dict]:
+    """The agents' conversation (roles agent/system); `step` rows are the pipeline's trace events."""
     with get_session() as db:
-        rows = db.execute(select(RunMessage).where(RunMessage.run_id == run_id).order_by(RunMessage.id)).scalars().all()
+        q = select(RunMessage).where(RunMessage.run_id == run_id).order_by(RunMessage.id)
+        if not include_steps:
+            q = q.where(RunMessage.role != "step")
+        rows = db.execute(q).scalars().all()
         return [{"agent": r.agent, "role": r.role, "content": r.content, "ts": r.created_at.isoformat()} for r in rows]
 
 

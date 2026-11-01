@@ -112,6 +112,8 @@ class LLM:
             fallback_used=fallback_used,
             raw_text=text,
         )
+        log.info("[%s] %s in=%d out=%d %.1fs%s", agent, model_used, result.input_tokens, result.output_tokens,
+                 result.duration_s, " FALLBACK" if fallback_used else "")
         if self.on_interaction:
             try:
                 self.on_interaction(result, system, user, obj.model_dump(mode="json"))

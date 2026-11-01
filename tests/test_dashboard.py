@@ -27,7 +27,18 @@ def test_dashboard_and_stats_endpoints(flawed_pdf):
 
     tr = client.get(f"/stats/trace/{run_id}").json()
     kinds = {e["kind"] for e in tr}
-    assert {"message", "llm_call"} <= kinds and all(e["t"] for e in tr)
+    assert {"message", "llm_call", "step"} <= kinds and all(e["t"] for e in tr)
+    steps = [e["event"] for e in tr if e["kind"] == "step"]
+    assert "intake" in steps and "done" in steps                     # pipeline step events are in the live trace
+    call = next(e for e in tr if e["kind"] == "llm_call")
+    detail = client.get(f"/stats/interaction/{call['id']}").json()   # click-through: one LLM call in full
+    assert detail["agent"] == call["agent"] and "output" in detail and "prompt_excerpt" in detail
+    assert client.get("/stats/interaction/999999").status_code == 404
+    lg = client.get("/logs", params={"run": run_id}).json()
+    assert lg["lines"] and all(f"[{run_id}]" in ln for ln in lg["lines"])   # server log, stamped with the run id
+    assert any("run %s done" % run_id in ln or "done:" in ln for ln in lg["lines"])
+    msgs = client.get(f"/runs/{run_id}/messages").json()
+    assert msgs and all(m["role"] != "step" for m in msgs)            # the blackboard conversation stays clean
 
     u = client.get(f"/stats/usage", params={"run": run_id, "by": "agent"}).json()
     assert u["runs"] == 1 and u["total"]["calls"] >= 1

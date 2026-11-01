@@ -187,7 +187,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
                      + "\n\n# All findings\n" + base.findings_json(findings) + "\n\nReturn the FinalSummary JSON now.")
         except LLMError as exc:
             errors.append(f"coordinator: {exc}")
-            trace = trace_event({"trace": trace}, AGENT, "llm_error", str(exc))
+            trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "llm_error", str(exc))
     if summary is None:
         summary = _deterministic_summary(state, decision, rationale)
 

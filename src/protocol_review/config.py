@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # Storage
     database_url: str = "sqlite:///data/protocol_review.db"
     output_dir: str = "outputs"
+    log_file: str = "logs/server.log"
     knowledge_base_dir: str = "knowledge_base"
 
     # Pipeline

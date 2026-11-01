@@ -15,7 +15,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPE
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, HttpUrl
 
-from . import memory, stats
+from . import logs, memory, stats
 from .config import PROJECT_ROOT, settings
 from .pipeline import new_run_id, run_baseline, run_review, run_single_agent
 
@@ -48,6 +48,7 @@ def configuration_of(run: dict) -> str:
         return stats.CONFIG_LABELS["agents_no_critic"]
     return stats.CONFIG_LABELS["agents_full"]
 app = FastAPI(title="Multi-Agent Clinical Trial Protocol Review", version="0.1.0")
+logs.setup_file_logging()
 UPLOAD_DIR = PROJECT_ROOT / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -70,7 +71,9 @@ def _save_upload(run_id: str, data: bytes, original_name: str) -> Path:
 
 def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str, nct_id: str,
                        force_scientific: bool = False, config: str = "agents_full"):
+    token = logs.current_run_id.set(run_id)
     try:
+        log.info("review queued from %s as %s (config=%s, force_scientific=%s)", source, run_id, config, force_scientific)
         memory.update_run(run_id, status="running")
         cfg = REVIEW_CONFIGS[config]
         if cfg["kind"] == "single":
@@ -81,6 +84,8 @@ def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str,
                        force_scientific=force_scientific, **cfg["kwargs"])
     except Exception:
         log.exception("background review failed for %s", run_id)
+    finally:
+        logs.current_run_id.reset(token)
 
 
 # ----------------------------------------------------------------- webhooks
@@ -269,7 +274,23 @@ def stats_results():
 
 @app.get("/stats/trace/{run_id}")
 def stats_trace(run_id: str):
+    """Chronological trace: pipeline step events, LLM calls (with their interaction id) and blackboard messages."""
     return [{**e, "t": e["t"].isoformat() if e["t"] else None} for e in stats.trace(run_id)]
+
+
+@app.get("/stats/interaction/{interaction_id}")
+def stats_interaction(interaction_id: int):
+    """One LLM call in full: prompt excerpt and the structured output (click-through from the dashboard trace)."""
+    row = stats.interaction(interaction_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="interaction not found")
+    return {**row, "t": row["t"].isoformat() if row["t"] else None}
+
+
+@app.get("/logs")
+def server_logs(lines: int = 200, run: str = "", contains: str = ""):
+    """Tail of the server log file (every line stamped with its run id)."""
+    return {"file": str(logs.log_file()), "lines": logs.tail(min(max(lines, 1), 2000), run, contains)}
 
 
 @app.get("/", include_in_schema=False)

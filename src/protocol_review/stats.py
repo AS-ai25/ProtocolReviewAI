@@ -76,8 +76,9 @@ def communications(run_prefix: str = "", contains: str = "") -> dict:
                   (the loop is bounded to one round in code, so max is 1 by construction)
     """
     with get_session() as db:
-        mq = select(RunMessage.agent, RunMessage.role, func.count()).group_by(RunMessage.agent, RunMessage.role)
-        pr = select(RunMessage.run_id, func.count()).group_by(RunMessage.run_id)
+        mq = select(RunMessage.agent, RunMessage.role, func.count()).where(RunMessage.role != "step") \
+            .group_by(RunMessage.agent, RunMessage.role)
+        pr = select(RunMessage.run_id, func.count()).where(RunMessage.role != "step").group_by(RunMessage.run_id)
         cq = select(Interaction.run_id, func.count()).group_by(Interaction.run_id)
         rq = select(Run.id, Run.state)
         pat = _pattern(run_prefix, contains)
@@ -103,22 +104,43 @@ def communications(run_prefix: str = "", contains: str = "") -> dict:
 def trace(run_id: str) -> list[dict]:
     """Chronological trace of one run: Blackboard messages and LLM calls interleaved (the detailed agent structure)."""
     with get_session() as db:
-        msgs = [{"t": m.created_at, "kind": "message", "agent": m.agent, "role": m.role, "text": m.content}
-                for m in db.execute(select(RunMessage).where(RunMessage.run_id == run_id)).scalars()]
-        calls = [{"t": i.created_at, "kind": "llm_call", "agent": i.agent, "model": i.model, "input_tokens": i.input_tokens,
-                  "output_tokens": i.output_tokens, "duration_s": i.duration_s, "fallback": bool(i.fallback_used)}
+        msgs = []
+        for m in db.execute(select(RunMessage).where(RunMessage.run_id == run_id)).scalars():
+            if m.role == "step":                      # pipeline step event: "<event>: <detail>"
+                event, _, detail = m.content.partition(": ")
+                msgs.append({"t": m.created_at, "kind": "step", "agent": m.agent, "role": m.role, "event": event,
+                             "detail": detail, "text": m.content})
+            else:
+                msgs.append({"t": m.created_at, "kind": "message", "agent": m.agent, "role": m.role, "text": m.content})
+        calls = [{"t": i.created_at, "kind": "llm_call", "id": i.id, "agent": i.agent, "model": i.model,
+                  "input_tokens": i.input_tokens, "output_tokens": i.output_tokens, "duration_s": i.duration_s,
+                  "fallback": bool(i.fallback_used)}
                  for i in db.execute(select(Interaction).where(Interaction.run_id == run_id)).scalars()]
-    return sorted(msgs + calls, key=lambda e: (e["t"], e["kind"] == "message"))
+    order = {"step": 0, "llm_call": 1, "message": 2}
+    return sorted(msgs + calls, key=lambda e: (e["t"], order[e["kind"]]))
+
+
+def interaction(interaction_id: int) -> dict | None:
+    """One LLM exchange in full (historical memory): what was asked and what came back."""
+    with get_session() as db:
+        i = db.get(Interaction, interaction_id)
+        if i is None:
+            return None
+        return {"id": i.id, "run_id": i.run_id, "agent": i.agent, "model": i.model, "input_tokens": i.input_tokens,
+                "output_tokens": i.output_tokens, "duration_s": i.duration_s, "fallback": bool(i.fallback_used),
+                "t": i.created_at, "prompt_excerpt": i.prompt_excerpt, "output": i.output}
 
 
 def format_trace(run_id: str, events: list[dict]) -> str:
     lines = [f"Trace of run {run_id}: {sum(e['kind'] == 'message' for e in events)} messages, "
-             f"{sum(e['kind'] == 'llm_call' for e in events)} LLM calls", ""]
+             f"{sum(e['kind'] == 'step' for e in events)} step events, {sum(e['kind'] == 'llm_call' for e in events)} LLM calls", ""]
     for e in events:
         t = e["t"].strftime("%H:%M:%S") if e["t"] else "--:--:--"
         if e["kind"] == "llm_call":
             lines.append(f"{t}  [LLM ] {e['agent']:<20} {e['model']}  in {e['input_tokens']:,} / out {e['output_tokens']:,}  "
                          f"{e['duration_s']:.1f}s{'  FALLBACK' if e['fallback'] else ''}")
+        elif e["kind"] == "step":
+            lines.append(f"{t}  [STEP] {e['agent']:<20} {e['event']}  {e['detail'][:120]}")
         else:
             text = " ".join(e["text"].split())
             lines.append(f"{t}  [{'MSG ' if e['role'] == 'agent' else 'SYS '}] {e['agent']:<20} {text[:150]}")
