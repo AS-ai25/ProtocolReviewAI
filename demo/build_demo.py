@@ -228,6 +228,8 @@ show(0);
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):      # Windows consoles default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--case", default="nct04084990")
     ap.add_argument("--stamp", default="20261029-205913")

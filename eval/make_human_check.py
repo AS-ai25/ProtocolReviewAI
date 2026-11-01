@@ -76,6 +76,8 @@ def sample(cands: dict[str, list[dict]], n: int, seed: int) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):      # Windows consoles default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--stamp", default=None, help="ablation run stamp (default: latest live run)")
     ap.add_argument("--n", type=int, default=30)

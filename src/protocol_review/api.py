@@ -12,7 +12,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, HttpUrl
 
 from . import memory, stats
@@ -270,6 +270,16 @@ def stats_results():
 @app.get("/stats/trace/{run_id}")
 def stats_trace(run_id: str):
     return [{**e, "t": e["t"].isoformat() if e["t"] else None} for e in stats.trace(run_id)]
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/dashboard")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/dashboard", response_class=HTMLResponse)

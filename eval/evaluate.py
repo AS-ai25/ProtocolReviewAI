@@ -41,6 +41,8 @@ def score(expected: list[dict], predicted: list[dict]) -> dict:
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):      # Windows consoles default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["baseline", "single", "agents"], default="baseline")
     ap.add_argument("--cases", default=str(ROOT / "eval" / "labeled_cases"))

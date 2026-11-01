@@ -10,6 +10,7 @@ HDR = {"X-Webhook-Secret": settings.webhook_secret}
 def test_dashboard_and_stats_endpoints(flawed_pdf):
     client = TestClient(app)
     page = client.get("/dashboard")
+    assert client.get("/", follow_redirects=False).status_code in (302, 307) and client.get("/favicon.ico").status_code == 204
     assert page.status_code == 200 and "<html" in page.text.lower() and "/stats/trace/" in page.text
 
     with open(flawed_pdf, "rb") as fh:

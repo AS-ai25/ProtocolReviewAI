@@ -191,5 +191,5 @@ $("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#
   try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
   catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
 
-(async()=>{await loadHealth();await loadRuns();loadConfigTable();loadResults();if(current)watch();})();
+(async()=>{await loadHealth();await loadRuns(new URLSearchParams(location.search).get("run")||undefined);loadConfigTable();loadResults();if(current)watch();})();
 </script></body></html>

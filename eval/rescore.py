@@ -160,6 +160,8 @@ def unlabeled_admin_section(cases: list[dict], stamp: str, outputs: Path | None 
 
 
 def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):      # Windows consoles default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--stamp", default=None)
     ap.add_argument("--cases", default=str(ROOT / "eval" / "labeled_cases"))
