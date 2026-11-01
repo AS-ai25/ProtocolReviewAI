@@ -11,7 +11,9 @@ button{cursor:pointer}button.primary{background:#1f4d2e;border-color:#2e7a47}but
 main{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:auto auto;gap:14px;padding:14px 20px}
 section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-height:200px}
 section h2{margin:0 0 10px;font-size:15px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px}
-#summary,#results{grid-column:1 / span 2}
+#summary,#results,#average{grid-column:1 / span 2}#average{min-height:0}
+#labeled{display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%}#labeled button{font-size:12px;padding:4px 9px}#labeled button.on{border-color:var(--acc);color:var(--acc)}
+#restab th.case{cursor:pointer;color:var(--acc)}#restab th.case small{display:block;color:var(--mut);font-weight:400}
 #cmp{font-size:12px}#cmp th,#cmp td{padding:4px 5px;white-space:nowrap}#cmp td:first-child{white-space:nowrap}
 #restab td.c{text-align:center;font-family:Consolas,monospace;font-size:12.5px}#restab td.c small{display:block;color:var(--mut);font-size:10.5px}#restab tr.best td{background:#13261a}#restab td.p{color:var(--acc)}#restab td.r{color:var(--grn)}
 .steps{display:flex;gap:6px;margin-bottom:12px}.step{flex:1;text-align:center;padding:7px 4px;border-radius:8px;background:#0e1420;border:1px solid var(--line);color:var(--mut);font-size:13px}
@@ -51,6 +53,7 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
     <button class="primary" id="go">Start review</button>
   </form>
   <span id="msg"></span>
+  <div id="labeled"><span class="mut">Labeled protocols (full-system run):</span></div>
 </header>
 <main>
   <section id="process">
@@ -67,10 +70,6 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
     <h2 style="margin-top:16px">This protocol · the four review types</h2>
     <div class="mut" style="font-size:12px;margin-bottom:6px" id="cmpmeta">runs of the same protocol (latest per configuration) · upload the same PDF with another configuration to fill the missing rows</div>
     <table id="cmp"><thead><tr><th>Review type</th><th>run</th><th>calls</th><th>tokens in</th><th>tokens out</th><th>s</th><th>findings</th><th>verified</th><th>→ human</th><th>decision</th></tr></thead><tbody></tbody></table>
-    <h2 style="margin-top:16px">Across the four review types · general average</h2>
-    <div class="mut" style="font-size:12px;margin-bottom:6px">ablation runs (abl-*) · per run averages ·
-      <select id="cfgscope" style="font-size:12px;padding:2px 6px"><option value="20261029-205913">real-protocol set (5 protocols, 29 Oct 2026)</option><option value="">all ablation runs (synthetic + real)</option></select></div>
-    <table id="cfg"><thead><tr><th>Review type</th><th>runs</th><th>calls/run</th><th>tokens in/run</th><th>tokens out/run</th><th>s/run</th></tr></thead><tbody></tbody></table>
   </section>
   <section id="summary">
     <h2>Summary</h2>
@@ -83,7 +82,13 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
       &nbsp; cell = <b>precision of verified findings</b> / <b>recall of labeled findings</b> (matched verified / verified · labels found / labels) &nbsp;·&nbsp; <span id="resmeta"></span>
     </div>
     <table id="restab"><thead></thead><tbody></tbody></table>
-    <div class="mut" style="font-size:12px;margin-top:8px">Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Precision against labels is a lower bound: the system reports about four times as many findings as the labeler recorded; the 30-finding human check measures the complement. Source: <span dir="ltr">reports/results.md</span>, <span dir="ltr">reports/CP2_SUMMARY.md</span>.</div>
+    <div class="mut" style="font-size:12px;margin-top:8px">Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Precision against labels is a lower bound: the system reports about four times as many findings as the labeler recorded; the 30-finding human check measures the complement. Click a protocol column to open its full-system run. Source: <span dir="ltr">reports/results.md</span>, <span dir="ltr">reports/CP2_SUMMARY.md</span>.</div>
+  </section>
+  <section id="average">
+    <h2>Across the four review types · general average</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:6px">ablation runs (abl-*) · per run averages ·
+      <select id="cfgscope" style="font-size:12px;padding:2px 6px"><option value="20261029-205913">real-protocol set (5 protocols, 29 Oct 2026)</option><option value="">all ablation runs (synthetic + real)</option></select></div>
+    <table id="cfg"><thead><tr><th>Review type</th><th>runs</th><th>calls/run</th><th>tokens in/run</th><th>tokens out/run</th><th>s/run</th></tr></thead><tbody></tbody></table>
   </section>
 </main>
 <script>
@@ -141,10 +146,16 @@ async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${cur
 async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
 
 let RESULTS=null;
-async function loadResults(){try{RESULTS=await j("/stats/results");renderResults();}catch(e){$("#restab tbody").innerHTML=`<tr><td class="empty">${e.message}</td></tr>`;}}
+const TITLES={nct01977547:"ABC PICU",nct04084990:"SAFER",nct05199324:"INVEST",nct05698277:"Fetal cardiac",nct06846736:"ALK pathology"};
+function openRun(id){if(![...$("#runs").options].some(o=>o.value===id)){$("#msg").textContent="run "+id+" not in this database";return;}$("#runs").value=id;current=id;watch();window.scrollTo({top:0,behavior:"smooth"});}
+function renderLabeled(){if(!RESULTS)return;const cases=(RESULTS.scientific||RESULTS.all||[])[0]?.per_case.map(c=>c.case)||[];const box=$("#labeled");box.querySelectorAll("button").forEach(b=>b.remove());
+  cases.forEach(c=>{const b=document.createElement("button");const id=`abl-agents_full-${c}-${RESULTS.stamp}`;b.textContent=`${TITLES[c]||c} · ${c.toUpperCase()}`;b.title=id;b.dataset.run=id;b.addEventListener("click",()=>openRun(id));box.appendChild(b);});markLabeled();}
+function markLabeled(){$("#labeled").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.run===current));}
+async function loadResults(){try{RESULTS=await j("/stats/results");renderResults();renderLabeled();}catch(e){$("#restab tbody").innerHTML=`<tr><td class="empty">${e.message}</td></tr>`;}}
 function renderResults(){if(!RESULTS)return;const rows=RESULTS[$("#resview").value]||[];const cases=rows.length?rows[0].per_case.map(c=>c.case):[];
   $("#resmeta").textContent=`run ${RESULTS.stamp} · re-scored ${RESULTS.rescored_at||""}${RESULTS.note?" · "+RESULTS.note:""}`;
-  $("#restab thead").innerHTML=`<tr><th>Configuration</th>${cases.map(c=>`<th style="text-align:center">${c}</th>`).join("")}<th style="text-align:center">all protocols</th><th>unverified</th><th>tokens in</th></tr>`;
+  $("#restab thead").innerHTML=`<tr><th>Configuration</th>${cases.map(c=>`<th class="case" style="text-align:center" data-run="abl-agents_full-${c}-${RESULTS.stamp}">${TITLES[c]||c}<small>${c}</small></th>`).join("")}<th style="text-align:center">all protocols</th><th>unverified</th><th>tokens in</th></tr>`;
+  $("#restab thead").querySelectorAll("th.case").forEach(th=>th.addEventListener("click",()=>openRun(th.dataset.run)));
   const pct=x=>Math.round(100*x)+"%";const bestP=Math.max(...rows.map(r=>r.verified_precision)),bestR=Math.max(...rows.map(r=>r.coverage));
   $("#restab tbody").innerHTML=rows.map((r,i)=>`<tr class="${r.key==="agents_full"?"best":""}"><td>${i+1}. ${r.label}</td>${r.per_case.map(c=>`<td class="c" title="verified ${c.n_verified}, matched ${c.matched_verified}; labels ${c.n_labels}, found ${c.tp}; unverified ${c.n_unverified}"><span class="p">${pct(c.verified_precision)}</span> / <span class="r">${pct(c.coverage)}</span><small>${c.matched_verified}/${c.n_verified} · ${c.tp}/${c.n_labels}</small></td>`).join("")}<td class="c"><b><span class="p">${pct(r.verified_precision)}</span> / <span class="r">${pct(r.coverage)}</span></b><small>${r.matched_verified}/${r.n_verified} · ${r.tp}/${r.labels}</small></td><td class="c">${r.n_unverified}</td><td class="c">${fmt(r.input_tokens)}</td></tr>`).join("");}
 $("#resview").addEventListener("change",renderResults);
@@ -170,7 +181,7 @@ async function tick(){if(!current)return;try{const [events,summary]=await Promis
   if(summary.status==="done"||summary.status==="failed"){clearInterval(timer);timer=null;loadConfigTable();loadCompare();}
   }catch(e){$("#msg").textContent=e.message;}}
 
-function watch(){if(timer)clearInterval(timer);lastStatus="";tick();loadCompare();timer=setInterval(tick,2000);}
+function watch(){if(timer)clearInterval(timer);lastStatus="";tick();loadCompare();markLabeled();timer=setInterval(tick,2000);}
 
 $("#runs").addEventListener("change",()=>{current=$("#runs").value;watch();});
 $("#cfgscope").addEventListener("change",loadConfigTable);
