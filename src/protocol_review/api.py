@@ -5,6 +5,7 @@ Run with:  python -m uvicorn protocol_review.api:app --reload --port 8040
 """
 from __future__ import annotations
 
+import json
 import logging
 import shutil
 from pathlib import Path
@@ -16,9 +17,36 @@ from pydantic import BaseModel, HttpUrl
 
 from . import memory, stats
 from .config import PROJECT_ROOT, settings
-from .pipeline import new_run_id, run_baseline, run_review
+from .pipeline import new_run_id, run_baseline, run_review, run_single_agent
 
 log = logging.getLogger(__name__)
+
+# The four review configurations of the ablation (charter v1.5). `agents_full` is the production system; the
+# other three exist for the evaluation and are selectable from the dashboard for side-by-side comparisons.
+REVIEW_CONFIGS = {
+    "agents_full": {"label": stats.CONFIG_LABELS["agents_full"], "kind": "agents", "kwargs": {}},
+    "agents_no_critic": {"label": stats.CONFIG_LABELS["agents_no_critic"], "kind": "agents", "kwargs": {"no_critic": True}},
+    "single_verified": {"label": stats.CONFIG_LABELS["single_verified"], "kind": "single", "kwargs": {"verify": True}},
+    "single_no_verification": {"label": stats.CONFIG_LABELS["single_no_verification"], "kind": "single", "kwargs": {"verify": False}},
+}
+
+
+def configuration_of(run: dict) -> str:
+    """Human label of the review configuration a run used (from its id for ablation runs, else from its state)."""
+    label = stats._config_of(run["id"])
+    if label != "other":
+        return label
+    st = run.get("state") or {}
+    mode = st.get("mode", "")
+    if mode == "single_agent_no_verification":
+        return stats.CONFIG_LABELS["single_no_verification"]
+    if mode.startswith("single_agent") or run.get("source") == "single_agent":
+        return stats.CONFIG_LABELS["single_verified"]
+    if mode == "rule_based_baseline":
+        return "rule-based baseline (no LLM)"
+    if st.get("no_critic"):
+        return stats.CONFIG_LABELS["agents_no_critic"]
+    return stats.CONFIG_LABELS["agents_full"]
 app = FastAPI(title="Multi-Agent Clinical Trial Protocol Review", version="0.1.0")
 UPLOAD_DIR = PROJECT_ROOT / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -41,11 +69,16 @@ def _save_upload(run_id: str, data: bytes, original_name: str) -> Path:
 
 
 def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str, nct_id: str,
-                       force_scientific: bool = False):
+                       force_scientific: bool = False, config: str = "agents_full"):
     try:
         memory.update_run(run_id, status="running")
-        run_review(pdf_path, source=source, submitter=submitter, nct_id=nct_id, run_id=run_id,
-                   force_scientific=force_scientific)
+        cfg = REVIEW_CONFIGS[config]
+        if cfg["kind"] == "single":
+            run_single_agent(pdf_path, nct_id=nct_id, run_id=run_id, **cfg["kwargs"])
+            memory.update_run(run_id, source=source, submitter=submitter)   # run_single_agent labels the source itself
+        else:
+            run_review(pdf_path, source=source, submitter=submitter, nct_id=nct_id, run_id=run_id,
+                       force_scientific=force_scientific, **cfg["kwargs"])
     except Exception:
         log.exception("background review failed for %s", run_id)
 
@@ -54,16 +87,20 @@ def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str,
 @app.post("/webhook/protocol", dependencies=[Depends(require_secret)])
 async def webhook_protocol(background: BackgroundTasks, file: UploadFile = File(...), nct_id: str = Form(""),
                            submitter: str = Form(""), source: str = Form("webhook"),
-                           force_scientific: bool = Form(False)):
+                           force_scientific: bool = Form(False), config: str = Form("agents_full")):
     """Multipart upload (Make/n8n 'HTTP request' module with the Drive file as binary).
 
     `force_scientific` is the evaluation gate bypass (charter section 2): the scientific stage runs even when
-    the administrative gate fails; the decision is unchanged. Used by the dashboard for demonstrations."""
+    the administrative gate fails; the decision is unchanged. `config` selects one of the four review
+    configurations of the ablation (default: the full system). Both are used by the dashboard for demonstrations
+    and comparisons; production integrations leave them at their defaults."""
+    if config not in REVIEW_CONFIGS:
+        raise HTTPException(status_code=400, detail=f"config must be one of {', '.join(REVIEW_CONFIGS)}")
     run_id = new_run_id()
     path = _save_upload(run_id, await file.read(), file.filename or "protocol.pdf")
     memory.create_run(run_id, source, submitter, str(path))
-    background.add_task(_background_review, run_id, path, source, submitter, nct_id, force_scientific)
-    return {"run_id": run_id, "status": "queued", "status_url": f"/runs/{run_id}"}
+    background.add_task(_background_review, run_id, path, source, submitter, nct_id, force_scientific, config)
+    return {"run_id": run_id, "status": "queued", "status_url": f"/runs/{run_id}", "config": config}
 
 
 class UrlPayload(BaseModel):
@@ -143,6 +180,10 @@ def run_summary(run_id: str):
         raise HTTPException(status_code=404, detail="run not found")
     st = run.get("state") or {}
     findings = st.get("findings") or []
+    if not findings and (st.get("paths") or {}).get("findings"):      # single agent: findings kept in a file
+        p = Path(st["paths"]["findings"])
+        if p.exists():
+            findings = json.loads(p.read_text(encoding="utf-8"))
 
     def count(key):
         out: dict[str, int] = {}
@@ -151,7 +192,8 @@ def run_summary(run_id: str):
         return out
     score = st.get("score")
     return {
-        "run_id": run_id, "status": run["status"], "decision": run.get("decision") or st.get("decision") or "",
+        "run_id": run_id, "status": run["status"], "configuration": configuration_of(run),
+        "decision": run.get("decision") or st.get("decision") or "",
         "decision_rationale": st.get("decision_rationale", ""), "nct_id": run.get("nct_id") or st.get("nct_id", ""),
         "score": score.get("score") if isinstance(score, dict) else score,
         "pending_human_review": score.get("pending_human_review") if isinstance(score, dict) else None,

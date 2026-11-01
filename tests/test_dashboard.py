@@ -34,3 +34,22 @@ def test_dashboard_and_stats_endpoints(flawed_pdf):
     c = client.get("/stats/communications", params={"run": run_id}).json()
     assert c["messages_per_run"]["runs"] == 1 and c["calls_per_run"]["max"] >= 1
     assert client.get("/runs/nope/summary").status_code == 404
+    assert s["configuration"].startswith("4 full system")
+
+    # the other review configurations are selectable; the single agent's findings come from its file
+    with open(flawed_pdf, "rb") as fh:
+        r = client.post("/webhook/protocol", headers=HDR, files={"file": ("p.pdf", fh, "application/pdf")},
+                        data={"nct_id": "NCT04470427", "config": "single_verified"})
+    assert r.status_code == 200 and r.json()["config"] == "single_verified"
+    s1 = client.get(f"/runs/{r.json()['run_id']}/summary").json()
+    assert s1["status"] == "done" and s1["configuration"].startswith("2 single agent") and s1["n_findings"] > 0
+    tr1 = client.get(f"/stats/trace/{r.json()['run_id']}").json()
+    assert any(e["agent"] == "single_agent" for e in tr1)
+    with open(flawed_pdf, "rb") as fh:
+        r = client.post("/webhook/protocol", headers=HDR, files={"file": ("p.pdf", fh, "application/pdf")},
+                        data={"config": "agents_no_critic", "force_scientific": "true"})
+    s3 = client.get(f"/runs/{r.json()['run_id']}/summary").json()
+    assert s3["configuration"].startswith("3 full system without")
+    with open(flawed_pdf, "rb") as fh:
+        r = client.post("/webhook/protocol", headers=HDR, files={"file": ("p.pdf", fh, "application/pdf")}, data={"config": "bogus"})
+    assert r.status_code == 400

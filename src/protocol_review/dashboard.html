@@ -39,6 +39,12 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
     <input type="file" id="file" accept="application/pdf" required>
     <input id="nct" placeholder="NCT id (optional)" size="14">
     <input id="secret" placeholder="webhook secret" size="16">
+    <select id="config" title="review configuration (the ablation rows); production = full system">
+      <option value="agents_full">4 · full system (4 agents, critic) - production</option>
+      <option value="agents_no_critic">3 · full system without critic (evaluation)</option>
+      <option value="single_verified">2 · single agent + code verification (evaluation)</option>
+      <option value="single_no_verification">1 · single agent, no verification (evaluation)</option>
+    </select>
     <label class="mut"><input type="checkbox" id="force"> force scientific (evaluation)</label>
     <button class="primary" id="go">Start review</button>
   </form>
@@ -52,10 +58,13 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
   </section>
   <section id="tokens">
     <h2>Tokens · this run</h2>
+    <div id="confline" class="mut" style="margin:-4px 0 8px;font-size:13px"></div>
     <div class="kpis" id="kpis"></div>
     <div class="bars" id="bars"></div>
+    <div class="mut" style="font-size:12px;margin-top:8px"><span style="display:inline-block;width:12px;height:10px;background:var(--acc);border-radius:2px"></span> tokens in (prompt: protocol text, knowledge base, rule findings) &nbsp; <span style="display:inline-block;width:12px;height:10px;background:var(--vio);border-radius:2px"></span> tokens out (the model's answer) &nbsp;·&nbsp; ×N = LLM calls by that agent</div>
     <h2 style="margin-top:16px">Across the four review types</h2>
-    <div class="mut" style="font-size:12px;margin-bottom:6px">ablation runs (abl-*) · per run averages</div>
+    <div class="mut" style="font-size:12px;margin-bottom:6px">ablation runs (abl-*) · per run averages ·
+      <select id="cfgscope" style="font-size:12px;padding:2px 6px"><option value="20261029-205913">real-protocol set (5 protocols, 29 Oct 2026)</option><option value="">all ablation runs (synthetic + real)</option></select></div>
     <table id="cfg"><thead><tr><th>Review type</th><th>runs</th><th>calls/run</th><th>tokens in/run</th><th>tokens out/run</th><th>s/run</th></tr></thead><tbody></tbody></table>
   </section>
   <section id="summary">
@@ -84,7 +93,8 @@ function stageOf(events){let stage="intake",done=new Set();for(const e of events
   else if(e.agent==="scientific_reviewer"){done.add("intake");done.add("administrative");stage="scientific_reviewer";}
   else if(e.agent==="scientific_critic"){done.add("scientific_reviewer");stage="scientific_critic";}
   else if(e.agent==="coordinator"&&t.includes("re-check")){done.add("scientific_critic");stage="revision";}
-  else if(e.agent==="coordinator"&&t.startsWith("final decision")){STEPS.forEach(s=>done.add(s[0]));stage="final";}}
+  else if(e.agent==="coordinator"&&t.startsWith("final decision")){STEPS.forEach(s=>done.add(s[0]));stage="final";}
+  else if(e.agent==="single_agent"){STEPS.forEach(s=>done.add(s[0]));stage="final";}}
   return {stage,done};}
 
 function renderSteps(events,status){const {stage,done}=stageOf(events);const finished=status==="done"||status==="failed";
@@ -97,18 +107,19 @@ function renderTimeline(events){const el=$("#timeline");if(!events.length){el.in
   el.scrollTop=el.scrollHeight;}
 
 function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm_call");const by={};let tin=0,tout=0,dur=0;
+  $("#confline").innerHTML=summary&&summary.configuration?`Configuration: <b style="color:var(--fg)">${summary.configuration}</b>${summary.force_scientific?" · gate bypass (evaluation)":""}`:"";
   for(const c of calls){const b=by[c.agent]||(by[c.agent]={calls:0,in:0,out:0,s:0});b.calls++;b.in+=c.input_tokens;b.out+=c.output_tokens;b.s+=c.duration_s;tin+=c.input_tokens;tout+=c.output_tokens;dur+=c.duration_s;}
   const t0=events[0]?new Date(events[0].t):null,t1=events.length?new Date(events[events.length-1].t):null;const wall=t0&&t1?Math.round((t1-t0)/1000):0;
   $("#kpis").innerHTML=[["LLM calls",calls.length],["tokens in",fmt(tin)],["tokens out",fmt(tout)],["LLM time",dur.toFixed(0)+" s"],["wall clock",wall+" s"],["revision rounds",summary?summary.revise_rounds:"-"]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
   const max=Math.max(1,...Object.values(by).map(b=>b.in+b.out));
   $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>`<div class="bar"><span>${a} <span class="mut">×${b.calls}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>`).join("")||'<div class="empty">no LLM calls yet</div>';}
 
-async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config");$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
+async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
 
 function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#sum").className="empty";$("#sum").textContent=s?`run ${s.status}…`:"the summary appears when the run is done";return;}
   $("#sum").className="";const bs=s.by_status||{},bv=s.by_severity||{},bd=s.by_domain||{};const m=s.protocol_meta||{};
   $("#sum").innerHTML=`<div class="sumgrid"><div>
-    <p><span class="badge ${s.decision}">${s.decision||s.status}</span> <span class="mut">${s.decision_rationale||""}</span></p>
+    <p><span class="badge ${s.decision}">${s.decision||s.status}</span> <span class="mut">${s.decision_rationale||""}</span><br><span class="mut">configuration: ${s.configuration||"-"}</span></p>
     <div class="kpis"><div class="kpi"><b>${s.score??"-"}</b><span>score / 100</span></div><div class="kpi"><b>${s.n_findings}</b><span>findings</span></div>
       <div class="kpi"><b>${bs.verified||0}</b><span>verified</span></div><div class="kpi"><b>${bs.unverified||0}</b><span>→ human</span></div>
       <div class="kpi"><b>${(bs.rejected||0)+(bs.withdrawn||0)}</b><span>rejected / withdrawn</span></div></div>
@@ -129,9 +140,10 @@ async function tick(){if(!current)return;try{const [events,summary]=await Promis
 function watch(){if(timer)clearInterval(timer);lastStatus="";tick();timer=setInterval(tick,2000);}
 
 $("#runs").addEventListener("change",()=>{current=$("#runs").value;watch();});
+$("#cfgscope").addEventListener("change",loadConfigTable);
 $("#refresh").addEventListener("click",async()=>{await loadRuns();watch();});
 $("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#file").files[0];if(!f)return;$("#go").disabled=true;$("#msg").textContent="uploading…";
-  const fd=new FormData();fd.append("file",f);fd.append("nct_id",$("#nct").value.trim());fd.append("source","dashboard");fd.append("submitter","dashboard");fd.append("force_scientific",$("#force").checked?"true":"false");
+  const fd=new FormData();fd.append("file",f);fd.append("nct_id",$("#nct").value.trim());fd.append("source","dashboard");fd.append("submitter","dashboard");fd.append("force_scientific",$("#force").checked?"true":"false");fd.append("config",$("#config").value);
   try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
   catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
 
