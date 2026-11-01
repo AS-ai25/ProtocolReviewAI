@@ -35,7 +35,9 @@ def test_rescore_reproduces_the_live_table_and_the_scientific_view(tmp_path):
     sci = rescore.rescore(summary, cases, STAMP, domain="scientific", outputs=OUTPUTS)
     n_sci = sum(1 for c in cases for x in c["expected_findings"] if x["domain"] == "scientific")
     assert all(r["labels"] == n_sci for r in sci) and n_sci == 37
-    assert rescore.main(["--stamp", STAMP, "--out", str(tmp_path / "r.md"), "--note", "test", "--outputs", str(OUTPUTS)]) == 0
+    assert rescore.main(["--stamp", STAMP, "--out", str(tmp_path / "r.md"), "--note", "test", "--outputs", str(OUTPUTS),
+                         "--results-dir", str(tmp_path / "res")]) == 0
+    assert list((tmp_path / "res").glob("rescore-*.json"))
     md = (tmp_path / "r.md").read_text(encoding="utf-8")
     assert "Scientific domain only" in md and "Critic contribution" in md
 

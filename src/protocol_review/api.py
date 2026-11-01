@@ -209,6 +209,37 @@ def run_summary(run_id: str):
     }
 
 
+@app.get("/runs/{run_id}/compare")
+def run_compare(run_id: str):
+    """The same protocol under the four review configurations: for the protocol of `run_id` (matched by NCT id,
+    else by PDF file name), the latest finished run of every configuration with its cost and finding counts."""
+    run = memory.get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+
+    def key_of(r: dict) -> str:
+        return (r.get("nct_id") or "").upper() or Path(r.get("pdf_path") or "").stem.split("_")[-1].lower()
+    key = key_of(run)
+    rows: dict[str, dict] = {}
+    for r in memory.list_runs(1000):
+        if r["status"] != "done":
+            continue
+        full = memory.get_run(r["id"])
+        if not full or key_of(full) != key:
+            continue
+        label = configuration_of(full)
+        if label == "rule-based baseline (no LLM)":
+            continue
+        if label not in rows or (full.get("created_at") or "") > (rows[label]["created_at"] or ""):
+            s = run_summary(r["id"])
+            rows[label] = {"configuration": label, "run_id": r["id"], "created_at": full.get("created_at"),
+                           "decision": s["decision"], "n_findings": s["n_findings"], "verified": s["by_status"].get("verified", 0),
+                           "unverified": s["by_status"].get("unverified", 0), "revise_rounds": s["revise_rounds"],
+                           "force_scientific": s["force_scientific"], **s["cost"]}
+    order = list(stats.CONFIG_LABELS.values())
+    return {"run_id": run_id, "protocol": key, "rows": sorted(rows.values(), key=lambda x: order.index(x["configuration"]) if x["configuration"] in order else 9)}
+
+
 # ------------------------------------------------------------- statistics
 @app.get("/stats/usage")
 def stats_usage(run: str = "", contains: str = "", by: str = "agent"):
@@ -220,6 +251,20 @@ def stats_usage(run: str = "", contains: str = "", by: str = "agent"):
 @app.get("/stats/communications")
 def stats_communications(run: str = "", contains: str = ""):
     return stats.communications(run, contains)
+
+
+@app.get("/stats/results")
+def stats_results():
+    """Evaluation results (precision / recall per configuration and per labeled protocol) from the latest
+    `eval/results/rescore-<stamp>-<when>.json` written by eval/rescore.py. 404 when no evaluation has been run."""
+    files = sorted((PROJECT_ROOT / "eval" / "results").glob("rescore-*.json"))
+    if not files:
+        raise HTTPException(status_code=404, detail="no evaluation results (run eval/ablation.py then eval/rescore.py)")
+    data = json.loads(files[-1].read_text(encoding="utf-8"))
+    parts = files[-1].stem.split("-")          # rescore-<stamp:2>-<when:2>
+    data["file"] = files[-1].name
+    data["rescored_at"] = "-".join(parts[3:5]) if len(parts) >= 5 else ""
+    return data
 
 
 @app.get("/stats/trace/{run_id}")

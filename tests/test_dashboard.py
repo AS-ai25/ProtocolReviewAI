@@ -36,6 +36,13 @@ def test_dashboard_and_stats_endpoints(flawed_pdf):
     assert client.get("/runs/nope/summary").status_code == 404
     assert s["configuration"].startswith("4 full system")
 
+    res = client.get("/stats/results")
+    if res.status_code == 200:                      # the committed evaluation summary
+        body = res.json()
+        assert body["stamp"] and {"all", "scientific"} <= set(body) and body["scientific"][0]["per_case"]
+    else:
+        assert res.status_code == 404
+
     # the other review configurations are selectable; the single agent's findings come from its file
     with open(flawed_pdf, "rb") as fh:
         r = client.post("/webhook/protocol", headers=HDR, files={"file": ("p.pdf", fh, "application/pdf")},
@@ -53,3 +60,10 @@ def test_dashboard_and_stats_endpoints(flawed_pdf):
     with open(flawed_pdf, "rb") as fh:
         r = client.post("/webhook/protocol", headers=HDR, files={"file": ("p.pdf", fh, "application/pdf")}, data={"config": "bogus"})
     assert r.status_code == 400
+
+    # the same protocol (NCT04470427) under several configurations
+    cmp_ = client.get(f"/runs/{run_id}/compare").json()
+    assert cmp_["protocol"] == "NCT04470427"
+    labels = [row["configuration"][:1] for row in cmp_["rows"]]
+    assert labels == sorted(labels) and {"4", "2"} <= set(labels)
+    assert all(row["llm_calls"] >= 1 and "decision" in row for row in cmp_["rows"])

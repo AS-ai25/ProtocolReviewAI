@@ -4,7 +4,7 @@ Generated 2026-10-29 20:59 by `eval/ablation.py`, model `claude-opus-5-5`.
 Test set: 5 labeled case(s) - `nct01977547` (9 labels), `nct04084990` (9 labels), `nct05199324` (9 labels), `nct05698277` (10 labels), `nct06846736` (9 labels).
 All rows run with the evaluation gate bypass (`force_scientific`): the scientific stage runs even when the administrative gate fails; the decision stays RETURNED_ADMIN in that case.
 
-Re-scored 2026-10-30 17:14 by `eval/rescore.py` from the saved findings of run `20261029-205913` (no new LLM calls): 16 labels moved from administrative to scientific on 2026-10-30 (domain field only, approved by the labeler; originals in domain_original and in commit 545a516).
+Re-scored 2026-11-01 11:23 by `eval/rescore.py` from the saved findings of run `20261029-205913` (no new LLM calls): 16 labels moved from administrative to scientific on 2026-10-30 (domain field only, approved by the labeler; originals in domain_original and in commit 545a516).
 
 ## Ablation table
 

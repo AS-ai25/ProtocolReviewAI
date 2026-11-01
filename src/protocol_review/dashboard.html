@@ -11,7 +11,8 @@ button{cursor:pointer}button.primary{background:#1f4d2e;border-color:#2e7a47}but
 main{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:auto auto;gap:14px;padding:14px 20px}
 section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-height:200px}
 section h2{margin:0 0 10px;font-size:15px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px}
-#summary{grid-column:1 / span 2}
+#summary,#results{grid-column:1 / span 2}
+#restab td.c{text-align:center;font-family:Consolas,monospace;font-size:12.5px}#restab td.c small{display:block;color:var(--mut);font-size:10.5px}#restab tr.best td{background:#13261a}#restab td.p{color:var(--acc)}#restab td.r{color:var(--grn)}
 .steps{display:flex;gap:6px;margin-bottom:12px}.step{flex:1;text-align:center;padding:7px 4px;border-radius:8px;background:#0e1420;border:1px solid var(--line);color:var(--mut);font-size:13px}
 .step.done{color:var(--grn);border-color:#2e7a47}.step.now{color:#fff;background:#1f3a5a;border-color:var(--acc);animation:pulse 1.4s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #5cc8ff55}50%{box-shadow:0 0 0 6px #5cc8ff00}}
@@ -62,7 +63,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
     <div class="kpis" id="kpis"></div>
     <div class="bars" id="bars"></div>
     <div class="mut" style="font-size:12px;margin-top:8px"><span style="display:inline-block;width:12px;height:10px;background:var(--acc);border-radius:2px"></span> tokens in (prompt: protocol text, knowledge base, rule findings) &nbsp; <span style="display:inline-block;width:12px;height:10px;background:var(--vio);border-radius:2px"></span> tokens out (the model's answer) &nbsp;·&nbsp; ×N = LLM calls by that agent</div>
-    <h2 style="margin-top:16px">Across the four review types</h2>
+    <h2 style="margin-top:16px">This protocol · the four review types</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:6px" id="cmpmeta">runs of the same protocol (latest per configuration) · upload the same PDF with another configuration to fill the missing rows</div>
+    <table id="cmp"><thead><tr><th>Review type</th><th>run</th><th>calls</th><th>tokens in</th><th>tokens out</th><th>s</th><th>findings</th><th>verified</th><th>→ human</th><th>decision</th></tr></thead><tbody></tbody></table>
+    <h2 style="margin-top:16px">Across the four review types · general average</h2>
     <div class="mut" style="font-size:12px;margin-bottom:6px">ablation runs (abl-*) · per run averages ·
       <select id="cfgscope" style="font-size:12px;padding:2px 6px"><option value="20261029-205913">real-protocol set (5 protocols, 29 Oct 2026)</option><option value="">all ablation runs (synthetic + real)</option></select></div>
     <table id="cfg"><thead><tr><th>Review type</th><th>runs</th><th>calls/run</th><th>tokens in/run</th><th>tokens out/run</th><th>s/run</th></tr></thead><tbody></tbody></table>
@@ -70,6 +74,15 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
   <section id="summary">
     <h2>Summary</h2>
     <div id="sum" class="empty">the summary appears when the run is done</div>
+  </section>
+  <section id="results">
+    <h2>Results · the four configurations against the blind labels</h2>
+    <div class="mut" style="font-size:12px;margin-bottom:8px">
+      <select id="resview" style="font-size:12px;padding:2px 6px"><option value="scientific">scientific domain only (reduced-scope view)</option><option value="all">all domains (charter table)</option></select>
+      &nbsp; cell = <b>precision of verified findings</b> / <b>recall of labeled findings</b> (matched verified / verified · labels found / labels) &nbsp;·&nbsp; <span id="resmeta"></span>
+    </div>
+    <table id="restab"><thead></thead><tbody></tbody></table>
+    <div class="mut" style="font-size:12px;margin-top:8px">Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Precision against labels is a lower bound: the system reports about four times as many findings as the labeler recorded; the 30-finding human check measures the complement. Source: <span dir="ltr">reports/results.md</span>, <span dir="ltr">reports/CP2_SUMMARY.md</span>.</div>
   </section>
 </main>
 <script>
@@ -119,7 +132,21 @@ function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm
   const max=Math.max(1,...Object.values(by).map(b=>b.in+b.out));
   $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>`<div class="bar"><span style="color:${STAGE_COLOR[AGENT_STAGE[a]]||(a==="coordinator"?STAGE_COLOR.final:"inherit")}">${a} <span class="mut">×${b.calls}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>`).join("")||'<div class="empty">no LLM calls yet</div>';}
 
+async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${current}/compare`);$("#cmpmeta").innerHTML=`protocol <b style="color:var(--fg)">${c.protocol||"?"}</b> · latest finished run per configuration · upload the same PDF with another configuration to fill the missing rows`;
+  const have=new Map(c.rows.map(r=>[r.configuration,r]));const order=["1 single agent, no verification","2 single agent + code verification","3 full system without critic","4 full system (4 agents, critic)"];
+  $("#cmp tbody").innerHTML=order.map(k=>{const r=have.get(k);if(!r)return `<tr><td class="mut">${k}</td><td colspan="9" class="empty">not run yet</td></tr>`;
+    return `<tr${r.run_id===current?' style="background:#13261a"':''}><td>${k}</td><td><a href="#" data-run="${r.run_id}" style="color:var(--acc)">${r.run_id.slice(0,22)}</a>${r.force_scientific?' <span class="mut">·fs</span>':''}</td><td>${r.llm_calls}</td><td>${fmt(r.input_tokens)}</td><td>${fmt(r.output_tokens)}</td><td>${Math.round(r.duration_s)}</td><td>${r.n_findings}</td><td>${r.verified}</td><td>${r.unverified}</td><td><span class="badge ${r.decision}" style="font-size:11px;padding:1px 8px">${r.decision}</span></td></tr>`;}).join("");
+  $("#cmp tbody").querySelectorAll("a[data-run]").forEach(a=>a.addEventListener("click",ev=>{ev.preventDefault();$("#runs").value=a.dataset.run;current=a.dataset.run;watch();}));}catch(e){}}
 async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
+
+let RESULTS=null;
+async function loadResults(){try{RESULTS=await j("/stats/results");renderResults();}catch(e){$("#restab tbody").innerHTML=`<tr><td class="empty">${e.message}</td></tr>`;}}
+function renderResults(){if(!RESULTS)return;const rows=RESULTS[$("#resview").value]||[];const cases=rows.length?rows[0].per_case.map(c=>c.case):[];
+  $("#resmeta").textContent=`run ${RESULTS.stamp} · re-scored ${RESULTS.rescored_at||""}${RESULTS.note?" · "+RESULTS.note:""}`;
+  $("#restab thead").innerHTML=`<tr><th>Configuration</th>${cases.map(c=>`<th style="text-align:center">${c}</th>`).join("")}<th style="text-align:center">all protocols</th><th>unverified</th><th>tokens in</th></tr>`;
+  const pct=x=>Math.round(100*x)+"%";const bestP=Math.max(...rows.map(r=>r.verified_precision)),bestR=Math.max(...rows.map(r=>r.coverage));
+  $("#restab tbody").innerHTML=rows.map((r,i)=>`<tr class="${r.key==="agents_full"?"best":""}"><td>${i+1}. ${r.label}</td>${r.per_case.map(c=>`<td class="c" title="verified ${c.n_verified}, matched ${c.matched_verified}; labels ${c.n_labels}, found ${c.tp}; unverified ${c.n_unverified}"><span class="p">${pct(c.verified_precision)}</span> / <span class="r">${pct(c.coverage)}</span><small>${c.matched_verified}/${c.n_verified} · ${c.tp}/${c.n_labels}</small></td>`).join("")}<td class="c"><b><span class="p">${pct(r.verified_precision)}</span> / <span class="r">${pct(r.coverage)}</span></b><small>${r.matched_verified}/${r.n_verified} · ${r.tp}/${r.labels}</small></td><td class="c">${r.n_unverified}</td><td class="c">${fmt(r.input_tokens)}</td></tr>`).join("");}
+$("#resview").addEventListener("change",renderResults);
 
 function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#sum").className="empty";$("#sum").textContent=s?`run ${s.status}…`:"the summary appears when the run is done";return;}
   $("#sum").className="";const bs=s.by_status||{},bv=s.by_severity||{},bd=s.by_domain||{};const m=s.protocol_meta||{};
@@ -139,10 +166,10 @@ function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#
 async function tick(){if(!current)return;try{const [events,summary]=await Promise.all([j(`/stats/trace/${current}`),j(`/runs/${current}/summary`)]);
   renderSteps(events,summary.status);renderTimeline(events);renderTokens(events,summary);renderSummary(summary);
   if(summary.status!==lastStatus){lastStatus=summary.status;loadRuns(current);}
-  if(summary.status==="done"||summary.status==="failed"){clearInterval(timer);timer=null;loadConfigTable();}
+  if(summary.status==="done"||summary.status==="failed"){clearInterval(timer);timer=null;loadConfigTable();loadCompare();}
   }catch(e){$("#msg").textContent=e.message;}}
 
-function watch(){if(timer)clearInterval(timer);lastStatus="";tick();timer=setInterval(tick,2000);}
+function watch(){if(timer)clearInterval(timer);lastStatus="";tick();loadCompare();timer=setInterval(tick,2000);}
 
 $("#runs").addEventListener("change",()=>{current=$("#runs").value;watch();});
 $("#cfgscope").addEventListener("change",loadConfigTable);
@@ -152,5 +179,5 @@ $("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#
   try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
   catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
 
-(async()=>{await loadHealth();await loadRuns();loadConfigTable();if(current)watch();})();
+(async()=>{await loadHealth();await loadRuns();loadConfigTable();loadResults();if(current)watch();})();
 </script></body></html>

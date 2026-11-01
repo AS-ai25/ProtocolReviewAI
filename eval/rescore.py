@@ -167,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", default=str(ROOT / "reports" / "results.md"))
     ap.add_argument("--note", default="", help="one line explaining why the run was re-scored (goes into the header)")
     ap.add_argument("--outputs", default=None, help="folder holding the abl-* run directories (default: settings.output_path)")
+    ap.add_argument("--results-dir", default=str(RESULTS), help="where the rescore-<stamp>-<when>.json summary goes")
     a = ap.parse_args(argv)
     stamp = a.stamp or latest_stamp()
     outputs = Path(a.outputs) if a.outputs else None
@@ -190,7 +191,8 @@ def main(argv: list[str] | None = None) -> int:
     md += "\n".join(unlabeled_admin_section(cases, stamp, outputs))
     out = Path(a.out)
     out.write_text(md, encoding="utf-8")
-    (RESULTS / f"rescore-{stamp}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json").write_text(
+    Path(a.results_dir).mkdir(parents=True, exist_ok=True)
+    (Path(a.results_dir) / f"rescore-{stamp}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json").write_text(
         json.dumps({"stamp": stamp, "note": a.note, "all": rows_all, "scientific": rows_sci}, indent=1, default=str), encoding="utf-8")
     for r in rows_all:
         print(f"ALL  {r['label']:<55} P={_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) R={_pct(r['coverage'])} ({r['tp']}/{r['labels']}) unverified={r['n_unverified']}")
