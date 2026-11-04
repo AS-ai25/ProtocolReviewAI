@@ -170,12 +170,12 @@ def build(case: str, stamp: str) -> str:
 <h2>Checkpoint 2 · חמישה פרוטוקולים אמיתיים, תיוג עיוור</h2>
 <table class="nums" dir="rtl">
 <tr><th></th><th>סוכן יחיד + אימות קוד</th><th>המערכת המלאה (4 סוכנים)</th></tr>
-<tr><td>Precision של ממצאים מאומתים (תחום מדעי)</td><td>18%</td><td class="hi">34%</td></tr>
+<tr><td>Precision של ממצאים מאומתים (תחום מדעי)</td><td>25%</td><td class="hi">34%</td></tr>
 <tr><td>Recall של תוויות אנושיות (תחום מדעי)</td><td>46%</td><td class="hi">78%</td></tr>
 <tr><td>טוקנים לפרוטוקול</td><td>~40k</td><td>~250k</td></tr>
 </table>
 <p class="lead small">המלצה מדורגת: סוכן יחיד + אימות לסינון ראשוני; המערכת המלאה לפרוטוקולים שמגיעים לדיון בוועדה.
-Precision מול תוויות הוא חסם תחתון – בדיקת 30 ממצאים ע״י אדם משלימה אותו.</p>
+בדיקה אנושית של 30 ממצאים מאומתים: הציטוט תומך בממצא ב-1, חלקית ב-5, לא ב-24. אימות אוטומטי אינו הוכחה; האדם מכריע.</p>
 <div class="foot" dir="ltr">github.com/Ron-levi1/Clinical-Trial-Protocol-Review-System · run abl-agents_full-{esc(case)}-{esc(stamp)}</div>"""))
 
     body = "".join(f'<section data-sec="{secs}">{content}</section>' for secs, content in screens)

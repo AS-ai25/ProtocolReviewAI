@@ -273,5 +273,7 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
 - 20 Oct (charter v1.4, mentor review): locked primary metric and matching rule, evaluation gate bypass,
   ablation switches and runner (`eval/ablation.py` -> `reports/results.md`) - **done**.
 - Checkpoint 2 (30 Oct): verified SPIRIT 2025 / ICH-GCP E6(R3) knowledge base, real public protocols,
-  blind labeled findings (Ron), ablation table on the real set, 30-finding human check, demo video.
+  blind labeled findings (Ron), ablation table on the real set, 30-finding human check (done 4 Nov: 1 yes / 5 partly / 24 no,
+  `eval/human_check/`), demo video. Knowledge base kb-v2 (Ron, `knowledge_base/VERSION.md`); sub-item guideline-code fix and
+  re-score of the code-only ablation rows (`reports/results.md`, `reports/CP2_SUMMARY.md`).
 - Final (12 Nov): evaluation vs rule-based and single-agent baselines, results and presentation.

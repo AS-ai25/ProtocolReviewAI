@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -48,16 +49,47 @@ def latest_stamp() -> str:
     return runs[-1].stem.replace("ablation-", "")
 
 
-def saved_findings(cfg: dict, case_id: str, stamp: str, outputs: Path | None = None) -> list[dict]:
+CODE_RE = re.compile(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-dA-D]?|GCP-\d{2}")
+CODE_ONLY_ROWS = {"single_verified", "agents_no_critic"}     # rows whose finding status is decided by code alone
+SUBITEM_NOTE = "[re-scored: guideline code was valid; sub-item regex bug fixed 2026-11-04] "
+
+
+def apply_subitem_code_fix(preds: list[dict], codes: set[str]) -> tuple[list[dict], int]:
+    """Undo the sub-item code bug on saved code-only findings, without any LLM call.
+
+    Until 2026-11-04 `verify_evidence` read "SPIRIT-27b" as "SPIRIT-27" (unknown) and the code-only rows demoted such
+    findings to unverified with the note "Guideline code missing or unknown". A finding whose quotes were located and
+    whose codes are all in `codes` (the knowledge base of the run) gets the status the fixed code gives: verified.
+    The saved files are not modified; the correction is applied in memory and reported in the results header."""
+    out, n = [], 0
+    for f in preds:
+        f = dict(f)
+        v = f.get("evidence_check") or {}
+        if (f.get("source") == "llm" and f.get("status") == "unverified" and "uideline code" in (f.get("critic_notes") or "")
+                and not (v.get("evidence_checked") and v.get("evidence_found", 0) < v.get("evidence_checked", 0))):
+            refs = [c[:-1] + c[-1].lower() if c[-1].isalpha() else c for c in CODE_RE.findall(f.get("guideline_ref") or "")]
+            if refs and all(r in codes for r in refs):
+                f["status"] = "verified"
+                f["critic_notes"] = SUBITEM_NOTE + f["critic_notes"]
+                n += 1
+        out.append(f)
+    return out, n
+
+
+def saved_findings(cfg: dict, case_id: str, stamp: str, outputs: Path | None = None,
+                   fix_codes: set[str] | None = None) -> list[dict]:
     d = (outputs or OUTPUTS) / f"abl-{cfg['key']}-{case_id}-{stamp}"
     f = d / ("single_agent_findings.json" if cfg["kind"] == "single" else "findings.json")
     if not f.exists():
         raise SystemExit(f"missing {f}")
-    return json.loads(f.read_text(encoding="utf-8"))
+    preds = json.loads(f.read_text(encoding="utf-8"))
+    if fix_codes is not None and cfg["key"] in CODE_ONLY_ROWS:
+        preds, _ = apply_subitem_code_fix(preds, fix_codes)
+    return preds
 
 
 def rescore(summary: dict, cases: list[dict], stamp: str, *, domain: str | None = None,
-            outputs: Path | None = None) -> list[dict]:
+            outputs: Path | None = None, fix_codes: set[str] | None = None) -> list[dict]:
     """Rebuild the ablation rows from the saved findings; `domain` restricts labels and predictions."""
     cost_by = {(r["key"], pc["case"]): pc for r in summary["rows"] for pc in r["per_case"]}
     rows = []
@@ -67,7 +99,7 @@ def rescore(summary: dict, cases: list[dict], stamp: str, *, domain: str | None 
         per_case, totals = [], {"labels": 0, "tp": 0, "n_verified": 0, "matched_verified": 0, "n_unverified": 0,
                                 "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "runtime_s": 0.0}
         for c in cases:
-            preds = saved_findings(cfg, c["case_id"], stamp, outputs)
+            preds = saved_findings(cfg, c["case_id"], stamp, outputs, fix_codes)
             labels = c["expected_findings"]
             if domain:
                 preds = [p for p in preds if p.get("domain") == domain]
@@ -170,19 +202,29 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--note", default="", help="one line explaining why the run was re-scored (goes into the header)")
     ap.add_argument("--outputs", default=None, help="folder holding the abl-* run directories (default: settings.output_path)")
     ap.add_argument("--results-dir", default=str(RESULTS), help="where the rescore-<stamp>-<when>.json summary goes")
+    ap.add_argument("--kb-codes", default=None, help="JSON file with the guideline codes of the knowledge base the run used "
+                    "(eval/results/kb-v1-codes.json); enables the sub-item code correction of the code-only rows")
     a = ap.parse_args(argv)
+    fix_codes = set(json.loads(Path(a.kb_codes).read_text(encoding="utf-8"))["codes"]) if a.kb_codes else None
     stamp = a.stamp or latest_stamp()
     outputs = Path(a.outputs) if a.outputs else None
     summary = json.loads((RESULTS / f"ablation-{stamp}.json").read_text(encoding="utf-8"))
     cases = load_cases(Path(a.cases), a.cases_glob)
     started = datetime.fromisoformat(summary["generated"])
-    rows_all = rescore(summary, cases, stamp, outputs=outputs)
-    rows_sci = rescore(summary, cases, stamp, domain="scientific", outputs=outputs)
+    rows_all = rescore(summary, cases, stamp, outputs=outputs, fix_codes=fix_codes)
+    rows_sci = rescore(summary, cases, stamp, domain="scientific", outputs=outputs, fix_codes=fix_codes)
+    fixed_note = ""
+    if fix_codes is not None:
+        n_fixed = {cfg["key"]: sum(apply_subitem_code_fix(saved_findings(cfg, c["case_id"], stamp, outputs), fix_codes)[1]
+                                   for c in cases) for cfg in CONFIGS if cfg["key"] in CODE_ONLY_ROWS}
+        fixed_note = (" Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks "
+                      f"(codes of `{Path(a.kb_codes).name}`): " + ", ".join(f"{k}: {v} findings verified instead of unverified"
+                                                                            for k, v in n_fixed.items()) + ".")
 
     md = render_markdown(rows_all, cases, no_llm=False, started=started, model=summary["model"])
     head, tail = md.split("## Ablation table", 1)
     head += (f"Re-scored {datetime.now().strftime('%Y-%m-%d %H:%M')} by `eval/rescore.py` from the saved findings of run "
-             f"`{stamp}` (no new LLM calls){': ' + a.note if a.note else ''}.\n\n")
+             f"`{stamp}` (no new LLM calls){': ' + a.note if a.note else ''}.{fixed_note}\n\n")
     md = head + "## Ablation table" + tail
     md += "\n".join(view_table(rows_sci, "Scientific domain only (reduced-scope view)",
                                "Labels and predictions restricted to the scientific domain. The five labeled protocols are "
@@ -195,7 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     out.write_text(md, encoding="utf-8")
     Path(a.results_dir).mkdir(parents=True, exist_ok=True)
     (Path(a.results_dir) / f"rescore-{stamp}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json").write_text(
-        json.dumps({"stamp": stamp, "note": a.note, "all": rows_all, "scientific": rows_sci}, indent=1, default=str), encoding="utf-8")
+        json.dumps({"stamp": stamp, "note": a.note + fixed_note, "kb_codes": a.kb_codes and Path(a.kb_codes).name,
+                    "all": rows_all, "scientific": rows_sci}, indent=1, default=str), encoding="utf-8")
     for r in rows_all:
         print(f"ALL  {r['label']:<55} P={_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) R={_pct(r['coverage'])} ({r['tp']}/{r['labels']}) unverified={r['n_unverified']}")
     for r in rows_sci:

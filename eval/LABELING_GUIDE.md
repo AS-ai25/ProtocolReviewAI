@@ -165,9 +165,9 @@ support it or is not on that page. The result is reported as yes / partly / no c
       `nct06846736`; 46 findings) - reduced-scope plan, objective text-level findings only
 - [x] live ablation run 2026-10-29 (`reports/results.md`, `reports/CP2_SUMMARY.md`)
 - [x] `eval/human_check/verified_findings_check.csv` generated (30 rows, full system) - Ron fills the last two columns
-- [ ] domain correction of the 16 data-management / monitoring / confidentiality labels (proposed to Ron 2026-10-29);
-      afterwards `python eval/rescore.py`
-- [ ] `eval/labeled_cases/<case_id>.json` for every protocol, committed **before** any run
-- [ ] `eval/category_aliases.json` extended if you used a new category
-- [ ] knowledge base verified, banners removed
-- [ ] `eval/human_check/verified_findings_check.csv` filled
+- [x] domain correction of the 16 data-management / monitoring / confidentiality labels (approved by Ron, applied
+      2026-10-30, commit `f339548`, originals in `domain_original`); re-scored with `python eval/rescore.py`
+- [x] `eval/labeled_cases/<case_id>.json` for every protocol, committed **before** any run (five files, 2026-10-29, commit `545a516`)
+- [x] `eval/category_aliases.json` extended if you used a new category (not needed: the labels use canonical categories only)
+- [x] knowledge base verified, banners removed (kb-v2, 2026-11-04, `knowledge_base/VERSION.md`; the ablation results stay attributed to kb-v1)
+- [x] `eval/human_check/verified_findings_check.csv` filled (2026-11-04: 1 yes / 5 partly / 24 no; summary in `HUMAN_CHECK_SUMMARY.md`)

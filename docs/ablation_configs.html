@@ -7,7 +7,7 @@ h1{font-size:22px;margin:0 0 2px}p.sub{margin:0 0 10px;color:#55637a;font-size:1
 svg{display:block}
 </style></head><body><div id="wrap">
 <h1>Multi-Agent Clinical Trial Protocol Review - the four configurations of the ablation (charter v1.5)</h1>
-<p class="sub">Same PDF, same deterministic checks, same registry record, same matching rule and model in every row. Blue = LLM call · green = code / tool · grey dashed = not present in this configuration · diamond = routing decision. Costs and scores: five real protocols, run of 29 Oct 2026 (scientific view, re-scored 30 Oct).</p>
+<p class="sub">Same PDF, same deterministic checks, same registry record, same matching rule and model in every row. Blue = LLM call · green = code / tool · grey dashed = not present in this configuration · diamond = routing decision. Costs and scores: five real protocols, run of 29 Oct 2026 (scientific view, re-scored 4 Nov after the sub-item guideline-code fix; rows 1 and 4 unchanged).</p>
 <svg id="d" xmlns="http://www.w3.org/2000/svg" width="1544" height="1030"></svg>
 </div>
 <script>
@@ -23,8 +23,8 @@ function arrow(g,x1,y1,x2,y2,opt={}){const id='a'+Math.random().toString(36).sli
 
 const ROWS=[
  {n:1,title:'Single agent, no code verification',kind:'single',verify:false,cost:'1 LLM call · ~41k tokens in · ~110 s per protocol',score:'precision 29% · recall 57%',note:'the model\'s own status stands: every finding it does not mark otherwise counts as verified'},
- {n:2,title:'Single agent + code verification  (= Single-Agent Baseline)',kind:'single',verify:true,cost:'1 LLM call · ~41k tokens in · ~113 s per protocol',score:'precision 18% · recall 46%',note:'quote not located in the PDF or unknown guideline code -> unverified (routed to a human)'},
- {n:3,title:'Full system without the critic',kind:'multi',critic:false,cost:'3 LLM calls · ~91k tokens in · ~180 s per protocol',score:'precision 26% · recall 57%',note:'administrative agent + scientific reviewer; the reviewer\'s findings are verified by code only; no revision round'},
+ {n:2,title:'Single agent + code verification  (= Single-Agent Baseline)',kind:'single',verify:true,cost:'1 LLM call · ~41k tokens in · ~113 s per protocol',score:'precision 25% · recall 46%',note:'quote not located in the PDF or unknown guideline code -> unverified (routed to a human)'},
+ {n:3,title:'Full system without the critic',kind:'multi',critic:false,cost:'3 LLM calls · ~91k tokens in · ~180 s per protocol',score:'precision 33% · recall 57%',note:'administrative agent + scientific reviewer; the reviewer\'s findings are verified by code only; no revision round'},
  {n:4,title:'Full system: four agents, critic, one revision round',kind:'multi',critic:true,cost:'4-6 LLM calls · ~256k tokens in · ~470 s per protocol',score:'precision 34% · recall 78%',note:'critic verdict per finding (verified / revise / unverified / rejected), critic-raised issues go to a human, at most one revision round'},
 ];
 const H=240;

@@ -52,3 +52,22 @@ The final 30-finding audit reports 1 yes / 5 partly / 24 no. The review used the
 
 **Source of machine results:** `eval/results/ablation-20261029-205913.json`, re-scored in `eval/results/rescore-20261029-205913-20261101-112300.json`, and `reports/results.md` in the supplied repository snapshot. The human-check results (1 yes, 5 partly, 24 no) come from Ron's completed handoff and are **not yet integrated in the repository ZIP**. Updated knowledge bases were supplied separately and are also **not included in this repository ZIP**.
 
+---
+
+## Addendum (Amir, 4 November 2026): the code-only rows after the sub-item guideline-code fix
+
+While running the test suite against kb-v2, a bug in `verify_evidence` surfaced: sub-item codes such as `SPIRIT-27b`
+were read as `SPIRIT-27` (unknown) and the code-only rows demoted correctly cited findings to *unverified* (18 of 21 in
+row 2, 24 of 33 in row 3). The rows were re-scored from the saved evidence checks against the kb-v1 code set, with no
+new model call (`eval/rescore.py --kb-codes eval/results/kb-v1-codes.json`; `reports/results.md`,
+`eval/results/rescore-20261029-205913-20261104-113925.json`). The tables above show the 30 October values; corrected:
+
+| Configuration | Verified precision (all) | Verified precision (scientific) | Unverified (all) | Recall |
+|---|---:|---:|---:|---|
+| Single agent + code verification (row 2) | 21/120 (17.5%) | 17/68 (25.0%) | 3 | unchanged |
+| Full system without the critic (row 3) | 30/150 (20.0%) | 26/79 (32.9%) | 9 | unchanged |
+| Full system (row 4) | 43/184 (23.4%) | 38/112 (33.9%) | 51 | unchanged |
+
+Reading: the locked comparison (row 2 vs row 4) still meets the +5 pp criterion (+5.9 pp all-domain, +8.9 pp scientific,
+recall +28.2 / +32.5). Row 3 vs row 4 no longer shows a precision gain from the critic (32.9% vs 33.9%); the critic's
+measured contribution is recall (revision round) and routing to a human. Everything else in this document stands.
