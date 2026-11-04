@@ -16,7 +16,7 @@ REAL_QUOTE = "Respiratory infections caused by the target pathogen remain a majo
 FAKE_QUOTE = "this sentence does not exist anywhere in the protocol text"
 
 
-def _sci(i, title, quote, page=1, ref="SPIRIT-14", status="proposed", category="OTHER"):
+def _sci(i, title, quote, page=1, ref="SPIRIT-14a", status="proposed", category="OTHER"):
     return {"id": f"SCI-{i}", "domain": "scientific", "category": category, "severity": "major", "title": title,
             "description": title, "evidence": [{"page": page, "quote": quote}], "guideline_ref": ref,
             "recommendation": "", "status": status, "critic_notes": "", "source": "llm"}

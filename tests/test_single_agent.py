@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "eval"))
 from evaluate import score  # noqa: E402
 
 
-def _finding(i, domain, title, page, quote, ref="SPIRIT-14", severity="major", category="OTHER"):
+def _finding(i, domain, title, page, quote, ref="SPIRIT-14a", severity="major", category="OTHER"):
     return {"id": f"X-{i}", "domain": domain, "category": category, "severity": severity, "title": title,
             "description": title, "evidence": [{"page": page, "quote": quote}] if quote or page else [],
             "guideline_ref": ref, "recommendation": "", "status": "proposed", "critic_notes": "", "source": "llm"}

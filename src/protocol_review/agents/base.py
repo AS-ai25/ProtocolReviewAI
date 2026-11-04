@@ -118,7 +118,10 @@ def verify_evidence(finding: dict, pages: list[dict], codes: set[str] | None = N
         ok, pg = quote_in_pages(e.get("quote", ""), pages, e.get("page") or None)
         results.append({"page": e.get("page"), "found": ok, "found_on_page": pg})
     ref = (finding.get("guideline_ref") or "").strip()
-    ref_codes = re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[A-D]?|GCP-\d{2}", ref)
+    # sub-item letters are lower-case in the knowledge base (SPIRIT-27b); the upper-case-only class used until
+    # 2026-11-04 cut "SPIRIT-27b" to "SPIRIT-27", an unknown code, and demoted such findings to unverified
+    ref_codes = [c[:-1] + c[-1].lower() if c[-1].isalpha() else c        # the KB spells sub-items in lower case
+                 for c in re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-dA-D]?|GCP-\d{2}", ref)]
     ref_ok = bool(ref_codes) and all(c in codes for c in ref_codes)
     absence_claim = not ev or all((e.get("page") or 0) == 0 for e in ev)
     return {
