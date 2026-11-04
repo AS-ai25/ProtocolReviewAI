@@ -26,3 +26,4 @@ docs/img/
 logs/
 docs/GUIDE_HE.*
 docs/TOOLS_PROPOSAL_HE.*
+!eval/results/kb-v1-codes.json
