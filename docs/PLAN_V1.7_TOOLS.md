@@ -1,4 +1,4 @@
-# Plan v1.7: real tools for the agents (ranked by expected effect on the results)
+# Plan v1.7: real tools for the agents, and the mentor's findings of 8 November
 
 **Status:** plan only, nothing implemented (decided 8 November 2026 after the mentoring session). To be extended with
 the mentor's written comments. Owner of the decision: Amir and Ron.
@@ -77,6 +77,51 @@ not a new run). Rows 2', 3 and 4' are run on the five labeled protocols. The com
 Changing the labels, the matching rule, the decision rule or the 29 existing checks' logic; any change to the frozen
 results of 29 October (they stay as the v1.6 baseline).
 
-## Mentor's comments (to be added)
+## Mentor's comments (mentoring session, 8 November 2026) and the planned response
 
-_Pending: Amir pastes the meeting notes; each comment gets a line here with the planned response._
+Transcript of the session (voice note) summarised; nothing below is implemented yet. Priority: **P0** = before the final
+submission (12 Nov), **P1** = before the presentation (15/18 Nov) if time allows, **P2** = after.
+
+### What she called strengths (keep, and say so on the slides)
+- Boundaries: the system supports the decision and never takes it; a finding whose quote is not in the PDF is never
+  verified; labels restricted to objective, text-verifiable findings.
+- The comparison is built right: four configurations, same set, same matching rule, a JSON that lets anyone recompute
+  the scores (she recomputed all eight rows herself).
+- Research honesty: differences between adjacent rows called noise, the raw table kept before the label correction, every
+  change documented. "This comes from a way of thinking, not from code."
+- Real guardrails in code; the evaluation gate bypass after 18 of 19 protocols stopped at the gate.
+- A straight answer to "who is really an agent" (the coordinator is an orchestrator) instead of inflating the count.
+- 52 automated tests.
+
+### Findings to fix or answer
+
+| # | Comment | Priority | Planned response | Effort / owner |
+|---|---|---|---|---|
+| M1 | **An LLM failure can end in PASS.** She ran the synthetic protocol with an invalid API key: zero LLM calls, decision PASS, summary says the protocol was reviewed. Cause: `agents/administrative.py` line 74, `accepted_by_llm = report.accepted if report is not None else True`; `errors` never reach the decision. | **P0** | Rule in `scoring.hybrid_decision` / `finalize_node`: if any agent failed (`state["errors"]` non-empty) or the administrative report is missing, the decision is **NEEDS_HUMAN_REVIEW** at most, never PASS; the summary, the report and the email state which agent did not run; a run with an LLM error is marked `status="done_with_errors"` in the DB and the dashboard shows it. Tests: invalid key -> no LLM -> NEEDS_HUMAN_REVIEW + "agent did not run" in the summary. Same for the single call. | 0.5 day, Amir |
+| M2 | **Which baseline, and is the gap noise?** vs row 2 the gap is 10.6 pp (all-domain, before the 4 Nov fix); vs row 1 (same model call, another sample) it is 4 pp all-domain / 5.1 pp scientific. Her bootstrap over the five protocols: the CI of the scientific gap vs row 1 includes zero. "Why did you not compare to row 1?" | **P0** | (a) `eval/bootstrap.py`: protocol-level bootstrap (and leave-one-out) CIs for precision, recall and the gaps row 4 vs row 1, vs row 2, vs row 3, both views; printed into `results.md`. (b) Report the gap against **both** baselines and state which one each claim holds against. (c) Repeat-run experiment: the same PDF twice on configurations 1, 2 and 4 (one protocol, ~700k input tokens) to measure run-to-run variation directly; report the spread. (d) One slide: "how do we know it is not noise". Honest expected outcome: recall gap (+32 pp) survives, precision gap does not with n=5. | 1 day, Amir (code) + 1 day runs |
+| M3 | **Average over more protocols and look at outliers.** Run the four configurations on the 16-19 protocols, compare averages, find extreme values and understand them. | P1 | Rows 1-4 on the 11 unlabeled evaluation protocols (cost ~ 4 x 11 runs: about 16M input tokens for row 4 alone; decide the budget). Without labels: counts, unverified rate, decision, cost per protocol, and outlier detection (a protocol whose numbers differ by > 2 SD from the mean) with a short explanation per outlier. | 1 day code + run time + budget; Amir |
+| M4 | **Deterministic rules counted as verified where they are noisy.** | **P0** | Audit of the 29 rules on the five labeled protocols: for every rule finding, did Ron's label set or her human check agree? Rules with a false-positive history (e.g. the contents-page quotes, sample-size regex) become `unverified` or `info`, or are fixed (plan tool 6); the audit table goes into the report. The decision rule is unchanged. | 1 day, Amir + Ron |
+| M5 | **77% of verified findings do not match a label. Are they wrong?** "Too much; explain, investigate, improve." | **P0** (explain) / P2 (improve) | Ron classifies a stratified sample of 40 unmatched verified findings (scientific, full system) into: true and unlabeled / duplicate of a matched one / wrong / evidence too weak to tell. Result on one slide next to the 1/5/24 check. The "improve" part is this plan's tools 1-8. | 1 day, Ron |
+| M6 | **The human-check question was not the right one.** The sheet asks whether the quote supports the finding; the committee cares whether the finding is a real problem. | P1 | Second column on the same 30 rows: "is the finding itself correct, regardless of the quote?" (yes / partly / no / cannot tell). Reported as two numbers: evidence quality (1/5/24) and finding correctness (to fill). | 2 hours, Ron |
+| M7 | **Business value is weak.** Quantify the pain in time and money (the KPI); make the trade-off decision explicitly: "this costs 6x and we need it because quality goes from X to Y". | **P0** | Ron collects from the committee coordinators: minutes per protocol for the administrative check and for the scientific pre-read, protocols per month, cost of a returned-incomplete cycle. System side: 8 min and ~USD 2 per protocol for the full system, ~1.5 min and ~USD 0.3 for the single call (compute from the saved token counts and list prices). One slide with the two tiers and the decision rule: single call for triage, full system for what reaches the committee; recall 78% vs 46% is the reason. | 1 day, Ron (data) + 0.5 day Amir (numbers) |
+| M8 | **Why Opus?** Do the model research, even retroactively; explain every choice as a trade-off. | P1 | Row 4 (and row 2) on two labeled protocols with `claude-sonnet-5-5`, same settings; precision/recall/cost side by side; one slide "model choice". If Sonnet is close, the recommendation changes. | 0.5 day + ~1.2M input tokens, Amir |
+| M9 | **Why not deterministic only?** | **P0** (one slide) | Add row 0 "rules only" to the table from the saved outputs (the rule findings are in every run): scientific recall 1/37, 16 rule findings over five protocols; administrative completeness is where the rules shine (that is the gate). The slide: rules give the gate, the LLM gives the scientific recall. | 0.5 day, Amir (rescore option) |
+| M10 | **Did you change labels after seeing the results?** | **P0** (answer) | The exact answer, on a slide: the domain field of 16 labels was changed on 30 Oct, after the run, before the labeler saw any system output, with her written approval; text, quote, category, severity, page untouched; originals in `domain_original` and commit 545a516; the raw table is kept and both are reported. No other label was touched. | 0, written |
+| M11 | **Which agent chooses a tool or decides the next step?** | **P0** (answer) / P2 (change) | Today: none; routing and tools are code (agentic workflow, evaluator-optimizer pattern). Plan v1.7 above gives the critic and the single agent a tool loop; until then the answer is the honest one. | 0 / plan |
+| M12 | **How much time does the system save the coordinator?** | **P0** (answer) | From M7. If no committee data arrives in time: an estimate from the five protocols (pages read vs findings to check), labelled as an estimate. | with M7 |
+| M13 | **Product / POC / MVP.** "Get to a product; explain every choice." | P2 | After the course: hosted instance, committee pilot on 10 protocols with the coordinators' feedback as the next label set. | later |
+
+### Prepared answers (the mentor's list, to rehearse)
+1. Full system at 6x tokens: two tiers; recall 78% vs 46%; USD 2 vs 0.3 per protocol vs hours of a coordinator (M7).
+2. Which agent chooses a tool: none today, by design; v1.7 plan (M11).
+3. 77% unmatched: label scope (9 vs 37 per protocol), the human check, the M5 classification; improvement = tools 1-8.
+4. Noise: bootstrap CIs, repeat runs, both baselines (M2).
+5. Which API fails mid-run: the LLM call; today it can end in PASS, fixed by M1; ClinicalTrials.gov failure already becomes a finding (REGISTRY_NOT_FOUND).
+6. Labels changed after results: M10, word for word.
+7. Time saved: M7 / M12.
+8. Why not deterministic only: row 0, recall 1/37 (M9).
+
+### Order for the four days before 12 November
+Day 1: M1 (fix + tests) and M9 (row 0). Day 2: M2 code (bootstrap, both baselines) and the repeat runs. Day 3: M4 rule
+audit (Amir) while Ron does M5 and M7 data. Day 4: slides for M2, M5, M7, M9, M10; charter v1.7; freeze. M3, M6, M8 only
+if a day is left; the tools of this plan after the submission.
