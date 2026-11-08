@@ -40,14 +40,33 @@ and let the model call some of them.
 Tools 1, 2, 4, 7, 8 also apply to the code-only rows (2 and 3) through `apply_evidence_verification`, so every row
 improves and the comparison stays fair; tool 3 (and later 10) is what makes row 4 "agents with tool use".
 
+## Naming of the rows after v1.7
+
+Today rows 1 and 2 are both one model call with no tool chosen by the model: row 1 trusts the model's status, row 2 adds
+the code verifier after the call. Both are therefore "Single LLM call" (charter v1.6). In v1.7 the single call gets the
+same tool loop as the critic (tool 3: `search_protocol`, `get_page`, `registry_field`, `kb_lookup`, up to 6 calls, code
+verification after). Only then does it become a **single agent**, and the ablation reads:
+
+| # | v1.7 configuration | What it is |
+|---|---|---|
+| 1 | Single LLM call, no code verification | frozen baseline (unchanged) |
+| 2 | Single LLM call + code verification | frozen baseline (unchanged, the v1.6 reference) |
+| 2' | **Single agent with tool use** + code verification | one LLM that calls the tools itself; the fair baseline for row 4' |
+| 3 | Multi-agent without critic (code tools) | code-only verification, as today, with tools 1-2-4-7-8 in the verifier |
+| 4' | **Multi-agent with critic tool use** | the critic calls the tools itself; code verification after |
+
+Rows 1-2 are not re-run (nothing changed for them except the shared code tools, which are reported as a re-score,
+not a new run). Rows 2', 3 and 4' are run on the five labeled protocols. The comparison that answers the mentor is
+2' vs 4': one agent with tools against four agents with tools.
+
 ## Suggested order
 
 * **Step A (3 days): 1, 2, 4, 6, 8** as deterministic tools in `tools/evidence_tools.py`, wired into
   `agents/base.verify_evidence`, the critic prompt and `single_agent.apply_evidence_verification`. Unit tests for each.
-* **Step B (2 days): 3**, the critic's tool loop, with the same code verification after it. MockLLM gets scripted tool
-  calls for the tests. Row 4 only.
+* **Step B (3 days): 3**, one tool loop shared by the critic (row 4') and the single agent (row 2'), with the same code
+  verification after it. MockLLM gets scripted tool calls for the tests.
 * **Step C (1 day): 5 and 7**, then 9 if time allows.
-* **Re-run:** all four rows on the five labeled protocols (code tools change rows 2-3 too), about 75 minutes, then
+* **Re-run:** rows 2', 3 and 4' on the five labeled protocols, about 75 minutes, then
   `eval/rescore.py`, then a second 30-finding human evidence check by Ron (same sampler, seed changed and documented).
 * **Report:** a new ablation table next to the frozen one (kb-v1 + v1.6 code vs kb-v2 + v1.7 code), charter v1.7,
   CP2_SUMMARY section 8. Success criteria: label-matching precision of the full system >= 45% at recall >= 70%;
