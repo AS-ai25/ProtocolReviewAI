@@ -11,6 +11,9 @@ the administrative gate fails and every configuration is scored on the same find
     2. single LLM call + code verification         run_single_agent(verify=True)        (= the Single LLM call baseline)
     3. full system without the critic           run_review(force_scientific=True, no_critic=True)
     4. full system (four agents, one revision)  run_review(force_scientific=True)
+    2'. single agent with tool use              run_single_agent(verify=True, tools=True)       (v1.7)
+    3'. full system without critic, tool use    run_review(force_scientific=True, no_critic=True, tool_use=True)
+    4'. full system, reviewer + critic tool use run_review(force_scientific=True, tool_use=True)
 
 Columns: precision of VERIFIED findings vs labels | recall (coverage) of labeled findings |
 unverified count | LLM calls | input / output tokens | runtime. The matching rule is in eval/matching.py.
@@ -40,7 +43,17 @@ CONFIGS: list[dict] = [
      "kind": "agents", "kwargs": {"force_scientific": True, "no_critic": True}},
     {"key": "agents_full", "label": "Full system (4 agents, critic, 1 revision round)",
      "kind": "agents", "kwargs": {"force_scientific": True}},
+    # v1.7: the same structures with tool use (the model calls search_protocol / get_page / registry_field / kb_lookup /
+    # power_calc itself) and the deterministic evidence tools in the verifier
+    {"key": "single_tools", "label": "Single agent with tool use + code verification",
+     "kind": "single", "kwargs": {"verify": True, "tools": True}},
+    {"key": "agents_no_critic_tools", "label": "Full system without the critic, reviewer with tool use",
+     "kind": "agents", "kwargs": {"force_scientific": True, "no_critic": True, "tool_use": True}},
+    {"key": "agents_full_tools", "label": "Full system, reviewer and critic with tool use",
+     "kind": "agents", "kwargs": {"force_scientific": True, "tool_use": True}},
 ]
+ROW_NUM = {"rules_only": "0", "single_no_verification": "1", "single_verified": "2", "agents_no_critic": "3", "agents_full": "4",
+           "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'"}
 
 
 def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
@@ -109,7 +122,7 @@ def render_markdown(rows: list[dict], cases: list[dict], *, no_llm: bool, starte
            "| # | Configuration | Precision of VERIFIED findings | Recall (coverage) of labeled findings | Unverified | LLM calls | Tokens in / out | Runtime |",
            "|---|---|---|---|---|---|---|---|"]
     for i, r in enumerate(rows, 1):
-        md.append(f"| {i} | {r['label']} | {pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) | "
+        md.append(f"| {ROW_NUM.get(r['key'], i)} | {r['label']} | {pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) | "
                   f"{pct(r['coverage'])} ({r['tp']}/{r['labels']}) | {r['n_unverified']} | {r['llm_calls']} | "
                   f"{r['input_tokens']:,} / {r['output_tokens']:,} | {r['runtime_s']:.0f} s |")
     md += ["", "Primary metric (charter v1.4, locked): precision of verified findings against blind human labels on the "

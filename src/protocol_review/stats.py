@@ -7,7 +7,10 @@ from .db import Interaction, Run, RunMessage, get_session
 
 
 CONFIG_LABELS = {"single_no_verification": "1 single LLM call, no verification", "single_verified": "2 single LLM call + code verification",
-                 "agents_no_critic": "3 full system without critic", "agents_full": "4 full system (4 agents, critic)"}
+                 "agents_no_critic": "3 full system without critic", "agents_full": "4 full system (4 agents, critic)",
+                 "single_tools": "2' single agent with tool use + code verification",
+                 "agents_no_critic_tools": "3' full system without critic, reviewer with tool use",
+                 "agents_full_tools": "4' full system, reviewer and critic with tool use"}
 
 
 def _pattern(prefix: str, contains: str) -> str:

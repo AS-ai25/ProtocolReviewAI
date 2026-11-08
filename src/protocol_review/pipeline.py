@@ -22,7 +22,7 @@ def new_run_id() -> str:
 
 def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = "", nct_id: str = "",
                llm=None, registry_fetch=None, run_id: str | None = None, no_llm: bool | None = None,
-               force_scientific: bool = False, no_critic: bool = False) -> dict:
+               force_scientific: bool = False, no_critic: bool = False, tool_use: bool = False) -> dict:
     """Full multi-agent review. Returns the final state (without pdf text).
 
     Evaluation switches (not for production runs):
@@ -34,15 +34,15 @@ def run_review(pdf_path: str | Path, *, source: str = "cli", submitter: str = ""
     run_id = run_id or new_run_id()
     token = current_run_id.set(run_id)
     try:
-        return _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic)
+        return _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic, tool_use)
     finally:
         current_run_id.reset(token)
 
 
-def _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic) -> dict:
+def _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch, no_llm, force_scientific, no_critic, tool_use=False) -> dict:
     pdf_path = str(pdf_path)
-    log.info("run %s started: %s (source=%s, force_scientific=%s, no_critic=%s)", run_id, Path(pdf_path).name, source,
-             force_scientific, no_critic)
+    log.info("run %s started: %s (source=%s, force_scientific=%s, no_critic=%s, tool_use=%s)", run_id, Path(pdf_path).name, source,
+             force_scientific, no_critic, tool_use)
     memory.create_run(run_id, source, submitter, pdf_path)
     if llm is None:
         llm = make_llm(on_interaction=memory.interaction_hook(run_id), no_llm=no_llm)
@@ -55,6 +55,8 @@ def _run_review(pdf_path, run_id, source, submitter, nct_id, llm, registry_fetch
             initial["force_scientific"] = True
         if no_critic:
             initial["no_critic"] = True
+        if tool_use:
+            initial["tool_use"] = True
         final = graph.invoke(initial)
     except Exception as exc:
         log.exception("run %s failed", run_id)

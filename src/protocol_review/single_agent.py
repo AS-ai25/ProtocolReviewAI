@@ -36,8 +36,8 @@ from .pdf_parser import parse_pdf
 from .protocol_json import build_protocol_json
 from .reports import run_dir
 from .scoring import compute_score
-from .state import Domain, FindingStatus, Severity, SingleAgentReport
-from .tools import checks, clinicaltrials
+from .state import Decision, Domain, FindingStatus, Severity, SingleAgentReport
+from .tools import agent_tools, checks, clinicaltrials, evidence_tools
 from .tools.section_coverage import coverage_prompt
 
 log = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def _memories_block(meta: dict) -> str:
 
 
 def build_user_prompt(pdf_text: str, meta: dict, rule_findings: list[dict], registry: dict | None,
-                      pages: list[dict] | None = None) -> str:
+                      pages: list[dict] | None = None, tools: bool = False) -> str:
     """Same inputs as the multi-agent reviewer, including the advisory section-coverage
     screen (equal-input rule for the ablation)."""
     return "\n\n".join(filter(None, [
@@ -71,7 +71,11 @@ def build_user_prompt(pdf_text: str, meta: dict, rule_findings: list[dict], regi
         _memories_block(meta),
         "# Metadata extracted from the PDF\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# " + clinicaltrials.registry_summary(registry or {}),
+        base.context_block({"numbers_table": evidence_tools.numbers_table(pages or []), "study_design": evidence_tools.study_design(pages or [])}) if pages else "",
         coverage_prompt(pages) if pages else "",
+        ("# Tools\nYou may call tools: search_protocol before claiming that something is missing, get_section / get_page to read "
+         "a part in full, registry_field to compare with ClinicalTrials.gov, kb_lookup to check a guideline item, power_calc "
+         "to recompute a sample size. Use them for every absence claim and every registry comparison.") if tools else "",
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
         "# Protocol text (with page markers)\n" + base.protocol_text({"pdf_text": pdf_text}),
         "Return the SingleAgentReport JSON now.",
@@ -83,14 +87,15 @@ def apply_evidence_verification(findings: list[dict], pages: list[dict], codes: 
     an unlocated quote or an unknown guideline code makes the finding `unverified`."""
     out = []
     for f in findings:
+        if f.get("status") in (FindingStatus.REJECTED.value, FindingStatus.WITHDRAWN.value):   # e.g. a merged duplicate
+            out.append(dict(f))
+            continue
         v = base.verify_evidence(f, pages, codes)
         f = dict(f)
-        if v["evidence_checked"] and v["evidence_found"] < v["evidence_checked"]:
-            f["status"] = FindingStatus.UNVERIFIED.value
-            f["critic_notes"] = "Evidence quote not located in the protocol (automatic check); human review required."
-        elif not v["guideline_ref_valid"]:
-            f["status"] = FindingStatus.UNVERIFIED.value
-            f["critic_notes"] = "Guideline code missing or unknown (automatic check); human review required."
+        floor, note = base.code_status(v)
+        if floor is not None:
+            f["status"] = floor.value
+            f["critic_notes"] = note
         else:
             f["status"] = FindingStatus.VERIFIED.value
             f["critic_notes"] = ("Single-agent claim; quote(s) located in the protocol and guideline code valid "
@@ -114,7 +119,7 @@ def apply_model_status(findings: list[dict]) -> list[dict]:
 
 
 def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None, run_id: str | None = None,
-                     llm=None, no_llm: bool | None = None, write: bool = True, verify: bool = True) -> dict:
+                     llm=None, no_llm: bool | None = None, write: bool = True, verify: bool = True, tools: bool = False) -> dict:
     """One LLM call over the whole review problem. Returns the `run_baseline` result shape.
 
     `verify=False` is the ablation switch: the code-level evidence verification is skipped and the
@@ -122,14 +127,14 @@ def run_single_agent(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=N
     run_id = run_id or datetime.utcnow().strftime("single-%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
     token = current_run_id.set(run_id)
     try:
-        return _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify)
+        return _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify, tools)
     finally:
         current_run_id.reset(token)
 
 
-def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify) -> dict:
+def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, write, verify, tools=False) -> dict:
     pdf_path = str(pdf_path)
-    log.info("run %s started (single agent, verify=%s): %s", run_id, verify, Path(pdf_path).name)
+    log.info("run %s started (single agent, verify=%s, tools=%s): %s", run_id, verify, tools, Path(pdf_path).name)
     memory.create_run(run_id, "single_agent", "", pdf_path)
     if llm is None:
         llm = make_llm(on_interaction=memory.interaction_hook(run_id), no_llm=no_llm)
@@ -150,9 +155,13 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
     errors: list[str] = []
     report: SingleAgentReport | None = None
     try:
-        report = llm.structured(agent=AGENT, system=SINGLE_AGENT_SYSTEM,
-                               user=build_user_prompt(parsed["pdf_text"], meta, rule_findings, registry, pages=pages),
-                               schema=SingleAgentReport)
+        user = build_user_prompt(parsed["pdf_text"], meta, rule_findings, registry, pages=pages, tools=tools)
+        if tools:
+            report = llm.structured_with_tools(agent=AGENT, system=SINGLE_AGENT_SYSTEM, user=user, schema=SingleAgentReport,
+                                               tools=agent_tools.specs(agent_tools.SINGLE_AGENT_TOOLS),
+                                               executor=agent_tools.make_executor(pages, build_protocol_json(pages, meta, pdf_path), registry))
+        else:
+            report = llm.structured(agent=AGENT, system=SINGLE_AGENT_SYSTEM, user=user, schema=SingleAgentReport)
     except LLMError as exc:
         log.error("single agent LLM failure: %s", exc)
         errors.append(f"single_agent: {exc}")
@@ -165,7 +174,8 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
         sci = base.renumber([f for f in raw if f["domain"] == Domain.SCIENTIFIC.value], "SCI")
         for f in admin + sci:
             f["source"] = "llm"
-        llm_findings = apply_evidence_verification(admin + sci, pages, codes) if verify else apply_model_status(admin + sci)
+        merged, _dups = evidence_tools.merge_duplicates(admin + sci) if verify else (admin + sci, [])
+        llm_findings = apply_evidence_verification(merged, pages, codes) if verify else apply_model_status(merged)
     base.attach_sections(rule_findings + llm_findings, build_protocol_json(pages, meta, pdf_path))
 
     findings = rule_findings + llm_findings
@@ -174,6 +184,9 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
     admin_ok = (report.admin_accepted if report is not None else True) and not blocking
     # Same decision rule as the coordinator -> comparable decisions across modes
     decision = decide({"admin_ok": admin_ok, "findings": findings})
+    agent_failures = [AGENT] if report is None else []
+    if agent_failures and decision == Decision.PASS:          # M1: no LLM ran -> never an automated PASS
+        decision = Decision.NEEDS_HUMAN_REVIEW
 
     if report is not None:
         final_summary = (report.executive_summary + "\n\nKey findings:\n"
@@ -181,12 +194,14 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
                                      if f["status"] == FindingStatus.VERIFIED.value and f["severity"] in ("critical", "major"))
                          + f"\n\nRecommendation: {report.recommendation}")
     else:
-        final_summary = (f"Single LLM call baseline: LLM unavailable ({'; '.join(errors)}). "
-                         f"{len(findings)} deterministic findings, decision {decision.value}.")
+        final_summary = (f"WARNING: the LLM agent did not run ({'; '.join(errors)}); only the deterministic checks were applied and "
+                         f"the review is incomplete. {len(findings)} deterministic findings, decision {decision.value} "
+                         f"(automated PASS not allowed without the agent).")
 
     result = {
         "run_id": run_id,
-        "mode": "single_agent" if verify else "single_agent_no_verification",
+        "mode": ("single_agent_tools" if tools else "single_agent") if verify else "single_agent_no_verification",
+        "agent_failures": agent_failures,
         "pdf_path": pdf_path,
         "protocol_meta": meta,
         "registry": registry,

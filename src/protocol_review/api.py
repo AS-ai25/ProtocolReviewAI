@@ -28,6 +28,9 @@ REVIEW_CONFIGS = {
     "agents_no_critic": {"label": stats.CONFIG_LABELS["agents_no_critic"], "kind": "agents", "kwargs": {"no_critic": True}},
     "single_verified": {"label": stats.CONFIG_LABELS["single_verified"], "kind": "single", "kwargs": {"verify": True}},
     "single_no_verification": {"label": stats.CONFIG_LABELS["single_no_verification"], "kind": "single", "kwargs": {"verify": False}},
+    "single_tools": {"label": stats.CONFIG_LABELS["single_tools"], "kind": "single", "kwargs": {"verify": True, "tools": True}},
+    "agents_no_critic_tools": {"label": stats.CONFIG_LABELS["agents_no_critic_tools"], "kind": "agents", "kwargs": {"no_critic": True, "tool_use": True}},
+    "agents_full_tools": {"label": stats.CONFIG_LABELS["agents_full_tools"], "kind": "agents", "kwargs": {"tool_use": True}},
 }
 
 
@@ -40,6 +43,10 @@ def configuration_of(run: dict) -> str:
     mode = st.get("mode", "")
     if mode == "single_agent_no_verification":
         return stats.CONFIG_LABELS["single_no_verification"]
+    if mode == "single_agent_tools":
+        return stats.CONFIG_LABELS["single_tools"]
+    if st.get("tool_use"):
+        return stats.CONFIG_LABELS["agents_no_critic_tools" if st.get("no_critic") else "agents_full_tools"]
     if mode.startswith("single_agent") or run.get("source") == "single_agent":
         return stats.CONFIG_LABELS["single_verified"]
     if mode == "rule_based_baseline":
@@ -248,6 +255,9 @@ def run_summary(run_id: str):
         "pending_human_review": score.get("pending_human_review") if isinstance(score, dict) else None,
         "n_findings": len(findings), "by_status": count("status"), "by_severity": count("severity"), "by_domain": count("domain"),
         "revise_rounds": st.get("revise_rounds", 0), "force_scientific": bool(st.get("force_scientific")),
+        "tool_use": bool(st.get("tool_use")) or st.get("mode") == "single_agent_tools",
+        "agent_failures": st.get("agent_failures") or [],
+        "study_design": (st.get("study_design") or {}).get("kind", ""),
         "critic_rounds": _critic_rounds(st),    # the critic -> reviewer exchange, round by round
         "final_summary": st.get("final_summary", ""), "error": st.get("error"),
         "reports": {k: f"/runs/{run_id}/report?kind={k}" for k, key in
@@ -286,8 +296,9 @@ def run_compare(run_id: str):
                            "decision": s["decision"], "n_findings": s["n_findings"], "verified": s["by_status"].get("verified", 0),
                            "unverified": s["by_status"].get("unverified", 0), "revise_rounds": s["revise_rounds"],
                            "force_scientific": s["force_scientific"], **s["cost"]}
-    order = list(stats.CONFIG_LABELS.values())
-    return {"run_id": run_id, "protocol": key, "rows": sorted(rows.values(), key=lambda x: order.index(x["configuration"]) if x["configuration"] in order else 9)}
+    def row_order(label: str):           # 1, 2, 2', 3, 3', 4, 4', then anything else
+        return (label[:1] if label[:1].isdigit() else "9", "'" in label[:2])
+    return {"run_id": run_id, "protocol": key, "rows": sorted(rows.values(), key=lambda x: row_order(x["configuration"]))}
 
 
 # ------------------------------------------------------------- statistics

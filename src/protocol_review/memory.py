@@ -184,7 +184,8 @@ def record_interaction(run_id: str, result: LLMResult, system: str, user: str, o
         db.add(Interaction(
             run_id=run_id, agent=result.agent, model=result.model, input_tokens=result.input_tokens,
             output_tokens=result.output_tokens, duration_s=result.duration_s, fallback_used=result.fallback_used,
-            prompt_excerpt=_prompt_excerpt(system, user), output=output,
+            prompt_excerpt=_prompt_excerpt(system, user),
+            output=({**output, "_tool_calls": result.tool_calls} if result.tool_calls else output),
         ))
         db.commit()
 
@@ -198,6 +199,14 @@ def _prompt_excerpt(system: str, user: str) -> str:
         j = user.find("# Protocol text", i)
         out += "\n[...]\n" + user[i:j if j != -1 else i + 6000][:6000]
     return out
+
+
+def list_interactions(run_id: str) -> list[dict]:
+    """Every LLM exchange of a run, oldest first, with the tool calls the agent made (v1.7)."""
+    with get_session() as db:
+        rows = db.execute(select(Interaction).where(Interaction.run_id == run_id).order_by(Interaction.id)).scalars().all()
+    return [{"id": r.id, "agent": r.agent, "model": r.model, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens,
+             "duration_s": r.duration_s, "tool_calls": (r.output or {}).get("_tool_calls") or []} for r in rows]
 
 
 def run_cost_summary(run_id: str) -> dict:

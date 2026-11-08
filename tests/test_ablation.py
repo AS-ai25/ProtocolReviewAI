@@ -102,15 +102,16 @@ def test_matching_rule_domain_alias_or_ref_and_page():
 
 
 # ------------------------------------------------------------ 4. ablation runner, dry mode
-def test_ablation_dry_run_writes_four_row_table(tmp_path, registry_fetch):
+def test_ablation_dry_run_writes_the_configuration_table(tmp_path, registry_fetch):
     out = tmp_path / "results.md"
     summary = ablation.run_ablation(ROOT / "eval" / "labeled_cases", out, no_llm=True, registry_fetch=registry_fetch,
                                     results_dir=tmp_path / "results", pattern="synthetic_*.json")
-    assert [r["key"] for r in summary["rows"]] == ["single_no_verification", "single_verified", "agents_no_critic", "agents_full"]
+    assert [r["key"] for r in summary["rows"]] == ["single_no_verification", "single_verified", "agents_no_critic", "agents_full",
+                                                   "single_tools", "agents_no_critic_tools", "agents_full_tools"]   # v1.7: 2' 3' 4'
     md = out.read_text(encoding="utf-8")
     table = md.split("## Ablation table")[1].split("## Per case")[0]
     data_rows = [ln for ln in table.splitlines() if ln.startswith("| ") and not ln.startswith("| #")]
-    assert len(data_rows) == 4
+    assert len(data_rows) == 7 and data_rows[4].startswith("| 2' |")       # the v1.7 rows carry primed numbers
     assert "DRY RUN" in md
     for r in summary["rows"]:
         assert r["coverage"] == 1.0                      # rule findings cover every injected deficiency

@@ -87,7 +87,7 @@ def test_agent_rejection_blocks_and_llm_failure_degrades(good_pdf, flawed_pdf, r
     assert res["errors"] and res["errors"][0].startswith("single_agent")
     assert res["findings"] and all(f["source"] == "rule" for f in res["findings"])
     assert res["decision"] == "RETURNED_ADMIN"
-    assert "LLM unavailable" in res["final_summary"]
+    assert "did not run" in res["final_summary"]
 
 
 def test_single_agent_schema_is_strict_compatible():

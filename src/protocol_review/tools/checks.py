@@ -69,25 +69,46 @@ def _norm_phase(p: str) -> str:
     return {"I": "1", "II": "2", "III": "3", "IV": "4", "I/II": "1/2", "II/III": "2/3"}.get(p, p)
 
 
+_TOC_RE = re.compile(r"\.{4,}|(?:\. ){3,}|\btable of contents\b|\bcontents\b", re.I)
+
+
+def _sentence(text: str, start: int, end: int) -> str:
+    """The whole sentence around [start, end) (v1.7: rule quotes are sentences, not 60-char windows)."""
+    lo = max(0, start - 300)
+    head = text[lo:start]
+    cut = max(head.rfind(". "), head.rfind("\n\n"), head.rfind("\n•"), head.rfind("; "))
+    lo = lo + cut + 2 if cut != -1 else lo
+    hi = min(len(text), end + 300)
+    tail = text[end:hi]
+    stop = min([i for i in (tail.find(". "), tail.find("\n\n"), tail.find(".\n")) if i != -1] or [len(tail)])
+    return " ".join(text[lo:end + stop + 1].split())[:300]
+
+
+def _is_toc_like(snippet: str) -> bool:
+    """Contents-page lines (dot leaders, 'Table of contents') and bare numbered headings are not evidence."""
+    return bool(_TOC_RE.search(snippet)) or bool(re.fullmatch(r"[\d.\s]+[A-Z][A-Z \-/]{3,}\s*\d*", snippet.strip()))
+
+
 def _page_of(pages: list[dict], needle: str) -> tuple[int, str]:
-    """First page containing `needle` (case-insensitive) and a short quote around it."""
-    low = needle.lower()
-    for p in pages:
-        idx = p["text"].lower().find(low)
-        if idx != -1:
-            start = max(0, idx - 60)
-            return p["page"], " ".join(p["text"][start:idx + len(needle) + 120].split())[:300]
-    return 0, ""
+    """First page containing `needle` (case-insensitive) with a sentence-level quote that is not a contents line."""
+    rx = re.compile(re.escape(needle), re.I)
+    return _find_rx(pages, rx)
 
 
 def _find(pages: list[dict], pattern: str) -> tuple[int, str]:
-    rx = re.compile(pattern, re.I)
+    return _find_rx(pages, re.compile(pattern, re.I))
+
+
+def _find_rx(pages: list[dict], rx: re.Pattern) -> tuple[int, str]:
+    fallback: tuple[int, str] = (0, "")
     for p in pages:
-        m = rx.search(p["text"])
-        if m:
-            start = max(0, m.start() - 60)
-            return p["page"], " ".join(p["text"][start:m.end() + 120].split())[:300]
-    return 0, ""
+        for m in rx.finditer(p["text"]):
+            q = _sentence(p["text"], m.start(), m.end())
+            if q and not _is_toc_like(q):
+                return p["page"], q
+            if not fallback[0] and q:
+                fallback = (p["page"], q)
+    return fallback
 
 
 def _finding(idx: int, domain: Domain, category: str, severity: Severity, title: str, description: str,

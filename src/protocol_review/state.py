@@ -161,6 +161,10 @@ class ReviewState(TypedDict, total=False):
     nct_id: str
     force_scientific: bool      # evaluation only: run the scientific stage even when admin_ok is False
     no_critic: bool             # ablation only: skip the Scientific Critic; reviewer findings verified by code only
+    tool_use: bool              # v1.7: the reviewer and the critic may call tools themselves (search, page, registry, KB)
+    numbers_table: dict         # v1.7: sample sizes, phases, versions, dates with pages (code, at intake)
+    study_design: dict          # v1.7: detected design and the SPIRIT items that do not apply (code, at intake)
+    agent_failures: list[str]   # v1.7 (M1): agents whose LLM call failed; such a run never ends in PASS
     protocol_meta: dict         # title, version, date, sponsor, PI ... extracted deterministically
     protocol_json: dict         # structured protocol: metadata + sections (text, pages) - IMMUTABLE after intake
     validation: dict            # JSON Validation Tool result {valid, errors, warnings}

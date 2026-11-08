@@ -35,17 +35,18 @@ from .agents.scientific_reviewer import scientific_reviewer_node
 from .state import ReviewState, trace_event
 
 PROTOCOL_KEYS = {"pdf_text", "pages", "protocol_meta", "protocol_json", "pdf_path", "nct_id"}
-EVAL_SWITCHES = {"force_scientific", "no_critic"}   # set at intake from run_review() arguments, read-only afterwards
+EVAL_SWITCHES = {"force_scientific", "no_critic", "tool_use"}   # set at intake from run_review() arguments, read-only afterwards
 COMMON = {"trace", "errors"}
 ALLOWED_WRITES: dict[str, set[str]] = {
     "intake": PROTOCOL_KEYS | EVAL_SWITCHES | COMMON | {"rule_findings", "findings", "revise_rounds", "revise_requests", "registry",
-                                                        "notifications", "scientific_reports", "critic_reports"},
+                                                        "notifications", "scientific_reports", "critic_reports",
+                                                        "numbers_table", "study_design"},
     "validate": COMMON | {"validation", "admin_ok", "findings", "admin_report"},
     "administrative": COMMON | {"admin_report", "admin_ok", "findings"},
     "scientific_reviewer": COMMON | {"registry", "scientific_report", "scientific_reports", "findings"},
     "scientific_critic": COMMON | {"critic_report", "critic_reports", "findings", "revise_requests"},
     "bump_round": COMMON | {"revise_rounds"},
-    "finalize": COMMON | {"findings", "decision", "decision_rationale", "score", "final_summary"},
+    "finalize": COMMON | {"findings", "decision", "decision_rationale", "score", "final_summary", "agent_failures"},
     "report": COMMON | {"report_paths"},
     "notify": COMMON | {"notifications"},
 }

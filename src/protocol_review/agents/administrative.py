@@ -23,6 +23,7 @@ def _user_prompt(state: ReviewState, rule_findings: list[dict]) -> str:
         mem,
         "# Metadata extracted from the PDF\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         base.sections_block(state),
+        base.context_block(state),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
         "# Protocol text (with page markers)\n" + base.protocol_text(state),
         "Return the AdminReport JSON now.",
@@ -55,15 +56,20 @@ def administrative_node(state: ReviewState, llm) -> dict:
             f["source"] = "llm"
             v = base.verify_evidence(f, pages, codes)
             auto = base.auto_status_from_verification(v)
+            floor, note = base.code_status(v)
             if auto:
                 f["status"] = auto.value
                 f["critic_notes"] = "Evidence quote(s) located in the protocol and guideline code valid (automatic check)."
+            elif floor is not None:
+                f["status"] = floor.value
+                f["critic_notes"] = note
             elif v["absence_claim"] and v["guideline_ref_valid"]:
                 f["status"] = FindingStatus.UNVERIFIED.value
                 f["critic_notes"] = "Absence claim with valid guideline code - confirm by hand."
             else:
                 f["status"] = FindingStatus.UNVERIFIED.value
                 f["critic_notes"] = "Evidence quote not located in the protocol or guideline code invalid."
+            f["evidence_check"] = v
             llm_findings.append(f)
 
     admin_findings = base.attach_sections(rule_findings + llm_findings, state.get("protocol_json") or {})
@@ -77,6 +83,7 @@ def administrative_node(state: ReviewState, llm) -> dict:
     report_dict = {
         "accepted": admin_ok,
         "accepted_by_agent": accepted_by_llm,
+        "agent_failed": report is None,          # M1: the coordinator never lets such a run end in PASS
         "summary": report.summary if report else "Administrative agent unavailable; decision based on deterministic checks only.",
         "checklist": [c.model_dump(mode="json") for c in report.checklist] if report else [],
         "findings": admin_findings,

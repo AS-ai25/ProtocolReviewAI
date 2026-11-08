@@ -8,7 +8,7 @@ from .. import memory
 from ..knowledge_base import kb_text, rule_codes
 from ..llm import LLMError
 from ..state import Domain, FindingStatus, ReviewState, ScientificReport, trace_event
-from ..tools import checks, clinicaltrials
+from ..tools import agent_tools, checks, clinicaltrials, evidence_tools
 from ..tools.section_coverage import coverage_prompt
 from . import base
 from .prompts import SCIENTIFIC_REVIEW_SYSTEM
@@ -26,12 +26,17 @@ def _user_prompt(state: ReviewState, rule_findings: list[dict], previous: list[d
         "# Protocol metadata\n" + json.dumps(meta, indent=1, ensure_ascii=False),
         "# " + clinicaltrials.registry_summary(state.get("registry") or {}),
         base.sections_block(state),
+        base.context_block(state),
         coverage_prompt(state.get("pages") or []),
         "# Deterministic rule findings already produced (do not duplicate)\n" + base.findings_json(rule_findings),
     ]
     if state.get("revise_rounds", 0) > 0:
         parts.append("# REVISION ROUND - critic feedback you must address\n" + "\n".join(f"- {r}" for r in state.get("revise_requests") or []))
         parts.append("# Your previous findings (revise, correct or withdraw; re-emit the full list)\n" + base.findings_json(previous))
+    if state.get("tool_use"):
+        parts.append("# Tools\nYou may call tools: search_protocol before claiming that something is missing or unspecified, "
+                     "get_section / get_page to read a part in full, kb_lookup to check what a SPIRIT or GCP item requires, "
+                     "power_calc to recompute a sample size. Use them for every absence claim.")
     parts += ["# Protocol text (with page markers)\n" + base.protocol_text(state), "Return the ScientificReport JSON now."]
     return "\n\n".join(p for p in parts if p)
 
@@ -60,8 +65,13 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     already_withdrawn = [f for f in state.get("findings") or [] if f["status"] == FindingStatus.WITHDRAWN.value]
     report: ScientificReport | None = None
     try:
-        report = llm.structured(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM,
-                                user=_user_prompt({**state, "registry": registry}, rule_sci, previous_llm), schema=ScientificReport)
+        user = _user_prompt({**state, "registry": registry}, rule_sci, previous_llm)
+        if state.get("tool_use"):
+            report = llm.structured_with_tools(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM, user=user, schema=ScientificReport,
+                                               tools=agent_tools.specs(agent_tools.REVIEWER_TOOLS),
+                                               executor=agent_tools.make_executor(pages, state.get("protocol_json"), registry))
+        else:
+            report = llm.structured(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM, user=user, schema=ScientificReport)
     except LLMError as exc:
         log.error("scientific reviewer LLM failure: %s", exc)
         errors.append(f"scientific_reviewer: {exc}")
@@ -75,6 +85,10 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
             f["status"] = FindingStatus.PROPOSED.value
             f["critic_notes"] = ""
             llm_findings.append(f)
+        llm_findings, dup_pairs = evidence_tools.merge_duplicates(llm_findings)      # v1.7: the same issue twice -> rejected duplicate
+        if dup_pairs:
+            trace = trace_event({"trace": trace, "run_id": state.get("run_id")}, AGENT, "duplicates_merged",
+                                "; ".join(f"{a} -> {b}" for a, b in dup_pairs))
     elif previous_llm:
         llm_findings = previous_llm  # keep last round's findings if the revision call failed
     if state.get("no_critic") and llm_findings:

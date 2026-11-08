@@ -8,6 +8,7 @@ import re
 from ..knowledge_base import rule_codes
 from ..protocol_json import section_for, section_index
 from ..state import FindingStatus, ReviewState
+from ..tools import evidence_tools
 
 MAX_PROTOCOL_CHARS = 400_000  # ~100k tokens; protocols are normally far smaller
 
@@ -124,6 +125,10 @@ def verify_evidence(finding: dict, pages: list[dict], codes: set[str] | None = N
                  for c in re.findall(r"ADMIN-CHK-\d{2}|SPIRIT-\d{1,2}[a-dA-D]?|GCP-\d{2}", ref)]
     ref_ok = bool(ref_codes) and all(c in codes for c in ref_codes)
     absence_claim = not ev or all((e.get("page") or 0) == 0 for e in ev)
+    # v1.7 code evidence tools: does the protocol mention the thing claimed absent? does the quote show a deficiency
+    # or only the topic? does the cited guideline item fit the category?
+    claims_absence = evidence_tools.is_absence_claim(finding)
+    search = evidence_tools.absence_search(finding, pages) if claims_absence else {"keywords": [], "found_pages": [], "hits": []}
     return {
         "finding_id": finding.get("id"),
         "evidence_checked": len(ev),
@@ -131,13 +136,43 @@ def verify_evidence(finding: dict, pages: list[dict], codes: set[str] | None = N
         "evidence_details": results,
         "guideline_ref_valid": ref_ok,
         "absence_claim": absence_claim,  # finding says something is missing -> no quote expected
+        "claims_absence": claims_absence,
+        "absence_search_keywords": search["keywords"],
+        "absence_search_pages": search["found_pages"],      # pages where the supposedly absent topic is described
+        "absence_search_hits": search["hits"][:4],
+        "quote_mention_only": evidence_tools.quote_is_mention_only(finding),
+        "guideline_fits_category": evidence_tools.guideline_fits_category(finding),
     }
+
+
+def code_status(v: dict) -> tuple[FindingStatus | None, str]:
+    """The deterministic floor (v1.7): the reasons for which a finding can never be `verified`, whatever an agent says.
+    Returns (UNVERIFIED, note) or (None, "")."""
+    if v.get("evidence_checked") and v.get("evidence_found", 0) < v.get("evidence_checked", 0):
+        return FindingStatus.UNVERIFIED, "Evidence quote not located in the protocol (automatic check); human review required."
+    if not v.get("guideline_ref_valid"):
+        return FindingStatus.UNVERIFIED, "Guideline code missing or unknown (automatic check); human review required."
+    if v.get("claims_absence") and v.get("absence_search_pages"):
+        return FindingStatus.UNVERIFIED, (f"Claims something is missing, but the topic is described on page(s) "
+                                          f"{v['absence_search_pages'][:6]} (automatic absence search); human review required.")
+    if v.get("quote_mention_only"):
+        return FindingStatus.UNVERIFIED, ("The quote mentions the topic but shows no deficiency (automatic check: a mention is not "
+                                          "evidence of absence); human review required.")
+    if v.get("guideline_fits_category") is False:
+        return FindingStatus.UNVERIFIED, "The cited guideline item does not fit the finding's category (automatic check); human review required."
+    return None, ""
 
 
 def auto_status_from_verification(v: dict) -> FindingStatus | None:
     """Rule findings are verified by construction; LLM findings whose quotes all
     check out AND cite a valid KB code may be auto-verified at the admin stage
     (no admin critic in this architecture)."""
-    if v["guideline_ref_valid"] and v["evidence_checked"] and v["evidence_found"] == v["evidence_checked"]:
+    if v["guideline_ref_valid"] and v["evidence_checked"] and v["evidence_found"] == v["evidence_checked"] and code_status(v)[0] is None:
         return FindingStatus.VERIFIED
     return None
+
+
+def context_block(state: ReviewState) -> str:
+    """v1.7 intake context for the LLM agents: the numbers table and the detected design."""
+    parts = [evidence_tools.design_prompt(state.get("study_design") or {}), evidence_tools.numbers_prompt(state.get("numbers_table") or {})]
+    return "\n\n".join(p for p in parts if p)

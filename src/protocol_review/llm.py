@@ -65,6 +65,7 @@ class LLMResult(BaseModel):
     duration_s: float = 0.0
     fallback_used: bool = False
     raw_text: str = ""
+    tool_calls: list[dict] = []          # v1.7: tools the model called itself (name, input, result size, duration)
 
 
 class LLM:
@@ -121,49 +122,128 @@ class LLM:
                 log.exception("on_interaction hook failed")
         return obj
 
+    def structured_with_tools(self, *, agent: str, system: str, user: str, schema: type[T], tools: list[dict],
+                              executor: Callable[[str, dict], str], max_tool_calls: int = 6) -> T:
+        """v1.7 tool use: the model may call the given tools (it decides which and when, up to `max_tool_calls`);
+        the code executes them and feeds the results back; then one final request without tools returns the
+        validated `schema`. Token usage of every request is summed into one LLMResult; the calls are kept in
+        `tool_calls` and reach the historical memory and the dashboard."""
+        started = time.perf_counter()
+        messages: list[dict] = [{"role": "user", "content": user}]
+        usage = {"input_tokens": 0, "output_tokens": 0}
+        calls: list[dict] = []
+        fallback_used = False
+        model_used = self.model
+        for _ in range(max_tool_calls + 1):
+            response = self._create(system, messages, schema, use_format=False, tools=tools)
+            usage = {k: usage[k] + (getattr(response.usage, k, 0) or 0) for k in usage}
+            model_used = getattr(response, "model", self.model)
+            tool_uses = [b for b in response.content if getattr(b, "type", "") == "tool_use"]
+            if not tool_uses or len(calls) >= max_tool_calls:
+                break
+            messages.append({"role": "assistant", "content": [self._block(b) for b in response.content]})
+            results = []
+            for tu in tool_uses:
+                args = dict(getattr(tu, "input", None) or {})
+                t0 = time.perf_counter()
+                out = executor(tu.name, args)
+                calls.append({"tool": tu.name, "input": args, "result_chars": len(out), "duration_s": round(time.perf_counter() - t0, 3),
+                              "result_preview": out[:300]})
+                results.append({"type": "tool_result", "tool_use_id": tu.id, "content": out})
+            messages.append({"role": "user", "content": results})
+        messages.append({"role": "user", "content": f"Now return the {schema.__name__} JSON, using what the tools showed you. "
+                                                    "Do not call any more tools."})
+        text, usage2, fb2, model_used = self._call_messages(system, messages, schema, use_format=True)
+        usage = {k: usage[k] + usage2.get(k, 0) for k in usage}
+        try:
+            obj = self._parse(text, schema)
+        except (ValidationError, json.JSONDecodeError) as exc:
+            log.warning("[%s] invalid structured output after tools, retrying once: %s", agent, exc)
+            messages.append({"role": "assistant", "content": text})
+            messages.append({"role": "user", "content": f"Your answer was not valid for the required schema ({type(exc).__name__}: "
+                                                        f"{str(exc)[:500]}). Return ONLY a corrected JSON object."})
+            text, usage3, fb3, model_used = self._call_messages(system, messages, schema, use_format=True)
+            usage = {k: usage[k] + usage3.get(k, 0) for k in usage}
+            fb2 = fb2 or fb3
+            obj = self._parse(text, schema)
+        result = LLMResult(agent=agent, model=model_used, input_tokens=usage["input_tokens"], output_tokens=usage["output_tokens"],
+                           duration_s=round(time.perf_counter() - started, 2), fallback_used=fallback_used or fb2, raw_text=text,
+                           tool_calls=calls)
+        log.info("[%s] %s in=%d out=%d %.1fs tools=%d%s", agent, model_used, result.input_tokens, result.output_tokens,
+                 result.duration_s, len(calls), " FALLBACK" if result.fallback_used else "")
+        if self.on_interaction:
+            try:
+                self.on_interaction(result, system, user, obj.model_dump(mode="json"))
+            except Exception:
+                log.exception("on_interaction hook failed")
+        return obj
+
+    @staticmethod
+    def _block(b) -> dict:
+        """SDK content block -> plain dict for the next request."""
+        if hasattr(b, "model_dump"):
+            d = b.model_dump(exclude_none=True)
+            return {k: v for k, v in d.items() if k in ("type", "text", "id", "name", "input")}
+        return dict(b)
+
     # ----------------------------------------------------------------- private
-    def _request_kwargs(self, system: str, user: str, schema: type[BaseModel], use_format: bool) -> dict:
+    def _request_kwargs(self, system: str, messages: list[dict], schema: type[BaseModel], use_format: bool,
+                        tools: list[dict] | None = None) -> dict:
         kwargs: dict[str, Any] = dict(
             model=self.model,
             max_tokens=self.max_tokens,
             system=system,
-            messages=[{"role": "user", "content": user}],
+            messages=messages,
             output_config={"effort": self.effort},
         )
         if use_format:
             kwargs["output_config"]["format"] = {"type": "json_schema", "schema": strict_schema(schema)}
+        if tools:
+            kwargs["tools"] = tools
         if self.fallbacks:
             kwargs["betas"] = [FALLBACK_BETA]
             kwargs["extra_body"] = {"fallbacks": "default"}
         return kwargs
 
-    def _call(self, system: str, user: str, schema: type[BaseModel], use_format: bool) -> tuple[str, dict, bool, str]:
-        kwargs = self._request_kwargs(system, user, schema, use_format)
+    def _create(self, system: str, messages: list[dict], schema: type[BaseModel], use_format: bool, tools: list[dict] | None = None):
+        """One API request with the error mapping; returns the raw response."""
+        kwargs = self._request_kwargs(system, messages, schema, use_format, tools)
         try:
             response = self.client.beta.messages.create(**kwargs)
         except anthropic.BadRequestError as exc:
-            msg = str(exc)
-            if use_format and ("schema" in msg.lower() or "output_config" in msg.lower() or "format" in msg.lower()):
-                # Schema not accepted -> fall back to prompt-instructed JSON
-                log.warning("structured format rejected (%s); retrying with prompt-only JSON", msg[:200])
-                prompt = user + "\n\nRespond ONLY with a JSON object matching this JSON schema:\n" + json.dumps(
-                    strict_schema(schema)
-                )
-                return self._call(system, prompt, schema, use_format=False)
-            raise LLMError(f"Bad request: {msg}") from exc
+            raise LLMError(f"Bad request: {exc}") from exc
         except anthropic.RateLimitError as exc:
             raise LLMError("Rate limited by the Claude API; retry later") from exc
         except anthropic.APIStatusError as exc:
             raise LLMError(f"Claude API error {exc.status_code}: {exc.message}") from exc
         except anthropic.APIConnectionError as exc:
             raise LLMError("Could not reach the Claude API") from exc
-
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)
             raise LLMRefusal(f"Model declined the request ({getattr(details, 'category', None)})")
         if response.stop_reason == "max_tokens":
             log.warning("response truncated at max_tokens=%s", self.max_tokens)
+        return response
 
+    def _call(self, system: str, user: str, schema: type[BaseModel], use_format: bool) -> tuple[str, dict, bool, str]:
+        return self._call_messages(system, [{"role": "user", "content": user}], schema, use_format)
+
+    def _call_messages(self, system: str, messages: list[dict], schema: type[BaseModel], use_format: bool) -> tuple[str, dict, bool, str]:
+        try:
+            response = self._create(system, messages, schema, use_format)
+        except LLMError as exc:
+            msg = str(exc)
+            if use_format and ("schema" in msg.lower() or "output_config" in msg.lower() or "format" in msg.lower()):
+                # Schema not accepted -> fall back to prompt-instructed JSON on the last user message
+                log.warning("structured format rejected (%s); retrying with prompt-only JSON", msg[:200])
+                messages = list(messages)
+                last = messages[-1]
+                if isinstance(last.get("content"), str):
+                    messages[-1] = {"role": "user", "content": last["content"] + "\n\nRespond ONLY with a JSON object matching this JSON schema:\n" + json.dumps(strict_schema(schema))}
+                else:
+                    messages.append({"role": "user", "content": "Respond ONLY with a JSON object matching this JSON schema:\n" + json.dumps(strict_schema(schema))})
+                return self._call_messages(system, messages, schema, use_format=False)
+            raise
         text = "".join(getattr(b, "text", "") for b in response.content if getattr(b, "type", "") == "text")
         usage = {
             "input_tokens": getattr(response.usage, "input_tokens", 0) or 0,
@@ -206,6 +286,27 @@ class MockLLM:
             self.on_interaction(
                 LLMResult(agent=agent, model="mock"), system, user, obj.model_dump(mode="json")
             )
+        return obj
+
+    def structured_with_tools(self, *, agent: str, system: str, user: str, schema: type[T], tools: list[dict],
+                              executor, max_tool_calls: int = 6) -> T:
+        """Scripted tool use for tests: `responses["<Schema>__tool_calls"] = [{"name": ..., "input": {...}}, ...]`
+        runs those tools through the real executor, then returns the canned response for the schema."""
+        script = list(self.responses.get(schema.__name__ + "__tool_calls") or [])[:max_tool_calls]
+        calls = []
+        for tc in script:
+            out = executor(tc["name"], dict(tc.get("input") or {}))
+            calls.append({"tool": tc["name"], "input": dict(tc.get("input") or {}), "result_chars": len(out), "duration_s": 0.0,
+                          "result_preview": out[:300]})
+        self.calls.append({"agent": agent, "schema": schema.__name__, "user": user, "tool_calls": calls})
+        payload = self.responses.get(schema.__name__)
+        if payload is None:
+            raise LLMError(f"MockLLM has no response for {schema.__name__}")
+        if callable(payload):
+            payload = payload(system, user)
+        obj = payload if isinstance(payload, schema) else schema.model_validate(payload)
+        if self.on_interaction:
+            self.on_interaction(LLMResult(agent=agent, model="mock", tool_calls=calls), system, user, obj.model_dump(mode="json"))
         return obj
 
 

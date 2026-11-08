@@ -8,7 +8,7 @@ from protocol_review.llm import MockLLM
 from protocol_review.pipeline import run_review
 
 
-def _sci_finding(i, title, page, quote, ref="SPIRIT-14", severity="major"):
+def _sci_finding(i, title, page, quote, ref="SPIRIT-14a", severity="major"):
     return {"id": f"SCI-{i}", "domain": "scientific", "category": "OTHER", "severity": severity, "title": title,
             "description": title, "evidence": [{"page": page, "quote": quote}], "guideline_ref": ref,
             "recommendation": "", "status": "proposed", "critic_notes": "", "source": "llm"}

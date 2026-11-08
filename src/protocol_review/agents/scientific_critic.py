@@ -9,7 +9,7 @@ from ..config import settings
 from ..knowledge_base import kb_text, rule_codes
 from ..llm import LLMError
 from ..state import CriticReport, Domain, Finding, FindingStatus, ReviewState, Severity, trace_event
-from ..tools import clinicaltrials
+from ..tools import agent_tools, clinicaltrials
 from . import base
 from .prompts import SCIENTIFIC_CRITIC_SYSTEM
 
@@ -24,6 +24,10 @@ def _user_prompt(state: ReviewState, targets: list[dict], verifications: list[di
         "# Scientific knowledge base (SPIRIT, ICH-GCP)\n" + kb_text("scientific"),
         mem,
         "# " + clinicaltrials.registry_summary(state.get("registry") or {}),
+        base.context_block(state),
+        ("# Tools\nYou may call tools before your verdicts: search_protocol to check whether something claimed missing is "
+         "described elsewhere, get_page to read the context of a quote, registry_field for REGISTRY_MISMATCH claims, "
+         "kb_lookup to check that the cited item requires what the finding claims.") if state.get("tool_use") else "",
         "# Reviewer summary\n" + (rep.get("summary") or ""),
         "# Findings to audit (return one verdict per id)\n" + base.findings_json(targets),
         "# Deterministic evidence check per finding (quotes located in the PDF? guideline code valid?)\n"
@@ -49,8 +53,13 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
     report: CriticReport | None = None
     if targets:
         try:
-            report = llm.structured(agent=AGENT, system=SCIENTIFIC_CRITIC_SYSTEM,
-                                    user=_user_prompt(state, targets, verifications), schema=CriticReport)
+            user = _user_prompt(state, targets, verifications)
+            if state.get("tool_use"):
+                report = llm.structured_with_tools(agent=AGENT, system=SCIENTIFIC_CRITIC_SYSTEM, user=user, schema=CriticReport,
+                                                   tools=agent_tools.specs(agent_tools.CRITIC_TOOLS),
+                                                   executor=agent_tools.make_executor(pages, state.get("protocol_json"), state.get("registry")))
+            else:
+                report = llm.structured(agent=AGENT, system=SCIENTIFIC_CRITIC_SYSTEM, user=user, schema=CriticReport)
         except LLMError as exc:
             log.error("scientific critic LLM failure: %s", exc)
             errors.append(f"scientific_critic: {exc}")
@@ -71,10 +80,12 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
         if v.revised_severity:
             f["severity"] = v.revised_severity.value
         if v.verdict == "verified":
-            # Guardrail: a quote the code could not find in the PDF is never 'verified'
-            if ver.get("evidence_checked") and ver.get("evidence_found", 0) < ver.get("evidence_checked", 0):
-                f["status"] = FindingStatus.UNVERIFIED.value
-                f["critic_notes"] = "Critic accepted it but the quoted evidence was not located in the PDF. " + v.notes
+            # Guardrail (the code floor): an unlocated quote, an unknown or unfitting guideline item, an absence claim about
+            # a topic the protocol describes, or a quote that only mentions the topic is never 'verified'
+            floor, note = base.code_status(ver)
+            if floor is not None:
+                f["status"] = floor.value
+                f["critic_notes"] = "Critic accepted it, but: " + note + " " + v.notes
             else:
                 f["status"] = FindingStatus.VERIFIED.value
                 f["critic_notes"] = v.notes

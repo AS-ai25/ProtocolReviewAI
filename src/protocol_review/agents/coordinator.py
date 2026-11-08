@@ -16,7 +16,7 @@ from ..pdf_parser import parse_pdf
 from ..protocol_json import build_protocol_json, section_for, validate_protocol_json
 from ..scoring import compute_score, hybrid_decision, score_line
 from ..state import Decision, Domain, Finding, FinalSummary, FindingStatus, ReviewState, Severity, trace_event
-from ..tools import checks
+from ..tools import checks, evidence_tools
 from . import base
 from .prompts import COORDINATOR_SYSTEM
 
@@ -42,7 +42,13 @@ def intake_node(state: ReviewState) -> dict:
                                                 f"nct={nct} rule_findings={len(rule_findings)}")
     out = {**parsed, "protocol_json": protocol_json, "nct_id": nct, "rule_findings": rule_findings, "findings": [],
            "revise_rounds": 0, "revise_requests": [], "registry": None, "errors": [], "notifications": [],
-           "scientific_reports": [], "critic_reports": [], "trace": trace}
+           "scientific_reports": [], "critic_reports": [], "trace": trace,
+           "numbers_table": evidence_tools.numbers_table(parsed["pages"]),          # v1.7 context for every agent
+           "study_design": evidence_tools.study_design(parsed["pages"])}
+    if state.get("tool_use"):
+        out["tool_use"] = True
+        memory.post_message(run_id, AGENT, "TOOL USE: the scientific reviewer and the critic may call tools "
+                            "(search_protocol, get_page, get_section, registry_field, kb_lookup, power_calc).", role="system")
     if state.get("force_scientific"):
         out["force_scientific"] = True
         memory.post_message(run_id, AGENT, "EVALUATION MODE: the scientific stage will run even if the administrative "
@@ -163,8 +169,18 @@ def finalize_node(state: ReviewState, llm) -> dict:
     admin_ok = bool(state.get("admin_ok"))
     decision, rationale = hybrid_decision(findings, admin_ok)
     score = compute_score(findings, admin_ok=admin_ok, scientific_ran=state.get("scientific_report") is not None)
-    trace = trace_event(state, AGENT, "decision", f"{decision.value} [{rationale}]; {score_line(score)}")
     errors = list(state.get("errors") or [])
+    # M1 (mentor, 8 Nov 2026): a run in which an LLM agent did not run can never end in PASS, and must say so
+    agent_failures = sorted({e.split(":")[0].strip() for e in errors
+                             if e.split(":")[0].strip() in ("administrative", "scientific_reviewer", "scientific_critic")})
+    if (state.get("admin_report") or {}).get("agent_failed") and "administrative" not in agent_failures:
+        agent_failures.append("administrative")
+    if agent_failures and decision == Decision.PASS:
+        decision = Decision.NEEDS_HUMAN_REVIEW
+        rationale = f"agent(s) did not run ({', '.join(agent_failures)}); automated PASS not allowed"
+    elif agent_failures:
+        rationale += f"; agent(s) did not run: {', '.join(agent_failures)}"
+    trace = trace_event(state, AGENT, "decision", f"{decision.value} [{rationale}]; {score_line(score)}")
 
     summary = None
     if llm is not None:
@@ -180,6 +196,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
                 "critic_summary": (state.get("critic_report") or {}).get("summary"),
                 "open_questions": (state.get("scientific_report") or {}).get("open_questions"),
                 "errors": errors,
+                "agents_that_did_not_run": agent_failures,
             }
             summary = llm.structured(
                 agent=AGENT, system=COORDINATOR_SYSTEM, schema=FinalSummary,
@@ -193,9 +210,12 @@ def finalize_node(state: ReviewState, llm) -> dict:
 
     text = summary.executive_summary + "\n\nKey findings:\n" + "\n".join(f"- {k}" for k in summary.key_findings) \
         + f"\n\nRecommendation: {summary.recommendation}"
+    if agent_failures:
+        text = (f"WARNING: the following agent(s) did not run (LLM error): {', '.join(agent_failures)}. Their part of the review "
+                f"is missing; the findings below are incomplete and the decision is capped at NEEDS_HUMAN_REVIEW.\n\n") + text
     memory.post_message(run_id, AGENT, f"Final decision {decision.value} ({rationale}). Sending summary and reports to the coordinator.")
     return {"findings": findings, "decision": decision.value, "decision_rationale": rationale, "score": score,
-            "final_summary": text, "trace": trace, "errors": errors}
+            "final_summary": text, "trace": trace, "errors": errors, "agent_failures": agent_failures}
 
 
 def domain_counts(findings: list[dict]) -> dict:
