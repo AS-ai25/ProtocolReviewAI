@@ -130,7 +130,7 @@ body:not([data-view="review"]) header #form,body:not([data-view="review"]) heade
       &nbsp; cell = <b>precision of verified findings</b> / <b>recall of labeled findings</b> (matched verified / verified · labels found / labels) &nbsp;·&nbsp; <span id="resmeta"></span>
     </div>
     <table id="restab"><thead></thead><tbody></tbody></table>
-    <div class="mut" style="font-size:12px;margin-top:8px">Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Precision against labels is a lower bound: the system reports about four times as many findings as the labeler recorded; the 30-finding human check measures the complement. Click a protocol column to open its full-system run. Source: <span dir="ltr">reports/results.md</span>, <span dir="ltr">reports/CP2_SUMMARY.md</span>.</div>
+    <div class="mut" style="font-size:12px;margin-top:8px">Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Label-matching precision counts every unlabeled verified finding as a false positive; it is not a lower bound on correctness: the 30-finding human evidence check (4 Nov 2026) found the cited passage supporting the finding in 1 of 30 (partly in 5), see reports/CP2_SUMMARY.md section 2b. Rows 2-3 re-scored 4 Nov after the sub-item guideline-code fix. Click a protocol column to open its full-system run. Source: <span dir="ltr">reports/results.md</span>, <span dir="ltr">reports/CP2_SUMMARY.md</span>.</div>
   </section>
   <section id="average">
     <h2>Across the four review types · general average</h2>
@@ -151,6 +151,7 @@ function setView(view){
   document.body.dataset.view=view;
   document.querySelectorAll(".view-tabs button").forEach(b=>{const active=b.dataset.target===view;b.classList.toggle("active",active);b.setAttribute("aria-selected",String(active));});
   $("#viewintro h2").textContent=VIEW_TEXT[view][0];$("#viewintro p").textContent=VIEW_TEXT[view][1];
+  if(location.hash!=="#"+view)history.replaceState(null,"","#"+view);     // the view survives a reload and can be linked
 }
 document.querySelectorAll(".view-tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.target)));
 
@@ -284,5 +285,6 @@ $("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#
   try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
   catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
 
-(async()=>{await loadHealth();await loadRuns(new URLSearchParams(location.search).get("run")||undefined);loadConfigTable();loadResults();if(current)watch();else loadLogs();})();
+(async()=>{const wanted=new URLSearchParams(location.search).get("run")||undefined;setView(wanted?"review":(location.hash||"#evaluation").slice(1));
+  await loadHealth();await loadRuns(wanted);loadConfigTable();loadResults();if(current)watch();else loadLogs();})();
 </script></body></html>
