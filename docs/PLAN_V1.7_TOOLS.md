@@ -1,7 +1,10 @@
 # Plan v1.7: real tools for the agents, and the mentor's findings of 8 November
 
-**Status:** plan only, nothing implemented (decided 8 November 2026 after the mentoring session). To be extended with
-the mentor's written comments. Owner of the decision: Amir and Ron.
+**Status (8 November 2026, evening):** steps A and B built, tested and run live the same day as rows 2', 3', 4'
+(`reports/results.md`; reading in `reports/CP2_SUMMARY.md` section 8; charter v1.7). Mentor items done: M1, M2 (a, b, d),
+M9, M11 (the change). Open: M2c repeat runs, M3, M4, M5, M6, M7, M8, M10 slide, M12, M13. Result in one line: the tools
+moved findings from verified to unverified (4': 36 verified scientific findings instead of 112) and did not change
+label-matching precision beyond noise; rows 1-4 stay the headline until Ron's second human check of row 4'.
 
 ## Why
 
@@ -110,6 +113,12 @@ submission (12 Nov), **P1** = before the presentation (15/18 Nov) if time allows
 | M11 | **Which agent chooses a tool or decides the next step?** | **P0** (answer) / P2 (change) | Today: none; routing and tools are code (agentic workflow, evaluator-optimizer pattern). Plan v1.7 above gives the critic and the single agent a tool loop; until then the answer is the honest one. | 0 / plan |
 | M12 | **How much time does the system save the coordinator?** | **P0** (answer) | From M7. If no committee data arrives in time: an estimate from the five protocols (pages read vs findings to check), labelled as an estimate. | with M7 |
 | M13 | **Product / POC / MVP.** "Get to a product; explain every choice." | P2 | After the course: hosted instance, committee pilot on 10 protocols with the coordinators' feedback as the next label set. | later |
+
+**Status of the table above (8 November, evening).** M1 done (`agent_failures`, decision capped, tests). M2 (a) and (b) done
+(`eval/rescore.py --bootstrap`, gaps against rows 1, 2 and 3 and between the tool-use rows), (d) the slide is to write,
+(c) repeat runs not run. M9 done (row 0). M11: the change is done (rows 2', 3', 4'), the answer is now "in the tool-use
+rows the reviewer, the critic and the single agent choose their tools; routing and the decision rule stay in code".
+M4, M5, M6, M7, M8, M3, M12, M13 unchanged.
 
 ### Prepared answers (the mentor's list, to rehearse)
 1. Full system at 6x tokens: two tiers; recall 78% vs 46%; USD 2 vs 0.3 per protocol vs hours of a coordinator (M7).

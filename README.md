@@ -107,13 +107,14 @@ src/protocol_review/
   memory.py / db.py   3-layer memory (SQLite via SQLAlchemy)
   reports.py          Markdown + PDF reports (xhtml2pdf)     notify.py  email with PDFs (SMTP / dry-run .eml)
   agents/             coordinator, administrative, scientific_reviewer, scientific_critic, prompts
-  tools/              checks.py (deterministic), clinicaltrials.py (registry API)
+  tools/              checks.py (deterministic), clinicaltrials.py (registry API),
+                      evidence_tools.py (v1.7 deterministic evidence floor), agent_tools.py (tools the LLM may call)
   ingest/imap_poller.py
 knowledge_base/       administrative/admin_checklist.md, scientific/spirit_checklist.md, ich_gcp_key_points.md
 samples/              make_sample_protocols.py -> two synthetic PDFs (good / flawed)
 eval/                 labeled_cases/*.json, evaluate.py, matching.py (locked matching rule), category_aliases.json, ablation.py
-reports/results.md    4-row ablation table written by eval/ablation.py
-tests/                31 pytest tests (MockLLM, no network)
+reports/results.md    8-row ablation table (0 rules only, 1-4 frozen, 2'/3'/4' tool use) with bootstrap intervals, eval/rescore.py
+tests/                65 pytest tests (MockLLM, no network)
 outputs/<run_id>/     final_report.md/.pdf, administrative_report.md/.pdf, scientific_report.md/.pdf, protocol.json, findings.json, state.json, email.eml
 ```
 
@@ -152,7 +153,7 @@ refusal fallbacks are enabled (`LLM_FALLBACKS=true`); set `false` when running t
 # evaluation
 .venv/Scripts/python eval/evaluate.py --mode baseline
 .venv/Scripts/python eval/evaluate.py --mode agents --force-scientific
-.venv/Scripts/python eval/ablation.py --no-llm          # 4-row ablation table -> reports/results.md (see section 6)
+.venv/Scripts/python eval/ablation.py --no-llm          # ablation dry run, 7 configurations -> reports/results.md (see section 6)
 ```
 
 ### API
@@ -221,14 +222,18 @@ Public protocols rarely include consent forms or insurance certificates, so in p
 | `--force-scientific` | `cli.py review`, `eval/evaluate.py --mode agents`, `run_review(force_scientific=True)` | gate bypass: the scientific stage runs even when the administrative gate fails; the decision is still `RETURNED_ADMIN`, the scientific findings are produced, scored and reported (score scope `full_forced`) |
 | `--no-critic` | `cli.py review`, `eval/evaluate.py --mode agents`, `run_review(no_critic=True)` | ablation: the Scientific Critic (and the revision round) is skipped; the reviewer's findings are verified by code only, exactly like the single agent's |
 | `--no-verification` | `cli.py single`, `eval/evaluate.py --mode single`, `run_single_agent(verify=False)` | ablation: no code-level evidence check; the model's own status stands (unmarked findings count as verified) |
+| `tool_use` / `tools` | `run_review(tool_use=True)`, `run_single_agent(tools=True)`, `eval/ablation.py` rows 2' 3' 4', webhook `config` | v1.7: the reviewer, the critic and the single agent call the protocol tools themselves (`tools/agent_tools.py`: search_protocol, get_page, get_section, registry_field, kb_lookup, power_calc; at most six calls per LLM call); the deterministic verification still runs afterwards |
 
-**Ablation runner.** `eval/ablation.py` runs the four Checkpoint 2 configurations on every labeled case (all with
-the gate bypass) and writes `reports/results.md`: single agent without code verification, single agent with it,
-full system without the critic, full system. Columns: precision of verified findings, recall (coverage) of
-labeled findings, unverified count, LLM calls, input / output tokens, runtime; a JSON copy goes to `eval/results/`.
+**Ablation runner.** `eval/ablation.py` runs the seven configurations on every labeled case (all with the gate
+bypass) and writes `reports/results.md`: 1 single LLM call without code verification, 2 with it, 3 full system
+without the critic, 4 full system, and the v1.7 tool-use rows 2' (single agent with tools), 3' (reviewer with tools),
+4' (reviewer and critic with tools). Columns: precision of verified findings, recall (coverage) of labeled findings,
+unverified count, LLM calls, input / output tokens, runtime; a JSON copy goes to `eval/results/`. `eval/rescore.py`
+rebuilds the tables from the saved findings without LLM calls, adds row 0 (rules only), merges several runs
+(`--stamp a,b`) and the protocol-level bootstrap (`--bootstrap 2000`).
 
 ```bash
-.venv/Scripts/python eval/ablation.py                 # live (ANTHROPIC_API_KEY), 4 x N reviews
+.venv/Scripts/python eval/ablation.py                 # live (ANTHROPIC_API_KEY), 7 x N reviews; --only <keys> for a subset
 .venv/Scripts/python eval/ablation.py --no-llm        # dry run with the MockLLM: harness check, no API calls
 .venv/Scripts/python eval/ablation.py --no-registry --only agents_full   # skip ClinicalTrials.gov / one row
 ```
@@ -262,7 +267,8 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
 
 - Structured outputs validate every agent response; invalid JSON is retried once with the error.
 - `stop_reason == "refusal"` is handled; server-side fallbacks re-run declined requests.
-- LLM failures degrade to deterministic results and are listed in the report (`errors`).
+- LLM failures degrade to deterministic results and are listed in the report (`errors`); since v1.7 any agent that
+  did not run caps the decision at `NEEDS_HUMAN_REVIEW` (never `PASS`) and the summary opens with a warning (`agent_failures`).
 - A finding is never `verified` unless its quote is located in the PDF; unknown guideline codes are flagged.
 - Bounded revision loop; anything still open at finalisation becomes `UNVERIFIED` -> human review.
 - Full trace of agent actions and decisions in `state.json` and the final report.
@@ -276,4 +282,7 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
   blind labeled findings (Ron), ablation table on the real set, 30-finding human check (done 4 Nov: 1 yes / 5 partly / 24 no,
   `eval/human_check/`), demo video. Knowledge base kb-v2 (Ron, `knowledge_base/VERSION.md`); sub-item guideline-code fix and
   re-score of the code-only ablation rows (`reports/results.md`, `reports/CP2_SUMMARY.md`).
+- 8 Nov (mentoring session, charter v1.7): agent failure never ends in PASS (M1); row 0 and protocol-level bootstrap in the
+  evaluation (M2, M9); deterministic evidence tools and LLM tool calling (`tools/evidence_tools.py`, `tools/agent_tools.py`)
+  run live as rows 2' 3' 4' (`reports/results.md`, `reports/CP2_SUMMARY.md` section 8) - **done**.
 - Final (12 Nov): evaluation vs rule-based and single LLM call baselines, results and presentation.

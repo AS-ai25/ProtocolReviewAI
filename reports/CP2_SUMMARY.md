@@ -11,6 +11,8 @@ rows (section 2.5). The raw table of the live run, scored with the labels as fir
 
 Updated 4 November 2026 after Ron's deliverables (knowledge base kb-v2, filled 30-finding human check,
 `reports/EVALUATION_AND_LIMITATIONS.md`, `reports/ABLATION_ANALYSIS.md`, `docs/CHARTER_CONSISTENCY_AUDIT.md`).
+Updated 8 November 2026 after the mentoring session: section 8 (row 0, bootstrap uncertainty, and the v1.7 tool-use rows
+2', 3', 4' run the same day). Sections 1-6 describe the frozen rows 1-4 and are unchanged.
 
 ## 1. Headline numbers
 
@@ -22,6 +24,7 @@ Updated 4 November 2026 after Ron's deliverables (knowledge base kb-v2, filled 3
 | scientific only (37 labels) | 4 Full system | **34% (38/112)** | **78% (29/37)** | 50 | - | - |
 
 Before the 4 November correction row 2 read 13% / 46% (all domains) and 18% / 46% (scientific); row 4 is unchanged.
+Row 0 (rules only) and the v1.7 rows 2', 3', 4' of 8 November are in section 8; they do not change this headline.
 
 Against the charter targets:
 
@@ -133,7 +136,7 @@ rule findings (section 7).
 
 ![The four configurations](../docs/ablation_configs.png)
 
-*`docs/ablation_configs.png` (source `docs/ablation_configs.html`): the same pipeline in the four rows of the ablation; grey dashed boxes are absent in that configuration; the red dashed path is the production behaviour of the administrative gate, bypassed in evaluation runs; the blue dashed arrow is the revision round.*
+*`docs/ablation_configs.png` (source `docs/ablation_configs.html`): the same pipeline in the four frozen rows of the ablation; grey dashed boxes are absent in that configuration; the red dashed path is the production behaviour of the administrative gate, bypassed in evaluation runs; the blue dashed arrow is the revision round. The tool-use rows of section 8 are the same pipeline with a tool loop inside the single call (2'), the reviewer (3') or the reviewer and the critic (4').*
 
 * **Recall.** On the scientific view the full system reaches 78% of the labeled findings (29/37) against 46% for the
   single agent with the same verification. Per protocol: ABC PICU 7/8, SAFER 7/7, INVEST 7/9, fetal cardiac 5/8,
@@ -167,7 +170,9 @@ another agent (one revision round). We say so in the presentation rather than in
 A related question, "why do the agents not call tools themselves": the tools (PDF parsing, the 29 rules, the registry
 lookup, the quote and code checks) run in code around each LLM call, always, so verification cannot be skipped by the
 model and every row of the ablation has a fixed number of calls. LLM tool calling (the model asking for a page or a
-search) is the next step, documented as future work (section 7).
+search) was built on 8 November (v1.7) and run as rows 2', 3', 4' (section 8): there the single call, the reviewer and
+the critic choose their own tool calls (113 calls over 15 runs), so by the strict definition those rows are agents;
+routing between agents and the decision rule stay in code in every row.
 
 ## 5. Limitations to state plainly
 
@@ -177,7 +182,9 @@ search) is the next step, documented as future work (section 7).
   "requires expert verification", never as verified claims.
 * The 30-finding human evidence check (section 2b) found the cited passage supporting the finding in 1 of 30, partly in
   5. `verified` is a traceability status, not a correctness guarantee.
-* One run per configuration (no repeats); differences of a few points between rows are not significant.
+* One run per configuration (no repeats); differences of a few points between rows are not significant. Since
+  8 November every row carries a protocol-level bootstrap interval (section 8); run-to-run variation of the model is
+  still not separated from protocol variation.
 * The matching rule was amended for generic categories on 29 October before the run (documented, conservative).
 * The domain of 16 labels was corrected after the run but before the labeler saw any output (section 2.3); the raw
   table with the labels as first delivered is kept next to the re-scored one.
@@ -185,7 +192,9 @@ search) is the next step, documented as future work (section 7).
   deterministic re-score, documented in `reports/results.md` and in the charter (v1.6).
 * The evidence text attached to rule findings can come from the contents page (section 2b); fixing it changes every
   row and needs a new run.
-* All results were produced with knowledge base kb-v1; kb-v2 (Ron, 4 November) has not been run.
+* Rows 1-4 were produced with knowledge base kb-v1 and the v1.6 code; rows 2', 3', 4' (section 8) with kb-v2 and the
+  v1.7 code, eight days later. A difference between a primed and an unprimed row therefore mixes the tools, the
+  knowledge base and run-to-run variation.
 
 ## 6. Reproducing
 
@@ -196,10 +205,12 @@ python eval/rescore.py --stamp <stamp> --kb-codes eval/results/kb-v1-codes.json 
 python eval/make_human_check.py --stamp <stamp>     # 30-finding sheet for the human check
 ```
 
-## 7. Future work: evidence tools for the agents (not before the final submission)
+## 7. Evidence tools for the agents (planned 1 November, built 8 November as v1.7; results in section 8)
 
-Decided on 1 November (proposal in the team's notes): no change to the agents before 12 November. The ranked list,
-for the presentation's "what we would improve" slide:
+Decided on 1 November: no change to the agents before 12 November. Reversed on 8 November after the mentoring session
+(the mentor's point: a model that chooses no tool is not an agent). The tools below were built the same day as
+deterministic evidence tools for every configuration plus LLM tool calling, and run as rows 2', 3', 4' next to the
+frozen rows (section 8). The ranked list as planned:
 
 | Tool | Agent | Problem it addresses | Evidence |
 |---|---|---|---|
@@ -212,5 +223,101 @@ for the presentation's "what we would improve" slide:
 
 Literature behind the direction: CRITIC (Gou et al., ICLR 2024: self-critique without tool feedback is unreliable, with
 tools it works), Agent-as-a-Judge (Zhuge et al., 2024: a judge with tools agrees with humans 90% vs 70%), PowerGPT
-(2025 RCT: keep the LLM out of the arithmetic). Any change to the critic is followed by a re-run of row 4 only;
-rows 1-3 stay as the frozen baselines.
+(2025 RCT: keep the LLM out of the arithmetic). Rows 1-4 stay frozen; the tool-use configurations are reported as new
+rows, never as a re-run of row 4.
+
+## 8. v1.7 (8 November 2026): row 0, uncertainty, and agents with tool use
+
+Context: mentoring session of 8 November (findings M1-M13 with priorities in `docs/PLAN_V1.7_TOOLS.md`). Built,
+tested (65 automated tests) and run the same day:
+
+* **M1, agent failure.** The mentor ran the synthetic protocol with an invalid API key: zero LLM calls, decision PASS.
+  Now any agent that did not run caps the decision at NEEDS_HUMAN_REVIEW, the summary opens with a warning naming the
+  agent, and `agent_failures` is stored with the run and shown on the dashboard. Same rule in the single call.
+* **M9, row 0.** Rules only, computed from the rule findings saved with every run: scientific precision 6% (1/16),
+  recall 3% (1 of 37 labels); all-domain 9% / 9%. The rules give the administrative gate; the scientific recall comes
+  from the LLM.
+* **M2, uncertainty.** Protocol-level bootstrap (five protocols resampled with replacement, B = 2000, seed 20261108):
+  95% interval per row and, for every gap, the mean, the interval and P(gap <= 0). Gaps are reported against both
+  baselines (rows 1 and 2) and against row 3.
+* **Evidence tools (code floor, every configuration).** Numbers table and study design built at intake and given to
+  every agent; absence search over the whole protocol for "missing X" claims; mention-is-not-evidence rule;
+  category-to-guideline-code fit; duplicate merge (rejected, not deleted); full-sentence rule quotes that skip the
+  contents page. The critic can demote a finding but cannot verify one the code demoted.
+* **Tool calling (`tool_use`).** The reviewer (`search_protocol`, `get_page`, `get_section`, `kb_lookup`,
+  `power_calc`), the critic (same, with `registry_field` instead of `power_calc`) and the single agent (all six) call
+  the tools themselves, at most six calls per LLM call; the deterministic verification runs after the loop.
+
+Run: `eval/ablation.py --only single_tools agents_no_critic_tools agents_full_tools --cases-glob "nct*.json"`,
+stamp `20261108-154153`, model `claude-opus-5-5`, knowledge base kb-v2, 15 reviews, 57 minutes, 5.4M input tokens.
+Merged with the frozen run by `eval/rescore.py --stamp 20261029-205913,20261108-154153 --kb-codes
+eval/results/kb-v1-codes.json` into the eight-row `reports/results.md`.
+
+### 8.1 The eight rows (scientific view, 37 labels)
+
+| Row | Precision of verified | Recall of labels | Unverified (scientific) | Tokens in | Runtime |
+|---|---|---|---|---|---|
+| 0 Rules only | 6% (1/16) | 3% (1/37) | 0 | 0 | 0 s |
+| 1 Single LLM call, no code verification | 29% (19/66) | 57% (21/37) | 0 | 207k | 548 s |
+| 2 Single LLM call + code verification | 25% (17/68) | 46% (17/37) | 0 | 207k | 568 s |
+| 2' Single agent with tool use + code verification | 29% (7/24) | 49% (18/37) | 33 | 729k | 882 s |
+| 3 Full system without the critic | 33% (26/79) | 57% (21/37) | 9 | 453k | 918 s |
+| 3' Full system without the critic, reviewer with tool use | 31% (9/29) | 65% (24/37) | 47 | 1,043k | 1,190 s |
+| 4 Full system | 34% (38/112) | 78% (29/37) | 50 | 1,280k | 2,372 s |
+| 4' Full system, reviewer and critic with tool use | 36% (13/36) | 70% (26/37) | 113 | 3,655k | 3,418 s |
+
+All-domain view (46 labels): 2' 18% (10/57) / 46%; 3' 17% (12/70) / 59%; 4' 21% (17/80) / 65% (full tables,
+intervals and per-case rows in `reports/results.md`).
+
+### 8.2 What the agents did with the tools
+
+113 tool calls over the 15 runs: 2' 19 (search_protocol 14, power_calc 4, registry_field 1); 3' 28 (search 24,
+power_calc 4); 4' 66 (reviewer 46: search 39, power_calc 6, kb_lookup 1; critic 20: search 19, registry_field 1).
+`get_page` and `get_section` were never called: the agents already receive the whole protocol in the prompt, so the
+tool they reach for is the search before a "missing X" claim, and the sample-size calculator. Every call and its
+result are stored with the LLM interaction (`_tool_calls`) and shown on the dashboard.
+
+The code floor did most of the demoting. Of the unverified findings (both domains) in the new rows, the absence
+search accounts for 39 (2'), 66 (3') and 85 (4'); the mention-only rule for 3 / 3 / 7; a quote not located for
+5 / 10 / 6; in 4' another 39 came from the critic's own verdicts and 8 from "no revision round left".
+
+Label-matched share by status (scientific findings, critic-raised issues excluded):
+
+| Row | verified (matched) | unverified (matched) |
+|---|---|---|
+| 4 Full system | 112 (38) = 34% | 14 (3) = 21% |
+| 2' | 24 (7) = 29% | 33 (8) = 24% |
+| 3' | 29 (9) = 31% | 47 (10) = 21% |
+| 4' | 36 (13) = 36% | 74 (13) = 18% |
+
+### 8.3 Reading
+
+1. **Precision did not move.** Every precision gap that involves a tool-use row has an interval that includes zero:
+   4' vs 4 +2 pp (-18 to +20, P = 0.38), 4' vs 2' +6 pp (-5 to +17, P = 0.13), 3' vs 3 -2 pp, 2' vs 2 +5 pp
+   (P = 0.24). The success criterion written in the plan (label-matching precision >= 45% at recall >= 70%) is not met.
+2. **The tools changed where findings go, not how many match a label.** Row 4' verifies 36 scientific findings instead
+   of 112 and sends 113 to a human instead of 50. The demoted findings match a label less often (18%) than the
+   verified ones (36%), so the floor removes mostly findings that match nothing, but it also demoted 13 matched
+   findings: the recall counted on verified findings alone fell. Whether the demoted "missing X" findings are the
+   kind that failed the human check (24 "no" of 30, section 2b) is exactly what label matching cannot see.
+3. **Recall.** 4' reaches 70% of the labels against 78% for row 4; the gap is below zero in every resample
+   (P = 1.00). 3' is above 3 (65% vs 57%) and 2' above 2 (49% vs 46%), both within noise. The tool loop makes the
+   reviewer more careful and shorter: fewer candidates, fewer matches.
+4. **Cost.** 4' uses 2.9x the input tokens of row 4 (3.65M vs 1.28M) and 1.4x the runtime; 2' uses 3.5x the tokens
+   of row 2. Each tool round re-sends the whole conversation, protocol included.
+5. **The mentor's question.** In rows 2', 3', 4' the model chooses its tools (113 calls), so these rows are agents by
+   the strict definition, and the comparison she asked for exists: one agent with tools (2') against four agents
+   with tools (4') gives +6 pp precision (noise) and +22 pp recall (P = 0.01) at 5x the tokens. The honest summary is
+   that tool use made the system route more and claim less; it did not make its claims agree more with the labels.
+6. **Headline.** Rows 1-4 stay the headline result. Row 4' becomes the headline only if the second 30-finding human
+   evidence check, drawn from it with the same sampler (`eval/make_human_check.py --stamp 20261108-154153 --row
+   agents_full_tools`, new seed), shows that the cited passages support the findings more often than 1 yes / 5
+   partly / 24 no. That is the number the tools were built to move.
+
+### 8.4 Still open from the mentoring session
+
+M2c repeat runs (the same protocol twice on rows 1, 2 and 4, to measure run-to-run variation directly), M3 (the
+unlabeled protocols), M4 (audit of the 29 rules against the labels), M5 (Ron classifies 40 unmatched verified
+findings), M6 (second human-check column: is the finding itself correct), M7 / M12 (committee time and cost), M8
+(Sonnet comparison), M10 (the labels-changed answer, written), M13 (product). Order and owners in
+`docs/PLAN_V1.7_TOOLS.md`.
