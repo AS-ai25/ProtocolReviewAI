@@ -13,7 +13,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:12px;
 section h2{margin:0 0 10px;font-size:15px;color:var(--acc);text-transform:uppercase;letter-spacing:.6px}
 #summary,#results,#average{grid-column:1 / span 2}#average{min-height:0}
 #labeled{display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%}#labeled button{font-size:12px;padding:4px 9px}#labeled button.on{border-color:var(--acc);color:var(--acc)}
-#restab th.case{cursor:pointer;color:var(--acc)}#restab th.case small{display:block;color:var(--mut);font-weight:400}
+#restab th.case{cursor:pointer;color:var(--acc)}#restab th small{display:block;color:var(--mut);font-weight:400}
 #cmp{font-size:12px}#cmp th,#cmp td{padding:4px 5px;white-space:nowrap}#cmp td:first-child{white-space:nowrap}
 #restab td.c{text-align:center;font-family:Consolas,monospace;font-size:12.5px}#restab td.c small{display:block;color:var(--mut);font-size:10.5px}#restab tr.best td{background:#13261a}#restab td.p{color:var(--acc)}#restab td.r{color:var(--grn)}
 .steps{display:flex;gap:6px;margin-bottom:12px}.step{flex:1;text-align:center;padding:7px 4px;border-radius:8px;background:#0e1420;border:1px solid var(--line);color:var(--mut);font-size:13px}
@@ -58,11 +58,17 @@ body[data-view="evaluation"] #process,body[data-view="evaluation"] #tokens,body[
 body[data-view="agents"] main>section:not(#agentsinfo){display:none}
 body:not([data-view="review"]) header #form,body:not([data-view="review"]) header #labeled,body:not([data-view="review"]) header #runs,body:not([data-view="review"]) header #refresh,body:not([data-view="review"]) header label:has(#runs),body:not([data-view="review"]) header #msg{display:none}
 #results,#average{overflow-x:auto}
+#lang{margin-inline-start:auto;font-size:12px;padding:4px 10px}
+html[dir=rtl] body{font-family:"Segoe UI",Arial,"Noto Sans Hebrew",sans-serif}
+html[dir=rtl] th:first-child,html[dir=rtl] td:first-child{text-align:right}html[dir=rtl] th,html[dir=rtl] td{text-align:left}
+html[dir=rtl] .timeline,html[dir=rtl] #cmp,html[dir=rtl] #restab,html[dir=rtl] #cfg,html[dir=rtl] pre,html[dir=rtl] #loglines,html[dir=rtl] .bars,html[dir=rtl] .kpis,html[dir=rtl] .steps,html[dir=rtl] #runs,html[dir=rtl] .summary-text,html[dir=rtl] .links,html[dir=rtl] #sum table{direction:ltr}
+html[dir=rtl] .ev .det,html[dir=rtl] .det .mut{direction:rtl;text-align:right}html[dir=rtl] .det pre{direction:ltr;text-align:left}
+html[dir=rtl] #cmpmeta,html[dir=rtl] #confline,html[dir=rtl] #resmeta{direction:rtl}
 @media(max-width:950px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}main{grid-template-columns:1fr}main>section{grid-column:1/-1!important}}
 @media(max-width:550px){.agent-grid{grid-template-columns:1fr}}
 </style></head><body data-view="evaluation">
 <header>
-  <h1>Protocol Review · live</h1><span class="mut" id="health">…</span>
+  <h1>Protocol Review · live</h1><span class="mut" id="health">…</span><button type="button" id="lang" title="שפת הממשק / interface language">עברית</button>
   <label class="mut">Run <select id="runs"></select></label>
   <button id="refresh">↻</button>
   <form id="form">
@@ -141,6 +147,66 @@ body:not([data-view="review"]) header #form,body:not([data-view="review"]) heade
 </main>
 <script>
 const $=s=>document.querySelector(s);
+// ---- interface language (presentation layer only; agent output, reports and run ids stay in English)
+const LANG=(new URLSearchParams(location.search).get("lang")||localStorage.getItem("lang")||"en")==="he"?"he":"en";
+const HE={
+  "Run":"ריצה","Start review":"התחל סקירה","force scientific (evaluation)":"force scientific (הערכה)","Labeled protocols (full-system run):":"פרוטוקולים מתויגים (ריצת המערכת המלאה):",
+  "NCT id (optional)":"מספר NCT (לא חובה)","webhook secret":"סוד ה-webhook",
+  "4 · full system (4 agents, critic) - production":"4 · המערכת המלאה (4 סוכנים, מבקר) - ייצור","3 · full system without critic (evaluation)":"3 · מערכת מלאה בלי מבקר (הערכה)",
+  "2 · single agent + code verification (evaluation)":"2 · סוכן יחיד + אימות קוד (הערכה)","1 · single agent, no verification (evaluation)":"1 · סוכן יחיד, בלי אימות (הערכה)",
+  "Evaluation & Ablation":"הערכה ו-Ablation","Live Protocol Review":"סקירת פרוטוקול חיה","Meet the Agents":"הכירו את הסוכנים",
+  "Explore saved assessment results without running a new protocol review or using LLM tokens.":"תוצאות ההערכה השמורות, בלי להריץ סקירה חדשה ובלי טוקנים.",
+  "Upload a PDF only when you intend to start a new review. Existing runs appear here when the local database contains them.":"העלו PDF רק כדי להתחיל סקירה חדשה. ריצות קיימות מופיעות כאן כשהן נמצאות במסד הנתונים המקומי.",
+  "Understand the responsibilities and limitations of the four-agent system.":"התפקידים והמגבלות של מערכת ארבעת הסוכנים.",
+  "Multi-Agent Architecture":"ארכיטקטורה רב-סוכנית","Four cooperating agent roles. This is an explanatory view, not an active run.":"ארבעה תפקידים משתפי פעולה. זו תצוגת הסבר, לא ריצה פעילה.",
+  "01 · Coordinator":"01 · מתאם","Prepares the protocol, manages the workflow and brings the findings together for the final decision and report.":"קולט את הפרוטוקול, מנהל את זרימת העבודה ומאחד את הממצאים להחלטה הסופית ולדוח. ההחלטה מתקבלת בכללים בקוד, לא במודל.",
+  "02 · Administrative Reviewer":"02 · סוקר מנהלי","Checks administrative completeness and requirements. The normal workflow can stop at the administrative gate.":"בודק שלמות מנהלית מול 15 סעיפי רשימה. בזרימה הרגילה הגשה לא שלמה נעצרת בשער המנהלי.",
+  "03 · Scientific Reviewer":"03 · סוקר מדעי","Reviews scientific and methodological issues using the project knowledge bases and relevant protocol evidence.":"סוקר בעיות מדעיות ומתודולוגיות מול SPIRIT 2025 ו-ICH-GCP, ומשווה לרישום ב-ClinicalTrials.gov.",
+  "04 · Scientific Critic":"04 · מבקר מדעי","Challenges the scientific findings and may request a revision. This improves scrutiny but does not replace expert verification.":"מאמת כל ממצא של הסוקר (הקוד בודק ציטוט וקוד הנחיה, המודל נותן פסק דין) ויכול לבקש סבב תיקון אחד. לא מחליף בדיקה של מומחה.",
+  "How to interpret evidence:":"איך לקרוא ראיות:","a finding marked verified by automated checks is not necessarily clinically or scientifically correct. Human review remains essential.":"ממצא שסומן \"מאומת\" בבדיקות אוטומטיות אינו בהכרח נכון קלינית או מדעית. בדיקה אנושית נשארת הכרחית.",
+  "Process · agents on the blackboard":"תהליך · הסוכנים על הלוח המשותף","click an event for its details: the full message, the step detail, or the LLM call's prompt and answer":"לחיצה על אירוע פותחת את פרטיו: ההודעה המלאה, פירוט השלב, או הפרומפט והתשובה של קריאת ה-LLM",
+  "select a run":"בחרו ריצה","no events yet":"אין אירועים עדיין",
+  "Intake + validation":"קליטה + ולידציה","Administrative gate":"שער מנהלי","Scientific reviewer":"סוקר מדעי","Critic":"מבקר","Revision round":"סבב תיקון","Final + reports":"סיום + דוחות",
+  "Tokens · this run":"טוקנים · הריצה הזו","tokens in (prompt: protocol text, knowledge base, rule findings)":"טוקנים נכנסים (הפרומפט: טקסט הפרוטוקול, מאגר הידע, ממצאי הכללים)","tokens out (the model's answer)":"טוקנים יוצאים (תשובת המודל)",
+  "×N = LLM calls by that agent":"×N = מספר קריאות ה-LLM של הסוכן","click an agent for its calls":"לחיצה על סוכן מציגה את הקריאות שלו",
+  "This protocol · the four review types":"הפרוטוקול הזה · ארבע תצורות הסקירה","runs of the same protocol (latest per configuration) · upload the same PDF with another configuration to fill the missing rows":"ריצות של אותו פרוטוקול (האחרונה בכל תצורה) · העלאת אותו PDF בתצורה אחרת ממלאת את השורות החסרות",
+  "Review type":"תצורה","run":"ריצה","calls":"קריאות","tokens in":"טוקנים נכנסים","tokens out":"טוקנים יוצאים","s":"שניות","findings":"ממצאים","verified":"מאומתים","→ human":"→ לאדם","decision":"החלטה",
+  "Summary":"סיכום","the summary appears when the run is done":"הסיכום מופיע כשהריצה מסתיימת",
+  "Logs · server":"לוגים · שרת","this run only":"הריצה הזו בלבד","filter text…":"סינון טקסט…","no log lines yet":"אין שורות לוג עדיין",
+  "Results · the four configurations against the blind labels":"תוצאות · ארבע התצורות מול התוויות העיוורות",
+  "scientific domain only (reduced-scope view)":"תחום מדעי בלבד (היקף מצומצם)","all domains (charter table)":"כל התחומים (טבלת הצ'רטר)",
+  "cell =":"תא =","precision of verified findings":"precision של ממצאים מאומתים","recall of labeled findings":"recall של התוויות","(matched verified / verified · labels found / labels)":"(מאומתים תואמים / מאומתים · תוויות שנמצאו / תוויות)",
+  "Across the four review types · general average":"ארבע התצורות · ממוצע כללי","ablation runs (abl-*) · per run averages ·":"ריצות ה-ablation (abl-*) · ממוצע לריצה ·",
+  "real-protocol set (5 protocols, 29 Oct 2026)":"סט הפרוטוקולים האמיתיים (5, 29.10.2026)","all ablation runs (synthetic + real)":"כל ריצות ה-ablation (סינתטי + אמיתי)",
+  "runs":"ריצות","calls/run":"קריאות/ריצה","tokens in/run":"טוקנים נכנסים/ריצה","tokens out/run":"טוקנים יוצאים/ריצה","s/run":"שניות/ריצה",
+  "LLM call":"קריאת LLM","step":"שלב","LLM calls":"קריאות LLM","LLM time":"זמן LLM","wall clock":"זמן כולל","revision rounds":"סבבי תיקון","no LLM calls yet":"אין קריאות LLM עדיין",
+  "Configuration":"תצורה","Configuration:":"תצורה:","gate bypass (evaluation)":"עקיפת השער (הערכה)","not run yet":"טרם הורץ","protocol":"פרוטוקול","latest finished run per configuration":"הריצה האחרונה שהסתיימה בכל תצורה",
+  "1 · single, no verification":"1 · יחיד, בלי אימות","2 · single + code verification":"2 · יחיד + אימות קוד","3 · full, no critic":"3 · מלאה, בלי מבקר","4 · full system":"4 · המערכת המלאה",
+  "no ablation runs in this database":"אין ריצות ablation במסד הנתונים הזה",
+  "all protocols":"כל הפרוטוקולים","pooled":"מאוחד","mean of":"ממוצע של","protocols":"פרוטוקולים","unverified":"לא מאומתים","total · per protocol":"סה\"כ · לפרוטוקול","per protocol":"לפרוטוקול",
+  "re-scored":"חושב מחדש","score / 100":"ציון / 100","rejected / withdrawn":"נדחו / נמשכו","severity":"חומרה","domain":"תחום","cost":"עלות","pages":"עמודים","configuration:":"תצורה:","no reports":"אין דוחות","report":"דוח",
+  "final":"סופי","admin":"מנהלי","scientific":"מדעי",
+  "model":"מודל","prompt (excerpt of what the agent was asked)":"הפרומפט (קטע ממה שהסוכן נשאל)","answer (the structured output the model returned)":"התשובה (הפלט המובנה שהמודל החזיר)","loading the call…":"טוען את הקריאה…",
+  "pipeline step":"שלב בצינור","by":"על ידי","at":"בשעה","message posted by":"הודעה שפרסם","system note from":"הערת מערכת של","full text":"טקסט מלא","interaction":"אינטראקציה",
+  "no log lines for this run yet":"אין שורות לוג לריצה הזו עדיין","no log lines":"אין שורות לוג","logs unavailable:":"הלוגים לא זמינים:",
+  "Saved run not found in the local database. Evaluation results are still available under Evaluation & Ablation. No new review has been started.":"הריצה השמורה לא נמצאה במסד הנתונים המקומי. תוצאות ההערכה זמינות בתצוגת הערכה ו-Ablation. לא הותחלה סקירה חדשה.",
+  "uploading…":"מעלה…","queued":"בתור","error:":"שגיאה:","server unreachable":"השרת לא זמין","NO LLM":"ללא LLM","email dry-run":"מייל במצב ניסוי",
+  "Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Label-matching precision counts every unlabeled verified finding as a false positive; it is not a lower bound on correctness: the 30-finding human evidence check (4 Nov 2026) found the cited passage supporting the finding in 1 of 30 (partly in 5), see reports/CP2_SUMMARY.md section 2b. Rows 2-3 re-scored 4 Nov after the sub-item guideline-code fix. Click a protocol column to open its full-system run. Source:":"תוויות: חמישה פרוטוקולים ציבוריים שרון לוי תייגה עיוור (ממצאים אובייקטיביים הניתנים לאימות בטקסט בלבד). precision מול תוויות סופר כל ממצא מאומת לא מתויג כשגוי; הוא אינו גבול תחתון לנכונות: בדיקת 30 הממצאים (4.11.2026) מצאה שהציטוט תומך בממצא ב-1 מתוך 30 (חלקית ב-5), ראו reports/CP2_SUMMARY.md סעיף 2b. שורות 2-3 חושבו מחדש ב-4.11 אחרי תיקון באג קודי תת-הסעיף. לחיצה על עמודת פרוטוקול פותחת את ריצת המערכת המלאה שלו. מקור:"
+};
+const t=x=>LANG==="he"?(HE[x]??x):x;
+function applyLanguage(){
+  $("#lang").textContent=LANG==="he"?"English":"עברית";
+  if(LANG!=="he")return;
+  document.documentElement.lang="he";document.documentElement.dir="rtl";document.title="סקירת פרוטוקולים - דשבורד חי";
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentNode&&!["SCRIPT","STYLE"].includes(n.parentNode.tagName)&&n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  const longKeys=Object.keys(HE).filter(k=>k.length>=12).sort((a,b)=>b.length-a.length);
+  for(const n of nodes){const k=n.nodeValue.trim();if(HE[k]){n.nodeValue=n.nodeValue.replace(k,HE[k]);continue;}
+    let v=n.nodeValue;for(const key of longKeys)if(v.includes(key))v=v.split(key).join(HE[key]);n.nodeValue=v;}   // mixed nodes (legend lines)
+  document.querySelectorAll("[placeholder]").forEach(el=>{el.placeholder=t(el.placeholder);});
+}
+$("#lang").addEventListener("click",()=>{localStorage.setItem("lang",LANG==="he"?"en":"he");const u=new URL(location.href);u.searchParams.delete("lang");location.href=u.toString();});
+applyLanguage();
 const VIEW_TEXT={
   evaluation:["Evaluation & Ablation","Explore saved assessment results without running a new protocol review or using LLM tokens."],
   review:["Live Protocol Review","Upload a PDF only when you intend to start a new review. Existing runs appear here when the local database contains them."],
@@ -150,7 +216,7 @@ function setView(view){
   if(!VIEW_TEXT[view])view="evaluation";
   document.body.dataset.view=view;
   document.querySelectorAll(".view-tabs button").forEach(b=>{const active=b.dataset.target===view;b.classList.toggle("active",active);b.setAttribute("aria-selected",String(active));});
-  $("#viewintro h2").textContent=VIEW_TEXT[view][0];$("#viewintro p").textContent=VIEW_TEXT[view][1];
+  $("#viewintro h2").textContent=t(VIEW_TEXT[view][0]);$("#viewintro p").textContent=t(VIEW_TEXT[view][1]);
   if(location.hash!=="#"+view)history.replaceState(null,"","#"+view);     // the view survives a reload and can be linked
 }
 document.querySelectorAll(".view-tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.target)));
@@ -170,7 +236,7 @@ const hhmm=iso=>iso?new Date(iso).toLocaleTimeString([], {hour12:false}):"--:--:
 
 async function j(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({detail:r.status}))).detail||r.status);return r.json();}
 
-async function loadHealth(){try{const h=await j("/health");$("#health").textContent=`model ${h.model}${h.no_llm?" · NO LLM":""}${h.email_dry_run?" · email dry-run":""}`;}catch(e){$("#health").textContent="server unreachable";}}
+async function loadHealth(){try{const h=await j("/health");$("#health").textContent=`${t("model")} ${h.model}${h.no_llm?" · "+t("NO LLM"):""}${h.email_dry_run?" · "+t("email dry-run"):""}`;}catch(e){$("#health").textContent=t("server unreachable");}}
 
 async function loadRuns(keep){const runs=await j("/runs?limit=60");const sel=$("#runs");const prev=keep||sel.value;sel.innerHTML="";
   for(const r of runs){const o=document.createElement("option");o.value=r.id;o.textContent=`${r.id}  ·  ${r.status}${r.decision?" · "+r.decision:""}${r.nct_id?" · "+r.nct_id:""}`;sel.appendChild(o);}
@@ -189,21 +255,21 @@ function stageOf(events){let stage="intake",done=new Set();for(const e of events
 
 function renderSteps(events,status){const {stage,done}=stageOf(events);const finished=status==="done"||status==="failed";
   $("#steps").innerHTML=STEPS.map(([k,l])=>{const cls=finished?(done.has(k)||k===stage?"done":""):(k===stage?"now":(done.has(k)?"done":""));const c=STAGE_COLOR[k];
-    const st=cls?`border-color:${c};color:${c};${cls==="now"?`background:${c}22;box-shadow:0 0 0 0 ${c}66`:""}`:"";return `<div class="step ${cls}" style="${st}">${l}</div>`;}).join("");}
+    const st=cls?`border-color:${c};color:${c};${cls==="now"?`background:${c}22;box-shadow:0 0 0 0 ${c}66`:""}`:"";return `<div class="step ${cls}" style="${st}">${t(l)}</div>`;}).join("");}
 
 function detailHtml(e){
-  if(e.kind==="llm_call"){const d=inter[e.id];if(!d)return `<div class="det"><span class="mut">loading the call…</span></div>`;
-    return `<div class="det"><span class="mut">model <b>${esc(d.model)}</b> · tokens in ${fmt(d.input_tokens)} / out ${fmt(d.output_tokens)} · ${Number(d.duration_s).toFixed(1)} s${d.fallback?" · FALLBACK model":""} · interaction #${d.id}</span>
-      <span class="mut">prompt (excerpt of what the agent was asked)</span><pre>${esc(d.prompt_excerpt||"(not stored)")}</pre>
-      <span class="mut">answer (the structured output the model returned)</span><pre>${esc(typeof d.output==="string"?d.output:JSON.stringify(d.output,null,1))}</pre></div>`;}
-  if(e.kind==="step")return `<div class="det"><span class="mut">pipeline step <b>${esc(e.event)}</b> by ${esc(e.agent)} at ${hhmm(e.t)}</span><pre>${esc(e.detail||"(no detail)")}</pre></div>`;
-  return `<div class="det"><span class="mut">${e.role==="agent"?"message posted by":"system note from"} ${esc(e.agent)} at ${hhmm(e.t)} · full text</span><pre>${esc(e.text)}</pre></div>`;}
+  if(e.kind==="llm_call"){const d=inter[e.id];if(!d)return `<div class="det"><span class="mut">${t("loading the call…")}</span></div>`;
+    return `<div class="det"><span class="mut">${t("model")} <b>${esc(d.model)}</b> · ${t("tokens in")} ${fmt(d.input_tokens)} / ${t("tokens out")} ${fmt(d.output_tokens)} · ${Number(d.duration_s).toFixed(1)} s${d.fallback?" · FALLBACK":""} · ${t("interaction")} #${d.id}</span>
+      <span class="mut">${t("prompt (excerpt of what the agent was asked)")}</span><pre>${esc(d.prompt_excerpt||"(not stored)")}</pre>
+      <span class="mut">${t("answer (the structured output the model returned)")}</span><pre>${esc(typeof d.output==="string"?d.output:JSON.stringify(d.output,null,1))}</pre></div>`;}
+  if(e.kind==="step")return `<div class="det"><span class="mut">${t("pipeline step")} <b>${esc(e.event)}</b> ${t("by")} ${esc(e.agent)} ${t("at")} ${hhmm(e.t)}</span><pre>${esc(e.detail||"(no detail)")}</pre></div>`;
+  return `<div class="det"><span class="mut">${e.role==="agent"?t("message posted by"):t("system note from")} ${esc(e.agent)} ${t("at")} ${hhmm(e.t)} · ${t("full text")}</span><pre>${esc(e.text)}</pre></div>`;}
 async function ensureInteraction(e){if(e.kind!=="llm_call"||inter[e.id])return;try{inter[e.id]=await j(`/stats/interaction/${e.id}`);}catch(err){inter[e.id]={model:"?",prompt_excerpt:"",output:"error: "+err.message};}}
 function eventHtml(e,set){const c=colorOf(e),k=keyOf(e),isOpen=set.has(k);const det=isOpen?detailHtml(e):"";
-  if(e.kind==="llm_call")return `<div class="ev llm" data-k="${k}" style="border-left-color:${c};background:${c}14"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>LLM call · <span class="tok" style="color:${c}">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""} <span class="mut">${isOpen?"▾":"▸"}</span></span>${det}</div>`;
-  if(e.kind==="step")return `<div class="ev step" data-k="${k}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span><span class="k">step</span>${esc(e.event)} <span class="mut">${esc((e.detail||"").slice(0,200))}</span></span>${det}</div>`;
+  if(e.kind==="llm_call")return `<div class="ev llm" data-k="${k}" style="border-left-color:${c};background:${c}14"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>${t("LLM call")} · <span class="tok" style="color:${c}">in ${fmt(e.input_tokens)} / out ${fmt(e.output_tokens)}</span> · ${Number(e.duration_s).toFixed(1)}s${e.fallback?" · FALLBACK":""} <span class="mut">${isOpen?"▾":"▸"}</span></span>${det}</div>`;
+  if(e.kind==="step")return `<div class="ev step" data-k="${k}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span><span class="k">${t("step")}</span>${esc(e.event)} <span class="mut">${esc((e.detail||"").slice(0,200))}</span></span>${det}</div>`;
   return `<div class="ev ${e.role==="agent"?"msg":"sys"}" data-k="${k}" style="border-left-color:${c}"><span class="t">${hhmm(e.t)}</span><span class="a" style="color:${c}">${e.agent}</span><span>${esc((e.text||"").slice(0,260))}${(e.text||"").length>260?"…":""}</span>${det}</div>`;}
-function renderTimeline(events){const el=$("#timeline");lastEvents=events;if(!events.length){el.innerHTML='<div class="empty">no events yet</div>';return;}
+function renderTimeline(events){const el=$("#timeline");lastEvents=events;if(!events.length){el.innerHTML=`<div class="empty">${t("no events yet")}</div>`;return;}
   const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-30;
   el.innerHTML=events.map(e=>eventHtml(e,open)).join("");
   if(atBottom&&!open.size)el.scrollTop=el.scrollHeight;}
@@ -211,61 +277,61 @@ $("#timeline").addEventListener("click",async ev=>{if(ev.target.closest(".det"))
   if(open.has(k))open.delete(k);else{open.add(k);const e=lastEvents.find(x=>keyOf(x)===k);if(e){renderTimeline(lastEvents);await ensureInteraction(e);}}renderTimeline(lastEvents);});
 
 function renderTokens(events,summary){const calls=events.filter(e=>e.kind==="llm_call");const by={};let tin=0,tout=0,dur=0;
-  $("#confline").innerHTML=summary&&summary.configuration?`Configuration: <b style="color:var(--fg)">${summary.configuration}</b>${summary.force_scientific?" · gate bypass (evaluation)":""}`:"";
+  $("#confline").innerHTML=summary&&summary.configuration?`${t("Configuration:")} <b style="color:var(--fg)">${summary.configuration}</b>${summary.force_scientific?" · "+t("gate bypass (evaluation)"):""}`:"";
   for(const c of calls){const b=by[c.agent]||(by[c.agent]={calls:0,in:0,out:0,s:0});b.calls++;b.in+=c.input_tokens;b.out+=c.output_tokens;b.s+=c.duration_s;tin+=c.input_tokens;tout+=c.output_tokens;dur+=c.duration_s;}
   const t0=events[0]?new Date(events[0].t):null,t1=events.length?new Date(events[events.length-1].t):null;const wall=t0&&t1?Math.round((t1-t0)/1000):0;
-  $("#kpis").innerHTML=[["LLM calls",calls.length],["tokens in",fmt(tin)],["tokens out",fmt(tout)],["LLM time",dur.toFixed(0)+" s"],["wall clock",wall+" s"],["revision rounds",summary?summary.revise_rounds:"-"]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
+  $("#kpis").innerHTML=[["LLM calls",calls.length],["tokens in",fmt(tin)],["tokens out",fmt(tout)],["LLM time",dur.toFixed(0)+" s"],["wall clock",wall+" s"],["revision rounds",summary?summary.revise_rounds:"-"]].map(([l,v])=>`<div class="kpi"><b>${v}</b><span>${t(l)}</span></div>`).join("");
   const max=Math.max(1,...Object.values(by).map(b=>b.in+b.out));
   $("#bars").innerHTML=Object.entries(by).sort((a,b)=>(b[1].in+b[1].out)-(a[1].in+a[1].out)).map(([a,b])=>{const col=STAGE_COLOR[AGENT_STAGE[a]]||(a==="coordinator"?STAGE_COLOR.final:"inherit");
     const list=openAgents.has(a)?`<div class="calls">${calls.filter(c=>c.agent===a).map((c,i)=>{const k=keyOf(c);return `<div class="call" data-k="${k}"><span class="mut">${hhmm(c.t)}</span><span>call ${i+1} · ${esc(c.model)} · <span style="color:${col}">in ${fmt(c.input_tokens)} / out ${fmt(c.output_tokens)}</span> · ${Number(c.duration_s).toFixed(1)} s${c.fallback?" · FALLBACK":""} <span class="mut">${openCalls.has(k)?"▾":"▸"}</span></span>${openCalls.has(k)?detailHtml(c):""}</div>`;}).join("")}</div>`:"";
-    return `<div class="bar" data-agent="${a}"><span style="color:${col}">${a} <span class="mut">×${b.calls} ${openAgents.has(a)?"▾":"▸"}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>${list}`;}).join("")||'<div class="empty">no LLM calls yet</div>';}
+    return `<div class="bar" data-agent="${a}"><span style="color:${col}">${a} <span class="mut">×${b.calls} ${openAgents.has(a)?"▾":"▸"}</span></span><div class="track"><div class="in" style="width:${100*b.in/max}%"></div><div class="out" style="width:${100*b.out/max}%"></div></div><span class="n">${fmt(b.in)} / ${fmt(b.out)}</span></div>${list}`;}).join("")||`<div class="empty">${t("no LLM calls yet")}</div>`;}
 $("#bars").addEventListener("click",async ev=>{if(ev.target.closest(".det"))return;const call=ev.target.closest(".call");const bar=ev.target.closest(".bar");
   if(call){const k=call.dataset.k;if(openCalls.has(k))openCalls.delete(k);else{openCalls.add(k);const e=lastEvents.find(x=>keyOf(x)===k);if(e)await ensureInteraction(e);}}
   else if(bar){const a=bar.dataset.agent;if(openAgents.has(a))openAgents.delete(a);else openAgents.add(a);}else return;
   renderTokens(lastEvents,lastSummary);});
 let lastSummary=null;
 async function loadLogs(){try{const run=$("#logrun").checked&&current?current:"";const r=await j(`/logs?lines=300&run=${encodeURIComponent(run)}&contains=${encodeURIComponent($("#logfilter").value.trim())}`);
-  $("#logfile").textContent=r.file;const el=$("#loglines");if(!r.lines.length){el.className="empty";el.textContent=run?"no log lines for this run yet":"no log lines";return;}
+  $("#logfile").textContent=r.file;const el=$("#loglines");if(!r.lines.length){el.className="empty";el.textContent=run?t("no log lines for this run yet"):t("no log lines");return;}
   const atBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-30;el.className="";
   el.innerHTML=r.lines.map(l=>{const cls=l.includes(" ERROR ")||l.includes(" CRITICAL ")?"le":l.includes(" WARNING ")?"lw":"";const m=l.match(/^(\S+ \S+) (\w+) (\[[^\]]*\]) (.*)$/);
     return m?`<span class="${cls}"><span class="lt">${esc(m[1])}</span> ${esc(m[2])} <span class="lt">${esc(m[3])}</span> ${esc(m[4])}</span>`:`<span class="${cls}">${esc(l)}</span>`;}).join("\n");
-  if(atBottom)el.scrollTop=el.scrollHeight;}catch(e){$("#loglines").textContent="logs unavailable: "+e.message;}}
+  if(atBottom)el.scrollTop=el.scrollHeight;}catch(e){$("#loglines").textContent=t("logs unavailable:")+" "+e.message;}}
 $("#logrun").addEventListener("change",loadLogs);$("#logfilter").addEventListener("input",loadLogs);
 
-async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${current}/compare`);$("#cmpmeta").innerHTML=`protocol <b style="color:var(--fg)">${c.protocol||"?"}</b> · latest finished run per configuration · upload the same PDF with another configuration to fill the missing rows`;
+async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${current}/compare`);$("#cmpmeta").innerHTML=`${t("protocol")} <b style="color:var(--fg)">${c.protocol||"?"}</b> · ${t("latest finished run per configuration")}`;
   const have=new Map(c.rows.map(r=>[r.configuration,r]));const order=["1 single agent, no verification","2 single agent + code verification","3 full system without critic","4 full system (4 agents, critic)"];const short={"1 single agent, no verification":"1 · single, no verification","2 single agent + code verification":"2 · single + code verification","3 full system without critic":"3 · full, no critic","4 full system (4 agents, critic)":"4 · full system"};
-  $("#cmp tbody").innerHTML=order.map(k=>{const r=have.get(k);if(!r)return `<tr><td class="mut">${short[k]}</td><td colspan="9" class="empty">not run yet</td></tr>`;
-    return `<tr${r.run_id===current?' style="background:#13261a"':''}><td>${short[k]}</td><td><a href="#" data-run="${r.run_id}" style="color:var(--acc)" title="${r.run_id}">${r.run_id.length>18?r.run_id.slice(0,8)+"…"+r.run_id.slice(-6):r.run_id}</a>${r.force_scientific?' <span class="mut">·fs</span>':''}</td><td>${r.llm_calls}</td><td>${fmt(r.input_tokens)}</td><td>${fmt(r.output_tokens)}</td><td>${Math.round(r.duration_s)}</td><td>${r.n_findings}</td><td>${r.verified}</td><td>${r.unverified}</td><td><span class="badge ${r.decision}" style="font-size:11px;padding:1px 8px">${r.decision}</span></td></tr>`;}).join("");
+  $("#cmp tbody").innerHTML=order.map(k=>{const r=have.get(k);if(!r)return `<tr><td class="mut">${t(short[k])}</td><td colspan="9" class="empty">${t("not run yet")}</td></tr>`;
+    return `<tr${r.run_id===current?' style="background:#13261a"':''}><td>${t(short[k])}</td><td><a href="#" data-run="${r.run_id}" style="color:var(--acc)" title="${r.run_id}">${r.run_id.length>18?r.run_id.slice(0,8)+"…"+r.run_id.slice(-6):r.run_id}</a>${r.force_scientific?' <span class="mut">·fs</span>':''}</td><td>${r.llm_calls}</td><td>${fmt(r.input_tokens)}</td><td>${fmt(r.output_tokens)}</td><td>${Math.round(r.duration_s)}</td><td>${r.n_findings}</td><td>${r.verified}</td><td>${r.unverified}</td><td><span class="badge ${r.decision}" style="font-size:11px;padding:1px 8px">${r.decision}</span></td></tr>`;}).join("");
   $("#cmp tbody").querySelectorAll("a[data-run]").forEach(a=>a.addEventListener("click",ev=>{ev.preventDefault();$("#runs").value=a.dataset.run;current=a.dataset.run;watch();}));}catch(e){}}
-async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">no ablation runs in this database</td></tr>';}catch(e){}}
+async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=config&contains="+encodeURIComponent($("#cfgscope").value));$("#cfg tbody").innerHTML=u.rows.map(r=>`<tr><td>${r.key}</td><td>${r.runs}</td><td>${(r.calls/r.runs).toFixed(1)}</td><td>${fmt(Math.round(r.input_tokens/r.runs))}</td><td>${fmt(Math.round(r.output_tokens/r.runs))}</td><td>${(r.duration_s/r.runs).toFixed(0)}</td></tr>`).join("")||`<tr><td colspan="6" class="empty">${t("no ablation runs in this database")}</td></tr>`;}catch(e){}}
 
 let RESULTS=null;
 const TITLES={nct01977547:"ABC PICU",nct04084990:"SAFER",nct05199324:"INVEST",nct05698277:"Fetal cardiac",nct06846736:"ALK pathology"};
-function openRun(id){setView("review");if(![...$("#runs").options].some(o=>o.value===id)){$("#msg").textContent="Saved run not found in the local database. Evaluation results are still available under Evaluation & Ablation. No new review has been started.";window.scrollTo({top:0,behavior:"smooth"});return;}$("#runs").value=id;current=id;watch();window.scrollTo({top:0,behavior:"smooth"});}
+function openRun(id){setView("review");if(![...$("#runs").options].some(o=>o.value===id)){$("#msg").textContent=t("Saved run not found in the local database. Evaluation results are still available under Evaluation & Ablation. No new review has been started.");window.scrollTo({top:0,behavior:"smooth"});return;}$("#runs").value=id;current=id;watch();window.scrollTo({top:0,behavior:"smooth"});}
 function renderLabeled(){if(!RESULTS)return;const cases=(RESULTS.scientific||RESULTS.all||[])[0]?.per_case.map(c=>c.case)||[];const box=$("#labeled");box.querySelectorAll("button").forEach(b=>b.remove());
   cases.forEach(c=>{const b=document.createElement("button");const id=`abl-agents_full-${c}-${RESULTS.stamp}`;b.textContent=`${TITLES[c]||c} · ${c.toUpperCase()}`;b.title=id;b.dataset.run=id;b.addEventListener("click",()=>openRun(id));box.appendChild(b);});markLabeled();}
 function markLabeled(){$("#labeled").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.run===current));}
 async function loadResults(){try{RESULTS=await j("/stats/results");renderResults();renderLabeled();}catch(e){$("#restab tbody").innerHTML=`<tr><td class="empty">${e.message}</td></tr>`;}}
 function renderResults(){if(!RESULTS)return;const rows=RESULTS[$("#resview").value]||[];const cases=rows.length?rows[0].per_case.map(c=>c.case):[];
-  $("#resmeta").textContent=`run ${RESULTS.stamp} · re-scored ${RESULTS.rescored_at||""}${RESULTS.note?" · "+RESULTS.note:""}`;
-  $("#restab thead").innerHTML=`<tr><th>Configuration</th>${cases.map(c=>`<th class="case" style="text-align:center" data-run="abl-agents_full-${c}-${RESULTS.stamp}">${TITLES[c]||c}<small>${c}</small></th>`).join("")}<th style="text-align:center" title="pooled over all findings (micro-average, the charter's primary number)">all protocols<small>pooled</small></th><th style="text-align:center" title="simple mean of the five per-protocol values (macro-average)">mean of<small>protocols</small></th><th style="text-align:center">unverified<small>total · per protocol</small></th><th style="text-align:center">tokens in<small>total · per protocol</small></th></tr>`;
+  $("#resmeta").textContent=`${t("run")} ${RESULTS.stamp} · ${t("re-scored")} ${RESULTS.rescored_at||""}${RESULTS.note&&LANG!=="he"?" · "+RESULTS.note:""}`;
+  $("#restab thead").innerHTML=`<tr><th>${t("Configuration")}</th>${cases.map(c=>`<th class="case" style="text-align:center" data-run="abl-agents_full-${c}-${RESULTS.stamp}">${TITLES[c]||c}<small>${c}</small></th>`).join("")}<th style="text-align:center" title="pooled over all findings (micro-average, the charter's primary number)">${t("all protocols")}<small>${t("pooled")}</small></th><th style="text-align:center" title="simple mean of the five per-protocol values (macro-average)">${t("mean of")}<small>${t("protocols")}</small></th><th style="text-align:center">${t("unverified")}<small>${t("total · per protocol")}</small></th><th style="text-align:center">${t("tokens in")}<small>${t("total · per protocol")}</small></th></tr>`;
   $("#restab thead").querySelectorAll("th.case").forEach(th=>th.addEventListener("click",()=>openRun(th.dataset.run)));
   const pct=x=>Math.round(100*x)+"%";const bestP=Math.max(...rows.map(r=>r.verified_precision)),bestR=Math.max(...rows.map(r=>r.coverage));
-  $("#restab tbody").innerHTML=rows.map((r,i)=>`<tr class="${r.key==="agents_full"?"best":""}"><td>${i+1}. ${r.label}</td>${r.per_case.map(c=>`<td class="c" title="verified ${c.n_verified}, matched ${c.matched_verified}; labels ${c.n_labels}, found ${c.tp}; unverified ${c.n_unverified}"><span class="p">${pct(c.verified_precision)}</span> / <span class="r">${pct(c.coverage)}</span><small>${c.matched_verified}/${c.n_verified} · ${c.tp}/${c.n_labels}</small></td>`).join("")}<td class="c"><b><span class="p">${pct(r.verified_precision)}</span> / <span class="r">${pct(r.coverage)}</span></b><small>${r.matched_verified}/${r.n_verified} · ${r.tp}/${r.labels}</small></td><td class="c"><span class="p">${pct(r.per_case.reduce((a,c)=>a+c.verified_precision,0)/r.per_case.length)}</span> / <span class="r">${pct(r.per_case.reduce((a,c)=>a+c.coverage,0)/r.per_case.length)}</span><small>mean of ${r.per_case.length}</small></td><td class="c">${r.n_unverified}<small>${(r.n_unverified/r.per_case.length).toFixed(1)} per protocol</small></td><td class="c">${fmt(r.input_tokens)}<small>${fmt(Math.round(r.input_tokens/r.per_case.length))} per protocol</small></td></tr>`).join("");}
+  $("#restab tbody").innerHTML=rows.map((r,i)=>`<tr class="${r.key==="agents_full"?"best":""}"><td>${i+1}. ${r.label}</td>${r.per_case.map(c=>`<td class="c" title="verified ${c.n_verified}, matched ${c.matched_verified}; labels ${c.n_labels}, found ${c.tp}; unverified ${c.n_unverified}"><span class="p">${pct(c.verified_precision)}</span> / <span class="r">${pct(c.coverage)}</span><small>${c.matched_verified}/${c.n_verified} · ${c.tp}/${c.n_labels}</small></td>`).join("")}<td class="c"><b><span class="p">${pct(r.verified_precision)}</span> / <span class="r">${pct(r.coverage)}</span></b><small>${r.matched_verified}/${r.n_verified} · ${r.tp}/${r.labels}</small></td><td class="c"><span class="p">${pct(r.per_case.reduce((a,c)=>a+c.verified_precision,0)/r.per_case.length)}</span> / <span class="r">${pct(r.per_case.reduce((a,c)=>a+c.coverage,0)/r.per_case.length)}</span><small>${t("mean of")} ${r.per_case.length}</small></td><td class="c">${r.n_unverified}<small>${(r.n_unverified/r.per_case.length).toFixed(1)} ${t("per protocol")}</small></td><td class="c">${fmt(r.input_tokens)}<small>${fmt(Math.round(r.input_tokens/r.per_case.length))} ${t("per protocol")}</small></td></tr>`).join("");}
 $("#resview").addEventListener("change",renderResults);
 
-function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#sum").className="empty";$("#sum").textContent=s?`run ${s.status}…`:"the summary appears when the run is done";return;}
+function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#sum").className="empty";$("#sum").textContent=s?`${t("run")} ${s.status}…`:t("the summary appears when the run is done");return;}
   $("#sum").className="";const bs=s.by_status||{},bv=s.by_severity||{},bd=s.by_domain||{};const m=s.protocol_meta||{};
   $("#sum").innerHTML=`<div class="sumgrid"><div>
-    <p><span class="badge ${s.decision}">${s.decision||s.status}</span> <span class="mut">${s.decision_rationale||""}</span><br><span class="mut">configuration: ${s.configuration||"-"}</span></p>
-    <div class="kpis"><div class="kpi"><b>${s.score??"-"}</b><span>score / 100</span></div><div class="kpi"><b>${s.n_findings}</b><span>findings</span></div>
-      <div class="kpi"><b>${bs.verified||0}</b><span>verified</span></div><div class="kpi"><b>${bs.unverified||0}</b><span>→ human</span></div>
-      <div class="kpi"><b>${(bs.rejected||0)+(bs.withdrawn||0)}</b><span>rejected / withdrawn</span></div></div>
-    <table><tr><th>severity</th><td>critical ${bv.critical||0}</td><td>major ${bv.major||0}</td><td>minor ${bv.minor||0}</td><td>info ${bv.info||0}</td></tr>
-      <tr><th>domain</th><td colspan="2">administrative ${bd.administrative||0}</td><td colspan="2">scientific ${bd.scientific||0}</td></tr>
-      <tr><th>protocol</th><td colspan="4" style="text-align:left">${m.nct_id||s.nct_id||"-"} · ${m.page_count||"?"} pages · v${m.version||"?"} ${m.date||""} · PI ${m.principal_investigator||"-"}</td></tr>
-      <tr><th>cost</th><td colspan="4" style="text-align:left">${s.cost.llm_calls} calls · ${fmt(s.cost.input_tokens)} in / ${fmt(s.cost.output_tokens)} out · ${s.cost.duration_s}s LLM${s.force_scientific?" · gate bypass (evaluation)":""}</td></tr></table>
-    <p class="links">${Object.entries(s.reports).map(([k,u])=>`<a href="${u}" target="_blank">${k} report</a>`).join("")||'<span class="mut">no reports</span>'}</p>
+    <p><span class="badge ${s.decision}">${s.decision||s.status}</span> <span class="mut">${s.decision_rationale||""}</span><br><span class="mut">${t("configuration:")} ${s.configuration||"-"}</span></p>
+    <div class="kpis"><div class="kpi"><b>${s.score??"-"}</b><span>${t("score / 100")}</span></div><div class="kpi"><b>${s.n_findings}</b><span>${t("findings")}</span></div>
+      <div class="kpi"><b>${bs.verified||0}</b><span>${t("verified")}</span></div><div class="kpi"><b>${bs.unverified||0}</b><span>${t("→ human")}</span></div>
+      <div class="kpi"><b>${(bs.rejected||0)+(bs.withdrawn||0)}</b><span>${t("rejected / withdrawn")}</span></div></div>
+    <table><tr><th>${t("severity")}</th><td>critical ${bv.critical||0}</td><td>major ${bv.major||0}</td><td>minor ${bv.minor||0}</td><td>info ${bv.info||0}</td></tr>
+      <tr><th>${t("domain")}</th><td colspan="2">administrative ${bd.administrative||0}</td><td colspan="2">scientific ${bd.scientific||0}</td></tr>
+      <tr><th>${t("protocol")}</th><td colspan="4" style="text-align:left">${m.nct_id||s.nct_id||"-"} · ${m.page_count||"?"} ${t("pages")} · v${m.version||"?"} ${m.date||""} · PI ${m.principal_investigator||"-"}</td></tr>
+      <tr><th>${t("cost")}</th><td colspan="4" style="text-align:left">${s.cost.llm_calls} ${t("calls")} · ${fmt(s.cost.input_tokens)} in / ${fmt(s.cost.output_tokens)} out · ${s.cost.duration_s}s LLM${s.force_scientific?" · "+t("gate bypass (evaluation)"):""}</td></tr></table>
+    <p class="links">${Object.entries(s.reports).map(([k,u])=>`<a href="${u}" target="_blank">${t(k)} ${t("report")}</a>`).join("")||`<span class="mut">${t("no reports")}</span>`}</p>
     ${s.error?`<p style="color:var(--red)">error: ${s.error}</p>`:""}
   </div><div class="summary-text">${(s.final_summary||"(no summary)").replace(/</g,"&lt;")}</div></div>`;}
 
@@ -280,10 +346,10 @@ function watch(){if(timer)clearInterval(timer);lastStatus="";open.clear();openCa
 $("#runs").addEventListener("change",()=>{current=$("#runs").value;watch();});
 $("#cfgscope").addEventListener("change",loadConfigTable);
 $("#refresh").addEventListener("click",async()=>{await loadRuns();watch();});
-$("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#file").files[0];if(!f)return;$("#go").disabled=true;$("#msg").textContent="uploading…";
+$("#form").addEventListener("submit",async ev=>{ev.preventDefault();const f=$("#file").files[0];if(!f)return;$("#go").disabled=true;$("#msg").textContent=t("uploading…");
   const fd=new FormData();fd.append("file",f);fd.append("nct_id",$("#nct").value.trim());fd.append("source","dashboard");fd.append("submitter","dashboard");fd.append("force_scientific",$("#force").checked?"true":"false");fd.append("config",$("#config").value);
-  try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`queued ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
-  catch(e){$("#msg").textContent="error: "+e.message;}finally{$("#go").disabled=false;}});
+  try{const r=await j("/webhook/protocol",{method:"POST",body:fd,headers:{"X-Webhook-Secret":$("#secret").value}});$("#msg").textContent=`${t("queued")} ${r.run_id}`;await loadRuns(r.run_id);current=r.run_id;watch();}
+  catch(e){$("#msg").textContent=t("error:")+" "+e.message;}finally{$("#go").disabled=false;}});
 
 (async()=>{const wanted=new URLSearchParams(location.search).get("run")||undefined;setView(wanted?"review":(location.hash||"#evaluation").slice(1));
   await loadHealth();await loadRuns(wanted);loadConfigTable();loadResults();if(current)watch();else loadLogs();})();
