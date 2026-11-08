@@ -204,6 +204,16 @@ def run_summary(run_id: str):
         "pending_human_review": score.get("pending_human_review") if isinstance(score, dict) else None,
         "n_findings": len(findings), "by_status": count("status"), "by_severity": count("severity"), "by_domain": count("domain"),
         "revise_rounds": st.get("revise_rounds", 0), "force_scientific": bool(st.get("force_scientific")),
+        "critic_rounds": [                      # what the critic said about the reviewer's findings, round by round
+            {"round": cr.get("round", i), "summary": cr.get("summary", ""),
+             "counts": {k: sum(1 for v in cr.get("verdicts") or [] if v.get("verdict") == k)
+                        for k in ("verified", "revise", "unverified", "rejected")},
+             "verdicts": [{"finding_id": v.get("finding_id"), "verdict": v.get("verdict"), "notes": v.get("notes", ""),
+                           "revised_severity": v.get("revised_severity")} for v in cr.get("verdicts") or []],
+             "missed_issues": cr.get("missed_issues") or [],
+             "reviewer_findings_after": len((st.get("scientific_reports") or [{}] * (i + 2))[i + 1].get("findings") or [])
+             if i + 1 < len(st.get("scientific_reports") or []) else None}
+            for i, cr in enumerate(st.get("critic_reports") or [])],
         "final_summary": st.get("final_summary", ""), "error": st.get("error"),
         "reports": {k: f"/runs/{run_id}/report?kind={k}" for k, key in
                     (("final", "final_report"), ("admin", "administrative_report"), ("scientific", "scientific_report"))

@@ -43,6 +43,10 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 .RETURNED_ADMIN{background:#4d2a2a;color:var(--red)}.PASS{background:#1f4d2e;color:var(--grn)}.NEEDS_HUMAN_REVIEW{background:#4d3a1f;color:var(--amb)}.MAJOR_CONCERNS{background:#4d2a2a;color:var(--red)}
 .sumgrid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px}.summary-text{white-space:pre-wrap;font-size:14px;color:#d7e0ec;max-height:260px;overflow:auto;background:#0e1420;border-radius:8px;padding:10px 12px}
 .links a{color:var(--acc);margin-right:14px}.empty{color:var(--mut);font-style:italic}
+details.critic{margin-top:10px;background:#0e1420;border:1px solid var(--line);border-radius:8px;padding:8px 12px}details.critic summary{cursor:pointer;font-size:13.5px}
+.vd{margin:6px 0;padding:6px 8px;border-radius:6px;background:#141c2b;border-left:3px solid var(--line);font-size:13px}.vd .tag{font-size:11px;padding:0 7px;border-radius:9px;background:#26324a;margin-left:6px}
+.vd.revise{border-left-color:var(--red)}.vd.revise .tag{background:#4d2a2a;color:var(--red)}.vd.unverified{border-left-color:var(--amb)}.vd.unverified .tag{background:#4d3a1f;color:var(--amb)}.vd.rejected{border-left-color:var(--mut)}.vd.missed{border-left-color:var(--vio)}.vd.missed .tag{background:#2d2450;color:var(--vio)}.vd.verified{border-left-color:var(--grn)}
+html[dir=rtl] .vd{border-left:none;border-right:3px solid var(--line);direction:ltr;text-align:left}html[dir=rtl] .vd.revise{border-right-color:var(--red)}html[dir=rtl] .vd.unverified{border-right-color:var(--amb)}html[dir=rtl] .vd.missed{border-right-color:var(--vio)}html[dir=rtl] .vd.verified{border-right-color:var(--grn)}
 #form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#msg{color:var(--amb);font-size:13px}
 
 /* Presentation-only navigation; the API and review pipeline are unchanged. */
@@ -190,6 +194,7 @@ const HE={
   "pipeline step":"שלב בצינור","by":"על ידי","at":"בשעה","message posted by":"הודעה שפרסם","system note from":"הערת מערכת של","full text":"טקסט מלא","interaction":"אינטראקציה",
   "no log lines for this run yet":"אין שורות לוג לריצה הזו עדיין","no log lines":"אין שורות לוג","logs unavailable:":"הלוגים לא זמינים:",
   "Saved run not found in the local database. Evaluation results are still available under Evaluation & Ablation. No new review has been started.":"הריצה השמורה לא נמצאה במסד הנתונים המקומי. תוצאות ההערכה זמינות בתצוגת הערכה ו-Ablation. לא הותחלה סקירה חדשה.",
+  "Critic → reviewer":"מבקר → סוקר","round":"סבב","revise":"לתיקון","rejected":"נדחו","missed issues":"בעיות שפוספסו","reviewer re-emitted":"הסוקר החזיר","missed":"פוספס","verified verdicts":"פסקי דין מאומתים",
   "uploading…":"מעלה…","queued":"בתור","error:":"שגיאה:","server unreachable":"השרת לא זמין","NO LLM":"ללא LLM","email dry-run":"מייל במצב ניסוי",
   "Labels: five public protocols labeled blind by Ron Levi (objective, text-verifiable findings only). Label-matching precision counts every unlabeled verified finding as a false positive; it is not a lower bound on correctness: the 30-finding human evidence check (4 Nov 2026) found the cited passage supporting the finding in 1 of 30 (partly in 5), see reports/CP2_SUMMARY.md section 2b. Rows 2-3 re-scored 4 Nov after the sub-item guideline-code fix. Click a protocol column to open its full-system run. Source:":"תוויות: חמישה פרוטוקולים ציבוריים שרון לוי תייגה עיוור (ממצאים אובייקטיביים הניתנים לאימות בטקסט בלבד). precision מול תוויות סופר כל ממצא מאומת לא מתויג כשגוי; הוא אינו גבול תחתון לנכונות: בדיקת 30 הממצאים (4.11.2026) מצאה שהציטוט תומך בממצא ב-1 מתוך 30 (חלקית ב-5), ראו reports/CP2_SUMMARY.md סעיף 2b. שורות 2-3 חושבו מחדש ב-4.11 אחרי תיקון באג קודי תת-הסעיף. לחיצה על עמודת פרוטוקול פותחת את ריצת המערכת המלאה שלו. מקור:"
 };
@@ -332,6 +337,12 @@ function renderSummary(s){if(!s||!(s.status==="done"||s.status==="failed")){$("#
       <tr><th>${t("protocol")}</th><td colspan="4" style="text-align:left">${m.nct_id||s.nct_id||"-"} · ${m.page_count||"?"} ${t("pages")} · v${m.version||"?"} ${m.date||""} · PI ${m.principal_investigator||"-"}</td></tr>
       <tr><th>${t("cost")}</th><td colspan="4" style="text-align:left">${s.cost.llm_calls} ${t("calls")} · ${fmt(s.cost.input_tokens)} in / ${fmt(s.cost.output_tokens)} out · ${s.cost.duration_s}s LLM${s.force_scientific?" · "+t("gate bypass (evaluation)"):""}</td></tr></table>
     <p class="links">${Object.entries(s.reports).map(([k,u])=>`<a href="${u}" target="_blank">${t(k)} ${t("report")}</a>`).join("")||`<span class="mut">${t("no reports")}</span>`}</p>
+    ${(s.critic_rounds||[]).map(cr=>`<details class="critic"${cr.round===0?" open":""}><summary><b>${t("Critic → reviewer")} · ${t("round")} ${cr.round}</b> <span class="mut">${cr.counts.verified} ${t("verified")} · ${cr.counts.revise} ${t("revise")} · ${cr.counts.unverified} ${t("unverified")} · ${cr.counts.rejected} ${t("rejected")} · ${cr.missed_issues.length} ${t("missed issues")}${cr.reviewer_findings_after!=null?` · ${t("reviewer re-emitted")} ${cr.reviewer_findings_after} ${t("findings")}`:""}</span></summary>
+      <div class="mut" style="margin:6px 0">${esc(cr.summary)}</div>
+      ${cr.verdicts.filter(v=>v.verdict!=="verified").map(v=>`<div class="vd ${v.verdict}"><b>${esc(v.finding_id)}</b> <span class="tag">${esc(v.verdict)}</span>${v.revised_severity?` <span class="mut">→ ${esc(v.revised_severity)}</span>`:""}<div>${esc(v.notes)}</div></div>`).join("")}
+      ${cr.missed_issues.map(m=>`<div class="vd missed"><span class="tag">${t("missed")}</span><div>${esc(m)}</div></div>`).join("")}
+      <details style="margin-top:6px"><summary class="mut">${t("verified verdicts")} (${cr.counts.verified})</summary>${cr.verdicts.filter(v=>v.verdict==="verified").map(v=>`<div class="vd verified"><b>${esc(v.finding_id)}</b><div>${esc(v.notes)}</div></div>`).join("")}</details>
+    </details>`).join("")}
     ${s.error?`<p style="color:var(--red)">error: ${s.error}</p>`:""}
   </div><div class="summary-text">${(s.final_summary||"(no summary)").replace(/</g,"&lt;")}</div></div>`;}
 

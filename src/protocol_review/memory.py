@@ -184,9 +184,20 @@ def record_interaction(run_id: str, result: LLMResult, system: str, user: str, o
         db.add(Interaction(
             run_id=run_id, agent=result.agent, model=result.model, input_tokens=result.input_tokens,
             output_tokens=result.output_tokens, duration_s=result.duration_s, fallback_used=result.fallback_used,
-            prompt_excerpt=(system[:1500] + "\n---\n" + user[:3000]), output=output,
+            prompt_excerpt=_prompt_excerpt(system, user), output=output,
         ))
         db.commit()
+
+
+def _prompt_excerpt(system: str, user: str) -> str:
+    """Beginning of the system and user prompts plus, when present, the critic's revision requests
+    (they sit after the knowledge base in the reviewer's prompt and would otherwise be cut off)."""
+    out = system[:1500] + "\n---\n" + user[:3000]
+    i = user.find("# REVISION ROUND")
+    if i != -1:
+        j = user.find("# Protocol text", i)
+        out += "\n[...]\n" + user[i:j if j != -1 else i + 6000][:6000]
+    return out
 
 
 def run_cost_summary(run_id: str) -> dict:
