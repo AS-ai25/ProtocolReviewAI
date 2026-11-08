@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import random
 import re
 import sys
 from datetime import datetime
@@ -34,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "eval"))
 
-from ablation import CONFIGS, load_cases, render_markdown  # noqa: E402
+from ablation import CONFIGS, ROW_NUM, load_cases, render_markdown  # noqa: E402
 from matching import score_findings  # noqa: E402
 from protocol_review.config import settings  # noqa: E402
 
@@ -89,17 +90,42 @@ def saved_findings(cfg: dict, case_id: str, stamp: str, outputs: Path | None = N
 
 
 def rescore(summary: dict, cases: list[dict], stamp: str, *, domain: str | None = None,
-            outputs: Path | None = None, fix_codes: set[str] | None = None) -> list[dict]:
-    """Rebuild the ablation rows from the saved findings; `domain` restricts labels and predictions."""
+            outputs: Path | None = None, fix_codes: set[str] | None = None, stamp_by_key: dict[str, str] | None = None,
+            rules_row: bool = True) -> list[dict]:
+    """Rebuild the ablation rows from the saved findings; `domain` restricts labels and predictions.
+    `stamp_by_key` lets rows of several runs (stamps) share one table; `rules_row` adds row 0 (the 29 deterministic
+    checks alone, no LLM) computed from the rule findings saved with any configuration."""
     cost_by = {(r["key"], pc["case"]): pc for r in summary["rows"] for pc in r["per_case"]}
+    stamp_by_key = stamp_by_key or {}
     rows = []
-    for cfg in CONFIGS:
-        if cfg["key"] not in {r["key"] for r in summary["rows"]}:
-            continue
+    present = {r["key"] for r in summary["rows"]}
+    if rules_row and present:
+        src_cfg = next(c for c in CONFIGS if c["key"] in present)
         per_case, totals = [], {"labels": 0, "tp": 0, "n_verified": 0, "matched_verified": 0, "n_unverified": 0,
                                 "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "runtime_s": 0.0}
         for c in cases:
-            preds = saved_findings(cfg, c["case_id"], stamp, outputs, fix_codes)
+            preds = [f for f in saved_findings(src_cfg, c["case_id"], stamp_by_key.get(src_cfg["key"], stamp), outputs)
+                     if f.get("source") == "rule"]
+            labels = c["expected_findings"]
+            if domain:
+                preds = [f for f in preds if f.get("domain") == domain]
+                labels = [x for x in labels if x.get("domain") == domain]
+            sc = score_findings(labels, preds)
+            per_case.append({"case": c["case_id"], "decision": "-", "expected_decision": cost_by[(src_cfg["key"], c["case_id"])]["expected_decision"],
+                             "runtime_s": 0.0, "n_findings": len(preds), "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, **sc})
+            totals["labels"] += sc["n_labels"]; totals["tp"] += sc["tp"]; totals["n_verified"] += sc["n_verified"]
+            totals["matched_verified"] += sc["matched_verified"]; totals["n_unverified"] += sc["n_unverified"]
+        rows.append({"key": "rules_only", "label": "Rules only (29 deterministic checks, no LLM)", "kind": "rules", "kwargs": {},
+                     "verified_precision": round(totals["matched_verified"] / totals["n_verified"], 3) if totals["n_verified"] else 0.0,
+                     "coverage": round(totals["tp"] / totals["labels"], 3) if totals["labels"] else 1.0, **totals, "per_case": per_case})
+    for cfg in CONFIGS:
+        if cfg["key"] not in present:
+            continue
+        row_stamp = stamp_by_key.get(cfg["key"], stamp)
+        per_case, totals = [], {"labels": 0, "tp": 0, "n_verified": 0, "matched_verified": 0, "n_unverified": 0,
+                                "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "runtime_s": 0.0}
+        for c in cases:
+            preds = saved_findings(cfg, c["case_id"], row_stamp, outputs, fix_codes)
             labels = c["expected_findings"]
             if domain:
                 preds = [p for p in preds if p.get("domain") == domain]
@@ -132,13 +158,79 @@ def view_table(rows: list[dict], title: str, intro: str) -> list[str]:
           "| # | Configuration | Precision of VERIFIED findings | Recall (coverage) of labeled findings | Unverified |",
           "|---|---|---|---|---|"]
     for i, r in enumerate(rows, 1):
-        md.append(f"| {i} | {r['label']} | {_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) | "
+        md.append(f"| {ROW_NUM.get(r['key'], i)} | {r['label']} | {_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) | "
                   f"{_pct(r['coverage'])} ({r['tp']}/{r['labels']}) | {r['n_unverified']} |")
     md += ["", "| Configuration | Case | Verified | Matched verified | Unverified | Coverage | Missed labels |", "|---|---|---|---|---|---|---|"]
     for r in rows:
         for c in r["per_case"]:
             md.append(f"| {r['label']} | {c['case']} | {c['n_verified']} | {c['matched_verified']} | {c['n_unverified']} | "
                       f"{c['tp']}/{c['n_labels']} | {', '.join(x[1] for x in c['missed']) or '-'} |")
+    return md + [""]
+
+
+MAIN_ROWS = ("agents_full", "agents_full_tools", "agents_no_critic_tools", "single_tools")
+BASE_ROWS = ("single_no_verification", "single_verified", "agents_no_critic", "agents_full")
+
+
+def bootstrap(rows: list[dict], B: int = 2000, seed: int = 20261108) -> dict:
+    """Protocol-level bootstrap (M2, mentor 8 Nov): resample the labeled protocols with replacement, recompute the pooled
+    precision and recall of every row and the gap between the main rows and every baseline row. Reports 95% percentile
+    intervals and the share of resamples in which the gap is <= 0. With five protocols this is the honest uncertainty."""
+    rng = random.Random(seed)
+    n = len(rows[0]["per_case"]) if rows else 0
+    if n < 2:
+        return {}
+    samples = [[rng.randrange(n) for _ in range(n)] for _ in range(B)]
+
+    def pooled(row, idx):
+        pc = row["per_case"]
+        tp = sum(pc[i]["tp"] for i in idx); lab = sum(pc[i]["n_labels"] for i in idx)
+        mv = sum(pc[i]["matched_verified"] for i in idx); nv = sum(pc[i]["n_verified"] for i in idx)
+        return (mv / nv if nv else 0.0, tp / lab if lab else 0.0)
+
+    def ci(values):
+        v = sorted(values)
+        return [round(v[int(0.025 * (len(v) - 1))], 3), round(v[int(0.975 * (len(v) - 1))], 3)]
+
+    stats = {r["key"]: [pooled(r, s) for s in samples] for r in rows}
+    out = {"B": B, "seed": seed, "n_protocols": n, "rows": {}, "gaps": {}}
+    for key, vals in stats.items():
+        out["rows"][key] = {"precision_ci95": ci([v[0] for v in vals]), "recall_ci95": ci([v[1] for v in vals])}
+    for main in MAIN_ROWS:
+        if main not in stats:
+            continue
+        for base in BASE_ROWS:
+            if base not in stats or base == main:
+                continue
+            gp = [a[0] - b[0] for a, b in zip(stats[main], stats[base])]
+            gr = [a[1] - b[1] for a, b in zip(stats[main], stats[base])]
+            out["gaps"][f"{main} vs {base}"] = {
+                "precision": {"mean": round(sum(gp) / B, 3), "ci95": ci(gp), "p_le_0": round(sum(1 for g in gp if g <= 0) / B, 3)},
+                "recall": {"mean": round(sum(gr) / B, 3), "ci95": ci(gr), "p_le_0": round(sum(1 for g in gr if g <= 0) / B, 3)}}
+    return out
+
+
+def bootstrap_section(bs_all: dict, bs_sci: dict, rows_all: list[dict]) -> list[str]:
+    if not bs_all:
+        return []
+    labels = {r["key"]: f"{ROW_NUM.get(r['key'], '?')} {r['label']}" for r in rows_all}
+    md = ["## Uncertainty: protocol-level bootstrap (B=%d, seed %d, %d protocols)" % (bs_all["B"], bs_all["seed"], bs_all["n_protocols"]), "",
+          "The five labeled protocols are resampled with replacement; precision and recall are pooled on each resample. "
+          "A gap whose 95% interval includes zero (or whose `P(gap <= 0)` is large) is not distinguishable from noise on this "
+          "test set. One model run per row: run-to-run variation of the model is not separated from protocol variation here.", "",
+          "| Row | Precision 95% CI (all) | Recall 95% CI (all) | Precision 95% CI (scientific) | Recall 95% CI (scientific) |", "|---|---|---|---|---|"]
+    for key, lab in labels.items():
+        a = bs_all["rows"].get(key); c = (bs_sci or {}).get("rows", {}).get(key)
+        if a:
+            md.append(f"| {lab} | {_pct(a['precision_ci95'][0])} - {_pct(a['precision_ci95'][1])} | {_pct(a['recall_ci95'][0])} - {_pct(a['recall_ci95'][1])} | "
+                      + (f"{_pct(c['precision_ci95'][0])} - {_pct(c['precision_ci95'][1])} | {_pct(c['recall_ci95'][0])} - {_pct(c['recall_ci95'][1])} |" if c else "- | - |"))
+    md += ["", "| Gap | View | Precision gap: mean (95% CI), P(gap <= 0) | Recall gap: mean (95% CI), P(gap <= 0) |", "|---|---|---|---|"]
+    for view, bs in (("all", bs_all), ("scientific", bs_sci or {})):
+        for name, g in (bs.get("gaps") or {}).items():
+            main, base = name.split(" vs ")
+            md.append(f"| {ROW_NUM.get(main, main)} vs {ROW_NUM.get(base, base)} | {view} | "
+                      f"{_pct(g['precision']['mean'])} ({_pct(g['precision']['ci95'][0])} to {_pct(g['precision']['ci95'][1])}), P={g['precision']['p_le_0']:.2f} | "
+                      f"{_pct(g['recall']['mean'])} ({_pct(g['recall']['ci95'][0])} to {_pct(g['recall']['ci95'][1])}), P={g['recall']['p_le_0']:.2f} |")
     return md + [""]
 
 
@@ -195,7 +287,10 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):      # Windows consoles default to cp1252
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--stamp", default=None)
+    ap.add_argument("--stamp", default=None, help="run stamp; several stamps separated by commas share one table "
+                    "(e.g. the frozen 29 Oct run and a v1.7 run of the primed rows)")
+    ap.add_argument("--no-rules-row", action="store_true", help="omit row 0 (rules only)")
+    ap.add_argument("--bootstrap", type=int, default=2000, help="bootstrap resamples (0 = off)")
     ap.add_argument("--cases", default=str(ROOT / "eval" / "labeled_cases"))
     ap.add_argument("--cases-glob", default="nct*.json")
     ap.add_argument("--out", default=str(ROOT / "reports" / "results.md"))
@@ -206,13 +301,26 @@ def main(argv: list[str] | None = None) -> int:
                     "(eval/results/kb-v1-codes.json); enables the sub-item code correction of the code-only rows")
     a = ap.parse_args(argv)
     fix_codes = set(json.loads(Path(a.kb_codes).read_text(encoding="utf-8"))["codes"]) if a.kb_codes else None
-    stamp = a.stamp or latest_stamp()
+    stamps = [x.strip() for x in (a.stamp or latest_stamp()).split(",") if x.strip()]
+    stamp = stamps[0]
     outputs = Path(a.outputs) if a.outputs else None
-    summary = json.loads((RESULTS / f"ablation-{stamp}.json").read_text(encoding="utf-8"))
+    summaries = [json.loads((RESULTS / f"ablation-{st}.json").read_text(encoding="utf-8")) for st in stamps]
+    summary = dict(summaries[0])
+    stamp_by_key: dict[str, str] = {}
+    merged_rows = []
+    for st, sm in zip(stamps, summaries):
+        for r in sm["rows"]:
+            if r["key"] in stamp_by_key:
+                continue                                   # the first stamp that has a row keeps it
+            stamp_by_key[r["key"]] = st
+            merged_rows.append(r)
+    summary["rows"] = merged_rows
     cases = load_cases(Path(a.cases), a.cases_glob)
     started = datetime.fromisoformat(summary["generated"])
-    rows_all = rescore(summary, cases, stamp, outputs=outputs, fix_codes=fix_codes)
-    rows_sci = rescore(summary, cases, stamp, domain="scientific", outputs=outputs, fix_codes=fix_codes)
+    rows_all = rescore(summary, cases, stamp, outputs=outputs, fix_codes=fix_codes, stamp_by_key=stamp_by_key, rules_row=not a.no_rules_row)
+    rows_sci = rescore(summary, cases, stamp, domain="scientific", outputs=outputs, fix_codes=fix_codes, stamp_by_key=stamp_by_key, rules_row=not a.no_rules_row)
+    bs_all = bootstrap(rows_all, B=a.bootstrap) if a.bootstrap else {}
+    bs_sci = bootstrap(rows_sci, B=a.bootstrap) if a.bootstrap else {}
     fixed_note = ""
     if fix_codes is not None:
         n_fixed = {cfg["key"]: sum(apply_subitem_code_fix(saved_findings(cfg, c["case_id"], stamp, outputs), fix_codes)[1]
@@ -223,24 +331,26 @@ def main(argv: list[str] | None = None) -> int:
 
     md = render_markdown(rows_all, cases, no_llm=False, started=started, model=summary["model"])
     head, tail = md.split("## Ablation table", 1)
-    head += (f"Re-scored {datetime.now().strftime('%Y-%m-%d %H:%M')} by `eval/rescore.py` from the saved findings of run "
-             f"`{stamp}` (no new LLM calls){': ' + a.note if a.note else ''}.{fixed_note}\n\n")
+    head += (f"Re-scored {datetime.now().strftime('%Y-%m-%d %H:%M')} by `eval/rescore.py` from the saved findings of run(s) "
+             f"`{'`, `'.join(stamps)}` (no new LLM calls){': ' + a.note if a.note else ''}.{fixed_note}"
+             + (" Row 0 (rules only) is computed from the deterministic findings saved with the runs." if not a.no_rules_row else "") + "\n\n")
     md = head + "## Ablation table" + tail
     md += "\n".join(view_table(rows_sci, "Scientific domain only (reduced-scope view)",
                                "Labels and predictions restricted to the scientific domain. The five labeled protocols are "
                                "public registry documents without submission appendices; the labeler recorded what is wrong "
                                "*in the protocol text*, not which package documents are absent, so this view compares like "
                                "with like.") + ["\n"])
+    md += "\n".join(bootstrap_section(bs_all, bs_sci, rows_all) + ["\n"])
     md += "\n".join(critic_section(cases, stamp, outputs) + ["\n"])
     md += "\n".join(unlabeled_admin_section(cases, stamp, outputs))
     out = Path(a.out)
     out.write_text(md, encoding="utf-8")
     Path(a.results_dir).mkdir(parents=True, exist_ok=True)
     (Path(a.results_dir) / f"rescore-{stamp}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json").write_text(
-        json.dumps({"stamp": stamp, "note": a.note + fixed_note, "kb_codes": a.kb_codes and Path(a.kb_codes).name,
-                    "all": rows_all, "scientific": rows_sci}, indent=1, default=str), encoding="utf-8")
+        json.dumps({"stamp": stamp, "stamps": stamps, "note": a.note + fixed_note, "kb_codes": a.kb_codes and Path(a.kb_codes).name,
+                    "all": rows_all, "scientific": rows_sci, "bootstrap": {"all": bs_all, "scientific": bs_sci}}, indent=1, default=str), encoding="utf-8")
     for r in rows_all:
-        print(f"ALL  {r['label']:<55} P={_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) R={_pct(r['coverage'])} ({r['tp']}/{r['labels']}) unverified={r['n_unverified']}")
+        print(f"ALL  {ROW_NUM.get(r['key'], '?'):>2} {r['label']:<55} P={_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) R={_pct(r['coverage'])} ({r['tp']}/{r['labels']}) unverified={r['n_unverified']}")
     for r in rows_sci:
         print(f"SCI  {r['label']:<55} P={_pct(r['verified_precision'])} ({r['matched_verified']}/{r['n_verified']}) R={_pct(r['coverage'])} ({r['tp']}/{r['labels']}) unverified={r['n_unverified']}")
     print(f"wrote {out}")

@@ -4,12 +4,13 @@ Generated 2026-10-29 20:59 by `eval/ablation.py`, model `claude-opus-5-5`.
 Test set: 5 labeled case(s) - `nct01977547` (9 labels), `nct04084990` (9 labels), `nct05199324` (9 labels), `nct05698277` (10 labels), `nct06846736` (9 labels).
 All rows run with the evaluation gate bypass (`force_scientific`): the scientific stage runs even when the administrative gate fails; the decision stays RETURNED_ADMIN in that case.
 
-Re-scored 2026-11-08 13:42 by `eval/rescore.py` from the saved findings of run `20261029-205913` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; the code-only rows 2 and 3 are re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call' (one model call is not an agent). Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified.
+Re-scored 2026-11-08 15:27 by `eval/rescore.py` from the saved findings of run(s) `20261029-205913` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; rows 2 and 3 re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call'; row 0 (rules only) and the protocol-level bootstrap added (mentor comments M9, M2). Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified. Row 0 (rules only) is computed from the deterministic findings saved with the runs.
 
 ## Ablation table
 
 | # | Configuration | Precision of VERIFIED findings | Recall (coverage) of labeled findings | Unverified | LLM calls | Tokens in / out | Runtime |
 |---|---|---|---|---|---|---|---|
+| 0 | Rules only (29 deterministic checks, no LLM) | 9% (4/44) | 9% (4/46) | 0 | 0 | 0 / 0 | 0 s |
 | 1 | Single LLM call, no code verification | 19% (23/119) | 54% (25/46) | 0 | 5 | 207,419 / 62,590 | 548 s |
 | 2 | Single LLM call + code verification | 18% (21/120) | 46% (21/46) | 3 | 5 | 207,419 / 66,291 | 568 s |
 | 3 | Full system without the critic | 20% (30/150) | 54% (25/46) | 9 | 15 | 452,979 / 104,016 | 918 s |
@@ -23,6 +24,11 @@ Matching rule: a predicted finding matches a labeled one when the domain matches
 
 | Configuration | Case | Decision (expected) | Verified | Matched verified | Unverified | Coverage | Missed labels | Unlabeled reported | Calls | Tokens in / out | s |
 |---|---|---|---|---|---|---|---|---|---|---|---|
+| Rules only (29 deterministic checks, no LLM) | nct01977547 | - (RETURNED_ADMIN) | 6 | 0 | 0 | 0/9 | OTHER, INTERNAL_CONTRADICTION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER | MISSING_CONSENT_FORM, MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, INCONSISTENT_SAMPLE_SIZE, NO_SAMPLE_SIZE_JUSTIFICATION | 0 | 0 / 0 | 0.0 |
+| Rules only (29 deterministic checks, no LLM) | nct04084990 | - (RETURNED_ADMIN) | 6 | 1 | 0 | 1/9 | MISSING_REGISTRY_ID, MISSING_VERSION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER | MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, NO_SAMPLE_SIZE_JUSTIFICATION, REGISTRY_MISMATCH | 0 | 0 / 0 | 0.0 |
+| Rules only (29 deterministic checks, no LLM) | nct05199324 | - (RETURNED_ADMIN) | 6 | 0 | 0 | 0/9 | INTERNAL_CONTRADICTION, NO_DATA_MONITORING, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER | MISSING_DATE, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, INCONSISTENT_SAMPLE_SIZE, RANDOMIZATION_METHOD_UNSPECIFIED | 0 | 0 / 0 | 0.0 |
+| Rules only (29 deterministic checks, no LLM) | nct05698277 | - (RETURNED_ADMIN) | 10 | 0 | 0 | 0/10 | INTERNAL_CONTRADICTION, MISSING_REGISTRY_ID, INTERNAL_CONTRADICTION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER, OTHER | MISSING_CONSENT_FORM, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES | 0 | 0 / 0 | 0.0 |
+| Rules only (29 deterministic checks, no LLM) | nct06846736 | - (RETURNED_ADMIN) | 16 | 3 | 0 | 3/9 | MISSING_REGISTRY_ID, INTERNAL_CONTRADICTION, OTHER, OTHER, OTHER, OTHER | MISSING_CONSENT_FORM, MISSING_DATE, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES | 0 | 0 / 0 | 0.0 |
 | Single LLM call, no code verification | nct01977547 | RETURNED_ADMIN (RETURNED_ADMIN) | 23 | 4 | 0 | 4/9 | OTHER, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, OTHER, OTHER | CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, ETHICS_GAP, INCONSISTENT_SAMPLE_SIZE, METHOD_UNSPECIFIED, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, REGISTRY_MISMATCH, SAFETY_GAP | 1 | 62,762 / 13,635 | 123.3 |
 | Single LLM call, no code verification | nct04084990 | RETURNED_ADMIN (RETURNED_ADMIN) | 24 | 6 | 0 | 6/9 | MISSING_REGISTRY_ID, MISSING_VERSION, OTHER | CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, ETHICS_GAP, INTERNAL_CONTRADICTION, NO_SAMPLE_SIZE_JUSTIFICATION, REGISTRY_MISMATCH, SAFETY_GAP | 1 | 30,366 / 13,489 | 116.2 |
 | Single LLM call, no code verification | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 18 | 3 | 0 | 4/9 | OTHER, OTHER, OTHER, OTHER, OTHER | ETHICS_GAP, INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, RANDOMIZATION_METHOD_UNSPECIFIED, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 1 | 52,141 / 11,918 | 101.8 |
@@ -56,6 +62,7 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 
 | # | Configuration | Precision of VERIFIED findings | Recall (coverage) of labeled findings | Unverified |
 |---|---|---|---|---|
+| 0 | Rules only (29 deterministic checks, no LLM) | 6% (1/16) | 3% (1/37) | 0 |
 | 1 | Single LLM call, no code verification | 29% (19/66) | 57% (21/37) | 0 |
 | 2 | Single LLM call + code verification | 25% (17/68) | 46% (17/37) | 0 |
 | 3 | Full system without the critic | 33% (26/79) | 57% (21/37) | 9 |
@@ -63,6 +70,11 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 
 | Configuration | Case | Verified | Matched verified | Unverified | Coverage | Missed labels |
 |---|---|---|---|---|---|---|
+| Rules only (29 deterministic checks, no LLM) | nct01977547 | 2 | 0 | 0 | 0/8 | INTERNAL_CONTRADICTION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER |
+| Rules only (29 deterministic checks, no LLM) | nct04084990 | 3 | 1 | 0 | 1/7 | INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER |
+| Rules only (29 deterministic checks, no LLM) | nct05199324 | 2 | 0 | 0 | 0/9 | INTERNAL_CONTRADICTION, NO_DATA_MONITORING, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER |
+| Rules only (29 deterministic checks, no LLM) | nct05698277 | 5 | 0 | 0 | 0/8 | INTERNAL_CONTRADICTION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER, OTHER |
+| Rules only (29 deterministic checks, no LLM) | nct06846736 | 4 | 0 | 0 | 0/5 | INTERNAL_CONTRADICTION, OTHER, OTHER, OTHER, OTHER |
 | Single LLM call, no code verification | nct01977547 | 12 | 4 | 0 | 4/8 | INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, OTHER, OTHER |
 | Single LLM call, no code verification | nct04084990 | 15 | 6 | 0 | 6/7 | OTHER |
 | Single LLM call, no code verification | nct05199324 | 10 | 3 | 0 | 4/9 | OTHER, OTHER, OTHER, OTHER, OTHER |
@@ -83,6 +95,28 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 | Full system (4 agents, critic, 1 revision round) | nct05199324 | 24 | 7 | 11 | 7/9 | OTHER, OTHER |
 | Full system (4 agents, critic, 1 revision round) | nct05698277 | 20 | 9 | 10 | 5/8 | OTHER, OTHER, OTHER |
 | Full system (4 agents, critic, 1 revision round) | nct06846736 | 23 | 3 | 8 | 3/5 | OTHER, OTHER |
+
+
+## Uncertainty: protocol-level bootstrap (B=2000, seed 20261108, 5 protocols)
+
+The five labeled protocols are resampled with replacement; precision and recall are pooled on each resample. A gap whose 95% interval includes zero (or whose `P(gap <= 0)` is large) is not distinguishable from noise on this test set. One model run per row: run-to-run variation of the model is not separated from protocol variation here.
+
+| Row | Precision 95% CI (all) | Recall 95% CI (all) | Precision 95% CI (scientific) | Recall 95% CI (scientific) |
+|---|---|---|---|---|
+| 0 Rules only (29 deterministic checks, no LLM) | 0% - 16% | 0% - 20% | 0% - 20% | 0% - 9% |
+| 1 Single LLM call, no code verification | 15% - 23% | 43% - 67% | 17% - 37% | 44% - 75% |
+| 2 Single LLM call + code verification | 14% - 21% | 38% - 56% | 15% - 32% | 30% - 68% |
+| 3 Full system without the critic | 15% - 24% | 35% - 71% | 22% - 42% | 33% - 83% |
+| 4 Full system (4 agents, critic, 1 revision round) | 18% - 29% | 66% - 82% | 22% - 45% | 66% - 91% |
+
+| Gap | View | Precision gap: mean (95% CI), P(gap <= 0) | Recall gap: mean (95% CI), P(gap <= 0) |
+|---|---|---|---|
+| 4 vs 1 | all | 4% (0% to 9%), P=0.01 | 20% (4% to 35%), P=0.01 |
+| 4 vs 2 | all | 6% (2% to 9%), P=0.00 | 28% (17% to 40%), P=0.00 |
+| 4 vs 3 | all | 4% (-0% to 7%), P=0.07 | 19% (7% to 38%), P=0.00 |
+| 4 vs 1 | scientific | 5% (-1% to 12%), P=0.07 | 21% (3% to 33%), P=0.01 |
+| 4 vs 2 | scientific | 9% (6% to 13%), P=0.00 | 32% (22% to 41%), P=0.00 |
+| 4 vs 3 | scientific | 1% (-6% to 8%), P=0.38 | 21% (3% to 42%), P=0.01 |
 
 
 ## Critic contribution (full system, scientific findings)
