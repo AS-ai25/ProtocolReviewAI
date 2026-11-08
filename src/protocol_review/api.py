@@ -177,6 +177,50 @@ def run_cost(run_id: str):
     return memory.run_cost_summary(run_id)
 
 
+def _critic_rounds(st: dict) -> list[dict]:
+    """The exchange between the critic and the reviewer, rebuilt from the saved state of a run.
+
+    For round i: the critic's verdicts (CriticReport i), the exact revision block the reviewer then received
+    (same construction as agents/scientific_critic.py + scientific_reviewer._user_prompt), and what the reviewer
+    answered in round i+1 (ScientificReport i+1) as a diff against its round-i findings."""
+    rounds = []
+    sci = st.get("scientific_reports") or []
+    crs = st.get("critic_reports") or []
+    for i, cr in enumerate(crs):
+        verdicts = cr.get("verdicts") or []
+        missed = cr.get("missed_issues") or []
+        last_round = i >= settings.max_revise_rounds
+        requests = [f"{v.get('finding_id')}: {v.get('notes', '')}" for v in verdicts if v.get("verdict") == "revise"]
+        if not last_round:
+            requests += [f"MISSED: {m}" for m in missed]
+        handoff = ("# REVISION ROUND - critic feedback you must address\n" + "\n".join(f"- {r}" for r in requests)) if requests else ""
+        before = {f["id"]: f for f in (sci[i].get("findings") or []) if f.get("source") == "llm"} if i < len(sci) else {}
+        after_report = sci[i + 1] if i + 1 < len(sci) else None
+        answer = None
+        if after_report is not None:
+            after = {f["id"]: f for f in (after_report.get("findings") or []) if f.get("source") == "llm" and f.get("status") != "withdrawn"}
+            def row(f, kind):
+                return {"id": f["id"], "kind": kind, "title": f.get("title", ""), "severity": f.get("severity"),
+                        "category": f.get("category"), "pages": [e.get("page") for e in f.get("evidence") or []]}
+            changed = [row(after[k], "changed") for k in after if k in before and
+                       (after[k].get("title"), after[k].get("description"), after[k].get("severity"), after[k].get("evidence")) !=
+                       (before[k].get("title"), before[k].get("description"), before[k].get("severity"), before[k].get("evidence"))]
+            kept = [row(after[k], "kept") for k in after if k in before and not any(c["id"] == k for c in changed)]
+            new = [row(after[k], "new") for k in after if k not in before]
+            withdrawn = [row(before[k], "withdrawn") for k in before if k not in after]
+            answer = {"summary": after_report.get("summary", ""), "n_findings": len(after_report.get("findings") or []),
+                      "changed": changed, "new": new, "withdrawn": withdrawn, "kept": kept}
+        rounds.append({
+            "round": cr.get("round", i), "summary": cr.get("summary", ""),
+            "counts": {k: sum(1 for v in verdicts if v.get("verdict") == k) for k in ("verified", "revise", "unverified", "rejected")},
+            "verdicts": [{"finding_id": v.get("finding_id"), "verdict": v.get("verdict"), "notes": v.get("notes", ""),
+                          "revised_severity": v.get("revised_severity")} for v in verdicts],
+            "missed_issues": missed, "requests": requests, "handoff_text": handoff, "reviewer_answer": answer,
+            "reviewer_findings_after": answer["n_findings"] if answer else None,
+        })
+    return rounds
+
+
 @app.get("/runs/{run_id}/summary")
 def run_summary(run_id: str):
     """Compact end-of-run view for the dashboard: decision, score, finding counts, summary text, reports, cost."""
@@ -204,16 +248,7 @@ def run_summary(run_id: str):
         "pending_human_review": score.get("pending_human_review") if isinstance(score, dict) else None,
         "n_findings": len(findings), "by_status": count("status"), "by_severity": count("severity"), "by_domain": count("domain"),
         "revise_rounds": st.get("revise_rounds", 0), "force_scientific": bool(st.get("force_scientific")),
-        "critic_rounds": [                      # what the critic said about the reviewer's findings, round by round
-            {"round": cr.get("round", i), "summary": cr.get("summary", ""),
-             "counts": {k: sum(1 for v in cr.get("verdicts") or [] if v.get("verdict") == k)
-                        for k in ("verified", "revise", "unverified", "rejected")},
-             "verdicts": [{"finding_id": v.get("finding_id"), "verdict": v.get("verdict"), "notes": v.get("notes", ""),
-                           "revised_severity": v.get("revised_severity")} for v in cr.get("verdicts") or []],
-             "missed_issues": cr.get("missed_issues") or [],
-             "reviewer_findings_after": len((st.get("scientific_reports") or [{}] * (i + 2))[i + 1].get("findings") or [])
-             if i + 1 < len(st.get("scientific_reports") or []) else None}
-            for i, cr in enumerate(st.get("critic_reports") or [])],
+        "critic_rounds": _critic_rounds(st),    # the critic -> reviewer exchange, round by round
         "final_summary": st.get("final_summary", ""), "error": st.get("error"),
         "reports": {k: f"/runs/{run_id}/report?kind={k}" for k, key in
                     (("final", "final_report"), ("admin", "administrative_report"), ("scientific", "scientific_report"))
