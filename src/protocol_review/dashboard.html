@@ -44,7 +44,23 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 .sumgrid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px}.summary-text{white-space:pre-wrap;font-size:14px;color:#d7e0ec;max-height:260px;overflow:auto;background:#0e1420;border-radius:8px;padding:10px 12px}
 .links a{color:var(--acc);margin-right:14px}.empty{color:var(--mut);font-style:italic}
 #form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#msg{color:var(--amb);font-size:13px}
-</style></head><body>
+
+/* Presentation-only navigation; the API and review pipeline are unchanged. */
+.view-tabs{display:flex;gap:10px;padding:16px 20px 0;flex-wrap:wrap}
+.view-tabs button{background:#18243a;border:1px solid #32435f;color:#b8cbe2;border-radius:10px;padding:11px 18px;font-weight:600}
+.view-tabs button.active{background:#17374d;color:#fff;border-color:var(--acc);box-shadow:inset 0 -2px var(--acc)}
+.view-intro{padding:14px 20px 0;color:#afc2d9}.view-intro h2{font-size:23px;color:#f5f8ff;margin:0 0 4px}.view-intro p{margin:0}
+#agentsinfo{grid-column:1/-1;min-height:0}
+.agent-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.agent-card{padding:16px;border-radius:10px;background:#101929;border:1px solid #304361}.agent-card strong{color:#8ed7ff}.agent-card p{color:#b5c7d9;font-size:13px;line-height:1.6}
+.help-note{background:#10263a;border:1px solid #2b5f7d;border-radius:9px;padding:12px 14px;color:#d3e8f8;margin-top:14px}
+body[data-view="review"] #results,body[data-view="review"] #average,body[data-view="review"] #agentsinfo{display:none}
+body[data-view="evaluation"] #process,body[data-view="evaluation"] #tokens,body[data-view="evaluation"] #summary,body[data-view="evaluation"] #logs,body[data-view="evaluation"] #agentsinfo{display:none}
+body[data-view="agents"] main>section:not(#agentsinfo){display:none}
+body:not([data-view="review"]) header #form,body:not([data-view="review"]) header #labeled,body:not([data-view="review"]) header #runs,body:not([data-view="review"]) header #refresh,body:not([data-view="review"]) header label:has(#runs),body:not([data-view="review"]) header #msg{display:none}
+#results,#average{overflow-x:auto}
+@media(max-width:950px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}main{grid-template-columns:1fr}main>section{grid-column:1/-1!important}}
+@media(max-width:550px){.agent-grid{grid-template-columns:1fr}}
+</style></head><body data-view="evaluation">
 <header>
   <h1>Protocol Review · live</h1><span class="mut" id="health">…</span>
   <label class="mut">Run <select id="runs"></select></label>
@@ -65,7 +81,24 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
   <span id="msg"></span>
   <div id="labeled"><span class="mut">Labeled protocols (full-system run):</span></div>
 </header>
+<nav class="view-tabs" aria-label="Dashboard views">
+  <button type="button" data-target="evaluation" class="active" aria-selected="true">Evaluation &amp; Ablation</button>
+  <button type="button" data-target="review" aria-selected="false">Live Protocol Review</button>
+  <button type="button" data-target="agents" aria-selected="false">Meet the Agents</button>
+</nav>
+<div class="view-intro" id="viewintro"><h2>Evaluation &amp; Ablation</h2><p>Explore saved assessment results without running a new protocol review or using LLM tokens.</p></div>
 <main>
+  <section id="agentsinfo">
+    <h2>Multi-Agent Architecture</h2>
+    <p class="mut">Four cooperating agent roles. This is an explanatory view, not an active run.</p>
+    <div class="agent-grid">
+      <div class="agent-card"><strong>01 · Coordinator</strong><p>Prepares the protocol, manages the workflow and brings the findings together for the final decision and report.</p></div>
+      <div class="agent-card"><strong>02 · Administrative Reviewer</strong><p>Checks administrative completeness and requirements. The normal workflow can stop at the administrative gate.</p></div>
+      <div class="agent-card"><strong>03 · Scientific Reviewer</strong><p>Reviews scientific and methodological issues using the project knowledge bases and relevant protocol evidence.</p></div>
+      <div class="agent-card"><strong>04 · Scientific Critic</strong><p>Challenges the scientific findings and may request a revision. This improves scrutiny but does not replace expert verification.</p></div>
+    </div>
+    <div class="help-note"><strong>How to interpret evidence:</strong> a finding marked verified by automated checks is not necessarily clinically or scientifically correct. Human review remains essential.</div>
+  </section>
   <section id="process">
     <h2>Process · agents on the blackboard</h2>
     <div class="steps" id="steps"></div>
@@ -108,6 +141,19 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px
 </main>
 <script>
 const $=s=>document.querySelector(s);
+const VIEW_TEXT={
+  evaluation:["Evaluation & Ablation","Explore saved assessment results without running a new protocol review or using LLM tokens."],
+  review:["Live Protocol Review","Upload a PDF only when you intend to start a new review. Existing runs appear here when the local database contains them."],
+  agents:["Meet the Agents","Understand the responsibilities and limitations of the four-agent system."]
+};
+function setView(view){
+  if(!VIEW_TEXT[view])view="evaluation";
+  document.body.dataset.view=view;
+  document.querySelectorAll(".view-tabs button").forEach(b=>{const active=b.dataset.target===view;b.classList.toggle("active",active);b.setAttribute("aria-selected",String(active));});
+  $("#viewintro h2").textContent=VIEW_TEXT[view][0];$("#viewintro p").textContent=VIEW_TEXT[view][1];
+}
+document.querySelectorAll(".view-tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.target)));
+
 // one colour per stage; the same colour is used for the agent's rows in the timeline
 const STAGE_COLOR={intake:"#5eead4",administrative:"#ffc857",scientific_reviewer:"#5cc8ff",scientific_critic:"#b89cff",revision:"#ff6b6b",final:"#7bd389"};
 const AGENT_STAGE={coordinator:"intake",administrative:"administrative",scientific_reviewer:"scientific_reviewer",scientific_critic:"scientific_critic",single_agent:"scientific_reviewer"};
@@ -194,7 +240,7 @@ async function loadConfigTable(){try{const u=await j("/stats/usage?run=abl-&by=c
 
 let RESULTS=null;
 const TITLES={nct01977547:"ABC PICU",nct04084990:"SAFER",nct05199324:"INVEST",nct05698277:"Fetal cardiac",nct06846736:"ALK pathology"};
-function openRun(id){if(![...$("#runs").options].some(o=>o.value===id)){$("#msg").textContent="run "+id+" not in this database";return;}$("#runs").value=id;current=id;watch();window.scrollTo({top:0,behavior:"smooth"});}
+function openRun(id){setView("review");if(![...$("#runs").options].some(o=>o.value===id)){$("#msg").textContent="Saved run not found in the local database. Evaluation results are still available under Evaluation & Ablation. No new review has been started.";window.scrollTo({top:0,behavior:"smooth"});return;}$("#runs").value=id;current=id;watch();window.scrollTo({top:0,behavior:"smooth"});}
 function renderLabeled(){if(!RESULTS)return;const cases=(RESULTS.scientific||RESULTS.all||[])[0]?.per_case.map(c=>c.case)||[];const box=$("#labeled");box.querySelectorAll("button").forEach(b=>b.remove());
   cases.forEach(c=>{const b=document.createElement("button");const id=`abl-agents_full-${c}-${RESULTS.stamp}`;b.textContent=`${TITLES[c]||c} · ${c.toUpperCase()}`;b.title=id;b.dataset.run=id;b.addEventListener("click",()=>openRun(id));box.appendChild(b);});markLabeled();}
 function markLabeled(){$("#labeled").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.run===current));}
