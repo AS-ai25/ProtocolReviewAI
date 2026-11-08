@@ -180,10 +180,10 @@ class LLM:
 
     @staticmethod
     def _block(b) -> dict:
-        """SDK content block -> plain dict for the next request."""
+        """SDK content block -> plain dict for the next request. Thinking blocks (with their signature) must be passed
+        back unchanged when the model thinks before calling a tool, so the whole block is kept."""
         if hasattr(b, "model_dump"):
-            d = b.model_dump(exclude_none=True)
-            return {k: v for k, v in d.items() if k in ("type", "text", "id", "name", "input")}
+            return b.model_dump(exclude_none=True)
         return dict(b)
 
     # ----------------------------------------------------------------- private
