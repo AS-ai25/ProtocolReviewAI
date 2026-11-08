@@ -1,4 +1,4 @@
-"""Single-Agent Baseline: ONE Claude call with everything the multi-agent system has.
+"""Single LLM call baseline: ONE Claude call with everything the multi-agent system has.
 
 The charter asks for a comparison of the multi-agent pipeline against a single
 agent that receives the same tools and data. This module gives one LLM call:
@@ -181,7 +181,7 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
                                      if f["status"] == FindingStatus.VERIFIED.value and f["severity"] in ("critical", "major"))
                          + f"\n\nRecommendation: {report.recommendation}")
     else:
-        final_summary = (f"Single-agent baseline: LLM unavailable ({'; '.join(errors)}). "
+        final_summary = (f"Single LLM call baseline: LLM unavailable ({'; '.join(errors)}). "
                          f"{len(findings)} deterministic findings, decision {decision.value}.")
 
     result = {

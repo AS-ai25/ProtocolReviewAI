@@ -1,4 +1,4 @@
-"""Single-Agent Baseline with a MockLLM (no network)."""
+"""Single LLM call baseline with a MockLLM (no network)."""
 import sys
 from pathlib import Path
 

@@ -22,8 +22,8 @@ function arrow(g,x1,y1,x2,y2,opt={}){const id='a'+Math.random().toString(36).sli
   g.appendChild(el('path',{d:opt.d||`M${x1},${y1} L${x2},${y2}`,fill:'none',stroke:opt.color||'#374151','stroke-width':opt.w||1.5,'stroke-dasharray':opt.dash?'5 4':'none','marker-end':`url(#${id})`}));if(opt.label)g.appendChild(text(opt.lx??(x1+x2)/2,opt.ly??(y1-6),[opt.label],{size:10,fill:opt.color||'#374151'}));}
 
 const ROWS=[
- {n:1,title:'Single agent, no code verification',kind:'single',verify:false,cost:'1 LLM call · ~41k tokens in · ~110 s per protocol',score:'precision 29% · recall 57%',note:'the model\'s own status stands: every finding it does not mark otherwise counts as verified'},
- {n:2,title:'Single agent + code verification  (= Single-Agent Baseline)',kind:'single',verify:true,cost:'1 LLM call · ~41k tokens in · ~113 s per protocol',score:'precision 25% · recall 46%',note:'quote not located in the PDF or unknown guideline code -> unverified (routed to a human)'},
+ {n:1,title:'Single LLM call, no code verification',kind:'single',verify:false,cost:'1 LLM call · ~41k tokens in · ~110 s per protocol',score:'precision 29% · recall 57%',note:'the model\'s own status stands: every finding it does not mark otherwise counts as verified'},
+ {n:2,title:'Single LLM call + code verification  (= Single LLM call baseline)',kind:'single',verify:true,cost:'1 LLM call · ~41k tokens in · ~113 s per protocol',score:'precision 25% · recall 46%',note:'quote not located in the PDF or unknown guideline code -> unverified (routed to a human)'},
  {n:3,title:'Full system without the critic',kind:'multi',critic:false,cost:'3 LLM calls · ~91k tokens in · ~180 s per protocol',score:'precision 33% · recall 57%',note:'administrative agent + scientific reviewer; the reviewer\'s findings are verified by code only; no revision round'},
  {n:4,title:'Full system: four agents, critic, one revision round',kind:'multi',critic:true,cost:'4-6 LLM calls · ~256k tokens in · ~470 s per protocol',score:'precision 34% · recall 78%',note:'critic verdict per finding (verified / revise / unverified / rejected), critic-raised issues go to a human, at most one revision round'},
 ];

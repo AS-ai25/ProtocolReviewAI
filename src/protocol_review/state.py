@@ -122,7 +122,7 @@ class FinalSummary(BaseModel):
 
 
 class SingleAgentReport(BaseModel):
-    """Structured output of the Single-Agent Baseline: one Claude call that plays
+    """Structured output of the Single LLM call baseline: one Claude call that plays
     administrative reviewer, scientific reviewer, critic and coordinator at once."""
     admin_accepted: bool = Field(description="True when no BLOCKING administrative checklist item fails")
     admin_summary: str = Field(description="Administrative completeness in 2-4 sentences")

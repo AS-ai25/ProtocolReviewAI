@@ -3,7 +3,7 @@
   review  <pdf> [--nct NCT...] [--no-llm] [--submitter x]   full multi-agent review
           [--force-scientific] [--no-critic]                evaluation switches (gate bypass / critic ablation)
   baseline <pdf> [--nct NCT...]                             rule-based baseline only
-  single   <pdf> [--nct NCT...] [--no-llm] [--no-verification]  single-agent baseline (one LLM call, all tools)
+  single   <pdf> [--nct NCT...] [--no-llm] [--no-verification]  single LLM call baseline (one LLM call, all tools)
   serve [--port 8040]                                       FastAPI webhook server
   poll-mail                                                 IMAP inbox poller (protocols by email)
   graph                                                     print the Mermaid diagram

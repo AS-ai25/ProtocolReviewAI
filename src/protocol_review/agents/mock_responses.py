@@ -23,7 +23,7 @@ NO_LLM_RESPONSES = {
         "registry_comparison": [],
         "open_questions": [],
         "executive_summary": "NO_LLM mode: see the deterministic findings table.",
-        "recommendation": "Run with an LLM for the single-agent baseline.",
+        "recommendation": "Run with an LLM for the single LLM call baseline.",
     },
     "FinalSummary": {
         "executive_summary": "NO_LLM mode: see the deterministic findings table.",

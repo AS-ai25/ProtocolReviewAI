@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from .db import Interaction, Run, RunMessage, get_session
 
 
-CONFIG_LABELS = {"single_no_verification": "1 single agent, no verification", "single_verified": "2 single agent + code verification",
+CONFIG_LABELS = {"single_no_verification": "1 single LLM call, no verification", "single_verified": "2 single LLM call + code verification",
                  "agents_no_critic": "3 full system without critic", "agents_full": "4 full system (4 agents, critic)"}
 
 

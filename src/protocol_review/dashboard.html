@@ -86,8 +86,8 @@ html[dir=rtl] #cmpmeta,html[dir=rtl] #confline,html[dir=rtl] #resmeta{direction:
     <select id="config" title="review configuration (the ablation rows); production = full system">
       <option value="agents_full">4 · full system (4 agents, critic) - production</option>
       <option value="agents_no_critic">3 · full system without critic (evaluation)</option>
-      <option value="single_verified">2 · single agent + code verification (evaluation)</option>
-      <option value="single_no_verification">1 · single agent, no verification (evaluation)</option>
+      <option value="single_verified">2 · single LLM call + code verification (evaluation)</option>
+      <option value="single_no_verification">1 · single LLM call, no verification (evaluation)</option>
     </select>
     <label class="mut" title="force_scientific: the administrative review still runs and still counts; on failure the run continues to the scientific stage instead of stopping. The decision is unchanged."><input type="checkbox" id="force"> force scientific (evaluation)</label>
     <button class="primary" id="go">Start review</button>
@@ -161,7 +161,7 @@ const HE={
   "Run":"ריצה","Start review":"התחל סקירה","force scientific (evaluation)":"force scientific (הערכה)","Labeled protocols (full-system run):":"פרוטוקולים מתויגים (ריצת המערכת המלאה):",
   "NCT id (optional)":"מספר NCT (לא חובה)","webhook secret":"סוד ה-webhook",
   "4 · full system (4 agents, critic) - production":"4 · המערכת המלאה (4 סוכנים, מבקר) - ייצור","3 · full system without critic (evaluation)":"3 · מערכת מלאה בלי מבקר (הערכה)",
-  "2 · single agent + code verification (evaluation)":"2 · סוכן יחיד + אימות קוד (הערכה)","1 · single agent, no verification (evaluation)":"1 · סוכן יחיד, בלי אימות (הערכה)",
+  "2 · single LLM call + code verification (evaluation)":"2 · קריאת LLM אחת + אימות קוד (הערכה)","1 · single LLM call, no verification (evaluation)":"1 · קריאת LLM אחת, בלי אימות (הערכה)",
   "Evaluation & Ablation":"הערכה ו-Ablation","Live Protocol Review":"סקירת פרוטוקול חיה","Meet the Agents":"הכירו את הסוכנים",
   "Explore saved assessment results without running a new protocol review or using LLM tokens.":"תוצאות ההערכה השמורות, בלי להריץ סקירה חדשה ובלי טוקנים.",
   "Upload a PDF only when you intend to start a new review. Existing runs appear here when the local database contains them.":"העלו PDF רק כדי להתחיל סקירה חדשה. ריצות קיימות מופיעות כאן כשהן נמצאות במסד הנתונים המקומי.",
@@ -189,7 +189,7 @@ const HE={
   "runs":"ריצות","calls/run":"קריאות/ריצה","tokens in/run":"טוקנים נכנסים/ריצה","tokens out/run":"טוקנים יוצאים/ריצה","s/run":"שניות/ריצה",
   "LLM call":"קריאת LLM","step":"שלב","LLM calls":"קריאות LLM","LLM time":"זמן LLM","wall clock":"זמן כולל","revision rounds":"סבבי תיקון","no LLM calls yet":"אין קריאות LLM עדיין",
   "Configuration":"תצורה","Configuration:":"תצורה:","gate bypass (evaluation)":"עקיפת השער (הערכה)","not run yet":"טרם הורץ","protocol":"פרוטוקול","latest finished run per configuration":"הריצה האחרונה שהסתיימה בכל תצורה",
-  "1 · single, no verification":"1 · יחיד, בלי אימות","2 · single + code verification":"2 · יחיד + אימות קוד","3 · full, no critic":"3 · מלאה, בלי מבקר","4 · full system":"4 · המערכת המלאה",
+  "1 · single call, no verification":"1 · קריאה אחת, בלי אימות","2 · single call + code verification":"2 · קריאה אחת + אימות קוד","3 · full, no critic":"3 · מלאה, בלי מבקר","4 · full system":"4 · המערכת המלאה",
   "no ablation runs in this database":"אין ריצות ablation במסד הנתונים הזה",
   "all protocols":"כל הפרוטוקולים","pooled":"מאוחד","mean of":"ממוצע של","protocols":"פרוטוקולים","unverified":"לא מאומתים","total · per protocol":"סה\"כ · לפרוטוקול","per protocol":"לפרוטוקול",
   "re-scored":"חושב מחדש","score / 100":"ציון / 100","rejected / withdrawn":"נדחו / נמשכו","severity":"חומרה","domain":"תחום","cost":"עלות","pages":"עמודים","configuration:":"תצורה:","no reports":"אין דוחות","report":"דוח",
@@ -333,7 +333,7 @@ async function loadLogs(){try{const run=$("#logrun").checked&&current?current:""
 $("#logrun").addEventListener("change",loadLogs);$("#logfilter").addEventListener("input",loadLogs);
 
 async function loadCompare(){if(!current)return;try{const c=await j(`/runs/${current}/compare`);$("#cmpmeta").innerHTML=`${t("protocol")} <b style="color:var(--fg)">${c.protocol||"?"}</b> · ${t("latest finished run per configuration")}`;
-  const have=new Map(c.rows.map(r=>[r.configuration,r]));const order=["1 single agent, no verification","2 single agent + code verification","3 full system without critic","4 full system (4 agents, critic)"];const short={"1 single agent, no verification":"1 · single, no verification","2 single agent + code verification":"2 · single + code verification","3 full system without critic":"3 · full, no critic","4 full system (4 agents, critic)":"4 · full system"};
+  const have=new Map(c.rows.map(r=>[r.configuration,r]));const order=["1 single LLM call, no verification","2 single LLM call + code verification","3 full system without critic","4 full system (4 agents, critic)"];const short={"1 single LLM call, no verification":"1 · single call, no verification","2 single LLM call + code verification":"2 · single call + code verification","3 full system without critic":"3 · full, no critic","4 full system (4 agents, critic)":"4 · full system"};
   $("#cmp tbody").innerHTML=order.map(k=>{const r=have.get(k);if(!r)return `<tr><td class="mut">${t(short[k])}</td><td colspan="9" class="empty">${t("not run yet")}</td></tr>`;
     return `<tr${r.run_id===current?' style="background:#13261a"':''}><td>${t(short[k])}</td><td><a href="#" data-run="${r.run_id}" style="color:var(--acc)" title="${r.run_id}">${r.run_id.length>18?r.run_id.slice(0,8)+"…"+r.run_id.slice(-6):r.run_id}</a>${r.force_scientific?' <span class="mut">·fs</span>':''}</td><td>${r.llm_calls}</td><td>${fmt(r.input_tokens)}</td><td>${fmt(r.output_tokens)}</td><td>${Math.round(r.duration_s)}</td><td>${r.n_findings}</td><td>${r.verified}</td><td>${r.unverified}</td><td><span class="badge ${r.decision}" style="font-size:11px;padding:1px 8px">${r.decision}</span></td></tr>`;}).join("");
   $("#cmp tbody").querySelectorAll("a[data-run]").forEach(a=>a.addEventListener("click",ev=>{ev.preventDefault();$("#runs").value=a.dataset.run;current=a.dataset.run;watch();}));}catch(e){}}

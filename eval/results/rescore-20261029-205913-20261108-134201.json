@@ -1,0 +1,4054 @@
+{
+ "stamp": "20261029-205913",
+ "note": "2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; the code-only rows 2 and 3 are re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call' (one model call is not an agent) Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified.",
+ "kb_codes": "kb-v1-codes.json",
+ "all": [
+  {
+   "key": "single_no_verification",
+   "label": "Single LLM call, no code verification",
+   "kind": "single",
+   "kwargs": {
+    "verify": false
+   },
+   "verified_precision": 0.193,
+   "coverage": 0.543,
+   "labels": 46,
+   "tp": 25,
+   "n_verified": 119,
+   "matched_verified": 23,
+   "n_unverified": 0,
+   "llm_calls": 5,
+   "input_tokens": 207419,
+   "output_tokens": 62590,
+   "runtime_s": 547.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 123.3,
+     "n_findings": 23,
+     "llm_calls": 1,
+     "input_tokens": 62762,
+     "output_tokens": 13635,
+     "tp": 4,
+     "fp": 19,
+     "fn": 5,
+     "precision": 0.174,
+     "recall": 0.444,
+     "f1": 0.25,
+     "missed": [
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 23,
+     "n_verified": 23,
+     "n_unverified": 0,
+     "matched_verified": 4,
+     "verified_precision": 0.174,
+     "coverage": 0.444,
+     "n_labels": 9
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 116.2,
+     "n_findings": 24,
+     "llm_calls": 1,
+     "input_tokens": 30366,
+     "output_tokens": 13489,
+     "tp": 6,
+     "fp": 18,
+     "fn": 3,
+     "precision": 0.25,
+     "recall": 0.667,
+     "f1": 0.364,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "administrative",
+       "MISSING_VERSION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 24,
+     "n_verified": 24,
+     "n_unverified": 0,
+     "matched_verified": 6,
+     "verified_precision": 0.25,
+     "coverage": 0.667,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 101.8,
+     "n_findings": 18,
+     "llm_calls": 1,
+     "input_tokens": 52141,
+     "output_tokens": 11918,
+     "tp": 4,
+     "fp": 15,
+     "fn": 5,
+     "precision": 0.167,
+     "recall": 0.444,
+     "f1": 0.242,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 18,
+     "n_verified": 18,
+     "n_unverified": 0,
+     "matched_verified": 3,
+     "verified_precision": 0.167,
+     "coverage": 0.444,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 109.5,
+     "n_findings": 25,
+     "llm_calls": 1,
+     "input_tokens": 40001,
+     "output_tokens": 12546,
+     "tp": 4,
+     "fp": 19,
+     "fn": 6,
+     "precision": 0.24,
+     "recall": 0.4,
+     "f1": 0.3,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_ETHICS_STATEMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 25,
+     "n_verified": 25,
+     "n_unverified": 0,
+     "matched_verified": 6,
+     "verified_precision": 0.24,
+     "coverage": 0.4,
+     "n_labels": 10
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 97.1,
+     "n_findings": 29,
+     "llm_calls": 1,
+     "input_tokens": 22149,
+     "output_tokens": 11002,
+     "tp": 7,
+     "fp": 25,
+     "fn": 2,
+     "precision": 0.138,
+     "recall": 0.778,
+     "f1": 0.234,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_PI"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 29,
+     "n_verified": 29,
+     "n_unverified": 0,
+     "matched_verified": 4,
+     "verified_precision": 0.138,
+     "coverage": 0.778,
+     "n_labels": 9
+    }
+   ]
+  },
+  {
+   "key": "single_verified",
+   "label": "Single LLM call + code verification",
+   "kind": "single",
+   "kwargs": {
+    "verify": true
+   },
+   "verified_precision": 0.175,
+   "coverage": 0.457,
+   "labels": 46,
+   "tp": 21,
+   "n_verified": 120,
+   "matched_verified": 21,
+   "n_unverified": 3,
+   "llm_calls": 5,
+   "input_tokens": 207419,
+   "output_tokens": 66291,
+   "runtime_s": 567.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 118.8,
+     "n_findings": 23,
+     "llm_calls": 1,
+     "input_tokens": 62762,
+     "output_tokens": 13748,
+     "tp": 4,
+     "fp": 19,
+     "fn": 5,
+     "precision": 0.174,
+     "recall": 0.444,
+     "f1": 0.25,
+     "missed": [
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 23,
+     "n_verified": 22,
+     "n_unverified": 1,
+     "matched_verified": 4,
+     "verified_precision": 0.182,
+     "coverage": 0.444,
+     "n_labels": 9
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 124.0,
+     "n_findings": 26,
+     "llm_calls": 1,
+     "input_tokens": 30366,
+     "output_tokens": 14804,
+     "tp": 6,
+     "fp": 21,
+     "fn": 3,
+     "precision": 0.192,
+     "recall": 0.667,
+     "f1": 0.299,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "administrative",
+       "MISSING_VERSION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 26,
+     "n_verified": 25,
+     "n_unverified": 1,
+     "matched_verified": 5,
+     "verified_precision": 0.2,
+     "coverage": 0.667,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 97.8,
+     "n_findings": 19,
+     "llm_calls": 1,
+     "input_tokens": 52141,
+     "output_tokens": 11506,
+     "tp": 3,
+     "fp": 17,
+     "fn": 6,
+     "precision": 0.105,
+     "recall": 0.333,
+     "f1": 0.16,
+     "missed": [
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 19,
+     "n_verified": 19,
+     "n_unverified": 0,
+     "matched_verified": 2,
+     "verified_precision": 0.105,
+     "coverage": 0.333,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 119.1,
+     "n_findings": 27,
+     "llm_calls": 1,
+     "input_tokens": 40001,
+     "output_tokens": 13929,
+     "tp": 4,
+     "fp": 21,
+     "fn": 6,
+     "precision": 0.222,
+     "recall": 0.4,
+     "f1": 0.286,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_ETHICS_STATEMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 27,
+     "n_verified": 26,
+     "n_unverified": 1,
+     "matched_verified": 6,
+     "verified_precision": 0.231,
+     "coverage": 0.4,
+     "n_labels": 10
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 108.2,
+     "n_findings": 28,
+     "llm_calls": 1,
+     "input_tokens": 22149,
+     "output_tokens": 12304,
+     "tp": 4,
+     "fp": 24,
+     "fn": 5,
+     "precision": 0.143,
+     "recall": 0.444,
+     "f1": 0.216,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_PI"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 28,
+     "n_verified": 28,
+     "n_unverified": 0,
+     "matched_verified": 4,
+     "verified_precision": 0.143,
+     "coverage": 0.444,
+     "n_labels": 9
+    }
+   ]
+  },
+  {
+   "key": "agents_no_critic",
+   "label": "Full system without the critic",
+   "kind": "agents",
+   "kwargs": {
+    "force_scientific": true,
+    "no_critic": true
+   },
+   "verified_precision": 0.2,
+   "coverage": 0.543,
+   "labels": 46,
+   "tp": 25,
+   "n_verified": 150,
+   "matched_verified": 30,
+   "n_unverified": 9,
+   "llm_calls": 15,
+   "input_tokens": 452979,
+   "output_tokens": 104016,
+   "runtime_s": 918.0,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 224.3,
+     "n_findings": 31,
+     "llm_calls": 3,
+     "input_tokens": 137811,
+     "output_tokens": 24869,
+     "tp": 7,
+     "fp": 23,
+     "fn": 2,
+     "precision": 0.258,
+     "recall": 0.778,
+     "f1": 0.388,
+     "missed": [
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 31,
+     "n_verified": 30,
+     "n_unverified": 1,
+     "matched_verified": 8,
+     "verified_precision": 0.267,
+     "coverage": 0.778,
+     "n_labels": 9
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 190.8,
+     "n_findings": 33,
+     "llm_calls": 3,
+     "input_tokens": 70102,
+     "output_tokens": 21905,
+     "tp": 6,
+     "fp": 26,
+     "fn": 3,
+     "precision": 0.212,
+     "recall": 0.667,
+     "f1": 0.322,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "administrative",
+       "MISSING_VERSION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 33,
+     "n_verified": 32,
+     "n_unverified": 1,
+     "matched_verified": 7,
+     "verified_precision": 0.219,
+     "coverage": 0.667,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 180.5,
+     "n_findings": 27,
+     "llm_calls": 3,
+     "input_tokens": 112474,
+     "output_tokens": 20812,
+     "tp": 2,
+     "fp": 25,
+     "fn": 7,
+     "precision": 0.074,
+     "recall": 0.222,
+     "f1": 0.111,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 27,
+     "n_verified": 24,
+     "n_unverified": 3,
+     "matched_verified": 2,
+     "verified_precision": 0.083,
+     "coverage": 0.222,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 170.2,
+     "n_findings": 32,
+     "llm_calls": 3,
+     "input_tokens": 84758,
+     "output_tokens": 19551,
+     "tp": 4,
+     "fp": 25,
+     "fn": 6,
+     "precision": 0.219,
+     "recall": 0.4,
+     "f1": 0.283,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_ETHICS_STATEMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 32,
+     "n_verified": 31,
+     "n_unverified": 1,
+     "matched_verified": 7,
+     "verified_precision": 0.226,
+     "coverage": 0.4,
+     "n_labels": 10
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 152.2,
+     "n_findings": 36,
+     "llm_calls": 3,
+     "input_tokens": 47834,
+     "output_tokens": 16879,
+     "tp": 6,
+     "fp": 29,
+     "fn": 3,
+     "precision": 0.194,
+     "recall": 0.667,
+     "f1": 0.301,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_PI"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 36,
+     "n_verified": 33,
+     "n_unverified": 3,
+     "matched_verified": 6,
+     "verified_precision": 0.182,
+     "coverage": 0.667,
+     "n_labels": 9
+    }
+   ]
+  },
+  {
+   "key": "agents_full",
+   "label": "Full system (4 agents, critic, 1 revision round)",
+   "kind": "agents",
+   "kwargs": {
+    "force_scientific": true
+   },
+   "verified_precision": 0.234,
+   "coverage": 0.739,
+   "labels": 46,
+   "tp": 34,
+   "n_verified": 184,
+   "matched_verified": 43,
+   "n_unverified": 51,
+   "llm_calls": 30,
+   "input_tokens": 1280437,
+   "output_tokens": 271554,
+   "runtime_s": 2371.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 545.1,
+     "n_findings": 48,
+     "llm_calls": 6,
+     "input_tokens": 364797,
+     "output_tokens": 61968,
+     "tp": 8,
+     "fp": 35,
+     "fn": 1,
+     "precision": 0.255,
+     "recall": 0.889,
+     "f1": 0.397,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 47,
+     "n_verified": 37,
+     "n_unverified": 10,
+     "matched_verified": 11,
+     "verified_precision": 0.297,
+     "coverage": 0.889,
+     "n_labels": 9
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 445.4,
+     "n_findings": 49,
+     "llm_calls": 6,
+     "input_tokens": 195068,
+     "output_tokens": 51565,
+     "tp": 7,
+     "fp": 39,
+     "fn": 2,
+     "precision": 0.204,
+     "recall": 0.778,
+     "f1": 0.323,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "administrative",
+       "MISSING_VERSION"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 49,
+     "n_verified": 37,
+     "n_unverified": 12,
+     "matched_verified": 9,
+     "verified_precision": 0.243,
+     "coverage": 0.778,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 578.1,
+     "n_findings": 48,
+     "llm_calls": 6,
+     "input_tokens": 361588,
+     "output_tokens": 67611,
+     "tp": 7,
+     "fp": 40,
+     "fn": 2,
+     "precision": 0.149,
+     "recall": 0.778,
+     "f1": 0.25,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 47,
+     "n_verified": 36,
+     "n_unverified": 11,
+     "matched_verified": 7,
+     "verified_precision": 0.194,
+     "coverage": 0.778,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 414.0,
+     "n_findings": 43,
+     "llm_calls": 6,
+     "input_tokens": 225089,
+     "output_tokens": 46611,
+     "tp": 6,
+     "fp": 31,
+     "fn": 4,
+     "precision": 0.262,
+     "recall": 0.6,
+     "f1": 0.365,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DOCUMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_ETHICS_STATEMENT"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MISSING_SIGNATURE_PAGE"
+      ],
+      [
+       "administrative",
+       "MISSING_SPONSOR"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 42,
+     "n_verified": 32,
+     "n_unverified": 10,
+     "matched_verified": 10,
+     "verified_precision": 0.312,
+     "coverage": 0.6,
+     "n_labels": 10
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 389.3,
+     "n_findings": 50,
+     "llm_calls": 6,
+     "input_tokens": 133895,
+     "output_tokens": 43799,
+     "tp": 6,
+     "fp": 44,
+     "fn": 3,
+     "precision": 0.12,
+     "recall": 0.667,
+     "f1": 0.203,
+     "missed": [
+      [
+       "administrative",
+       "MISSING_REGISTRY_ID"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "administrative",
+       "CONSENT_GAP"
+      ],
+      [
+       "administrative",
+       "ETHICS_GAP"
+      ],
+      [
+       "administrative",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "administrative",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "administrative",
+       "MISSING_CONSENT_FORM"
+      ],
+      [
+       "administrative",
+       "MISSING_DATE"
+      ],
+      [
+       "administrative",
+       "MISSING_INSURANCE"
+      ],
+      [
+       "administrative",
+       "MISSING_PI"
+      ],
+      [
+       "administrative",
+       "MISSING_SECTION"
+      ],
+      [
+       "administrative",
+       "MULTIPLE_REGISTRY_IDS"
+      ],
+      [
+       "administrative",
+       "OTHER"
+      ],
+      [
+       "administrative",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 50,
+     "n_verified": 42,
+     "n_unverified": 8,
+     "matched_verified": 6,
+     "verified_precision": 0.143,
+     "coverage": 0.667,
+     "n_labels": 9
+    }
+   ]
+  }
+ ],
+ "scientific": [
+  {
+   "key": "single_no_verification",
+   "label": "Single LLM call, no code verification",
+   "kind": "single",
+   "kwargs": {
+    "verify": false
+   },
+   "verified_precision": 0.288,
+   "coverage": 0.568,
+   "labels": 37,
+   "tp": 21,
+   "n_verified": 66,
+   "matched_verified": 19,
+   "n_unverified": 0,
+   "llm_calls": 5,
+   "input_tokens": 207419,
+   "output_tokens": 62590,
+   "runtime_s": 547.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 123.3,
+     "n_findings": 12,
+     "llm_calls": 1,
+     "input_tokens": 62762,
+     "output_tokens": 13635,
+     "tp": 4,
+     "fp": 8,
+     "fn": 4,
+     "precision": 0.333,
+     "recall": 0.5,
+     "f1": 0.4,
+     "missed": [
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 12,
+     "n_verified": 12,
+     "n_unverified": 0,
+     "matched_verified": 4,
+     "verified_precision": 0.333,
+     "coverage": 0.5,
+     "n_labels": 8
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 116.2,
+     "n_findings": 15,
+     "llm_calls": 1,
+     "input_tokens": 30366,
+     "output_tokens": 13489,
+     "tp": 6,
+     "fp": 9,
+     "fn": 1,
+     "precision": 0.4,
+     "recall": 0.857,
+     "f1": 0.545,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 15,
+     "n_verified": 15,
+     "n_unverified": 0,
+     "matched_verified": 6,
+     "verified_precision": 0.4,
+     "coverage": 0.857,
+     "n_labels": 7
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 101.8,
+     "n_findings": 10,
+     "llm_calls": 1,
+     "input_tokens": 52141,
+     "output_tokens": 11918,
+     "tp": 4,
+     "fp": 7,
+     "fn": 5,
+     "precision": 0.3,
+     "recall": 0.444,
+     "f1": 0.358,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 10,
+     "n_verified": 10,
+     "n_unverified": 0,
+     "matched_verified": 3,
+     "verified_precision": 0.3,
+     "coverage": 0.444,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 109.5,
+     "n_findings": 16,
+     "llm_calls": 1,
+     "input_tokens": 40001,
+     "output_tokens": 12546,
+     "tp": 3,
+     "fp": 11,
+     "fn": 5,
+     "precision": 0.312,
+     "recall": 0.375,
+     "f1": 0.341,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 16,
+     "n_verified": 16,
+     "n_unverified": 0,
+     "matched_verified": 5,
+     "verified_precision": 0.312,
+     "coverage": 0.375,
+     "n_labels": 8
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 97.1,
+     "n_findings": 13,
+     "llm_calls": 1,
+     "input_tokens": 22149,
+     "output_tokens": 11002,
+     "tp": 4,
+     "fp": 12,
+     "fn": 1,
+     "precision": 0.077,
+     "recall": 0.8,
+     "f1": 0.14,
+     "missed": [
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 13,
+     "n_verified": 13,
+     "n_unverified": 0,
+     "matched_verified": 1,
+     "verified_precision": 0.077,
+     "coverage": 0.8,
+     "n_labels": 5
+    }
+   ]
+  },
+  {
+   "key": "single_verified",
+   "label": "Single LLM call + code verification",
+   "kind": "single",
+   "kwargs": {
+    "verify": true
+   },
+   "verified_precision": 0.25,
+   "coverage": 0.459,
+   "labels": 37,
+   "tp": 17,
+   "n_verified": 68,
+   "matched_verified": 17,
+   "n_unverified": 0,
+   "llm_calls": 5,
+   "input_tokens": 207419,
+   "output_tokens": 66291,
+   "runtime_s": 567.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 118.8,
+     "n_findings": 11,
+     "llm_calls": 1,
+     "input_tokens": 62762,
+     "output_tokens": 13748,
+     "tp": 4,
+     "fp": 7,
+     "fn": 4,
+     "precision": 0.364,
+     "recall": 0.5,
+     "f1": 0.421,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 11,
+     "n_verified": 11,
+     "n_unverified": 0,
+     "matched_verified": 4,
+     "verified_precision": 0.364,
+     "coverage": 0.5,
+     "n_labels": 8
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 124.0,
+     "n_findings": 17,
+     "llm_calls": 1,
+     "input_tokens": 30366,
+     "output_tokens": 14804,
+     "tp": 6,
+     "fp": 12,
+     "fn": 1,
+     "precision": 0.294,
+     "recall": 0.857,
+     "f1": 0.438,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 17,
+     "n_verified": 17,
+     "n_unverified": 0,
+     "matched_verified": 5,
+     "verified_precision": 0.294,
+     "coverage": 0.857,
+     "n_labels": 7
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 97.8,
+     "n_findings": 10,
+     "llm_calls": 1,
+     "input_tokens": 52141,
+     "output_tokens": 11506,
+     "tp": 3,
+     "fp": 8,
+     "fn": 6,
+     "precision": 0.2,
+     "recall": 0.333,
+     "f1": 0.25,
+     "missed": [
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 10,
+     "n_verified": 10,
+     "n_unverified": 0,
+     "matched_verified": 2,
+     "verified_precision": 0.2,
+     "coverage": 0.333,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 119.1,
+     "n_findings": 17,
+     "llm_calls": 1,
+     "input_tokens": 40001,
+     "output_tokens": 13929,
+     "tp": 3,
+     "fp": 12,
+     "fn": 5,
+     "precision": 0.294,
+     "recall": 0.375,
+     "f1": 0.33,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 17,
+     "n_verified": 17,
+     "n_unverified": 0,
+     "matched_verified": 5,
+     "verified_precision": 0.294,
+     "coverage": 0.375,
+     "n_labels": 8
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 108.2,
+     "n_findings": 13,
+     "llm_calls": 1,
+     "input_tokens": 22149,
+     "output_tokens": 12304,
+     "tp": 1,
+     "fp": 12,
+     "fn": 4,
+     "precision": 0.077,
+     "recall": 0.2,
+     "f1": 0.111,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 13,
+     "n_verified": 13,
+     "n_unverified": 0,
+     "matched_verified": 1,
+     "verified_precision": 0.077,
+     "coverage": 0.2,
+     "n_labels": 5
+    }
+   ]
+  },
+  {
+   "key": "agents_no_critic",
+   "label": "Full system without the critic",
+   "kind": "agents",
+   "kwargs": {
+    "force_scientific": true,
+    "no_critic": true
+   },
+   "verified_precision": 0.329,
+   "coverage": 0.568,
+   "labels": 37,
+   "tp": 21,
+   "n_verified": 79,
+   "matched_verified": 26,
+   "n_unverified": 9,
+   "llm_calls": 15,
+   "input_tokens": 452979,
+   "output_tokens": 104016,
+   "runtime_s": 918.0,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 224.3,
+     "n_findings": 17,
+     "llm_calls": 3,
+     "input_tokens": 137811,
+     "output_tokens": 24869,
+     "tp": 7,
+     "fp": 9,
+     "fn": 1,
+     "precision": 0.471,
+     "recall": 0.875,
+     "f1": 0.612,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 17,
+     "n_verified": 16,
+     "n_unverified": 1,
+     "matched_verified": 8,
+     "verified_precision": 0.5,
+     "coverage": 0.875,
+     "n_labels": 8
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 190.8,
+     "n_findings": 20,
+     "llm_calls": 3,
+     "input_tokens": 70102,
+     "output_tokens": 21905,
+     "tp": 6,
+     "fp": 13,
+     "fn": 1,
+     "precision": 0.35,
+     "recall": 0.857,
+     "f1": 0.497,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 20,
+     "n_verified": 19,
+     "n_unverified": 1,
+     "matched_verified": 7,
+     "verified_precision": 0.368,
+     "coverage": 0.857,
+     "n_labels": 7
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 180.5,
+     "n_findings": 16,
+     "llm_calls": 3,
+     "input_tokens": 112474,
+     "output_tokens": 20812,
+     "tp": 2,
+     "fp": 14,
+     "fn": 7,
+     "precision": 0.125,
+     "recall": 0.222,
+     "f1": 0.16,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 16,
+     "n_verified": 13,
+     "n_unverified": 3,
+     "matched_verified": 2,
+     "verified_precision": 0.154,
+     "coverage": 0.222,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 170.2,
+     "n_findings": 19,
+     "llm_calls": 3,
+     "input_tokens": 84758,
+     "output_tokens": 19551,
+     "tp": 3,
+     "fp": 13,
+     "fn": 5,
+     "precision": 0.316,
+     "recall": 0.375,
+     "f1": 0.343,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 19,
+     "n_verified": 18,
+     "n_unverified": 1,
+     "matched_verified": 6,
+     "verified_precision": 0.333,
+     "coverage": 0.375,
+     "n_labels": 8
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 152.2,
+     "n_findings": 16,
+     "llm_calls": 3,
+     "input_tokens": 47834,
+     "output_tokens": 16879,
+     "tp": 3,
+     "fp": 12,
+     "fn": 2,
+     "precision": 0.25,
+     "recall": 0.6,
+     "f1": 0.353,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 16,
+     "n_verified": 13,
+     "n_unverified": 3,
+     "matched_verified": 3,
+     "verified_precision": 0.231,
+     "coverage": 0.6,
+     "n_labels": 5
+    }
+   ]
+  },
+  {
+   "key": "agents_full",
+   "label": "Full system (4 agents, critic, 1 revision round)",
+   "kind": "agents",
+   "kwargs": {
+    "force_scientific": true
+   },
+   "verified_precision": 0.339,
+   "coverage": 0.784,
+   "labels": 37,
+   "tp": 29,
+   "n_verified": 112,
+   "matched_verified": 38,
+   "n_unverified": 50,
+   "llm_calls": 30,
+   "input_tokens": 1280437,
+   "output_tokens": 271554,
+   "runtime_s": 2371.9,
+   "per_case": [
+    {
+     "case": "nct01977547",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 545.1,
+     "n_findings": 31,
+     "llm_calls": 6,
+     "input_tokens": 364797,
+     "output_tokens": 61968,
+     "tp": 7,
+     "fp": 19,
+     "fn": 1,
+     "precision": 0.367,
+     "recall": 0.875,
+     "f1": 0.517,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 30,
+     "n_verified": 20,
+     "n_unverified": 10,
+     "matched_verified": 10,
+     "verified_precision": 0.5,
+     "coverage": 0.875,
+     "n_labels": 8
+    },
+    {
+     "case": "nct04084990",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 445.4,
+     "n_findings": 36,
+     "llm_calls": 6,
+     "input_tokens": 195068,
+     "output_tokens": 51565,
+     "tp": 7,
+     "fp": 26,
+     "fn": 0,
+     "precision": 0.278,
+     "recall": 1.0,
+     "f1": 0.435,
+     "missed": [],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 36,
+     "n_verified": 25,
+     "n_unverified": 11,
+     "matched_verified": 9,
+     "verified_precision": 0.36,
+     "coverage": 1.0,
+     "n_labels": 7
+    },
+    {
+     "case": "nct05199324",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 578.1,
+     "n_findings": 36,
+     "llm_calls": 6,
+     "input_tokens": 361588,
+     "output_tokens": 67611,
+     "tp": 7,
+     "fp": 28,
+     "fn": 2,
+     "precision": 0.2,
+     "recall": 0.778,
+     "f1": 0.318,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "RANDOMIZATION_METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 35,
+     "n_verified": 24,
+     "n_unverified": 11,
+     "matched_verified": 7,
+     "verified_precision": 0.292,
+     "coverage": 0.778,
+     "n_labels": 9
+    },
+    {
+     "case": "nct05698277",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 414.0,
+     "n_findings": 31,
+     "llm_calls": 6,
+     "input_tokens": 225089,
+     "output_tokens": 46611,
+     "tp": 5,
+     "fp": 20,
+     "fn": 3,
+     "precision": 0.333,
+     "recall": 0.625,
+     "f1": 0.435,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_PHASE"
+      ],
+      [
+       "scientific",
+       "INCONSISTENT_SAMPLE_SIZE"
+      ],
+      [
+       "scientific",
+       "INTERNAL_CONTRADICTION"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_SAMPLE_SIZE_JUSTIFICATION"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "SAFETY_GAP"
+      ]
+     ],
+     "n_reported": 30,
+     "n_verified": 20,
+     "n_unverified": 10,
+     "matched_verified": 9,
+     "verified_precision": 0.45,
+     "coverage": 0.625,
+     "n_labels": 8
+    },
+    {
+     "case": "nct06846736",
+     "decision": "RETURNED_ADMIN",
+     "expected_decision": "RETURNED_ADMIN",
+     "runtime_s": 389.3,
+     "n_findings": 31,
+     "llm_calls": 6,
+     "input_tokens": 133895,
+     "output_tokens": 43799,
+     "tp": 3,
+     "fp": 28,
+     "fn": 2,
+     "precision": 0.097,
+     "recall": 0.6,
+     "f1": 0.167,
+     "missed": [
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ]
+     ],
+     "extra": [
+      [
+       "scientific",
+       "CONSENT_GAP"
+      ],
+      [
+       "scientific",
+       "ETHICS_GAP"
+      ],
+      [
+       "scientific",
+       "FORMAT_ISSUE"
+      ],
+      [
+       "scientific",
+       "METHOD_UNSPECIFIED"
+      ],
+      [
+       "scientific",
+       "MISSING_SECTION"
+      ],
+      [
+       "scientific",
+       "NO_DATA_MONITORING"
+      ],
+      [
+       "scientific",
+       "NO_HARMS_PLAN"
+      ],
+      [
+       "scientific",
+       "NO_PRIMARY_OUTCOME"
+      ],
+      [
+       "scientific",
+       "NO_STOPPING_RULES"
+      ],
+      [
+       "scientific",
+       "OTHER"
+      ],
+      [
+       "scientific",
+       "REGISTRY_MISMATCH"
+      ],
+      [
+       "scientific",
+       "UNJUSTIFIED_SAMPLE_SIZE"
+      ]
+     ],
+     "n_reported": 31,
+     "n_verified": 23,
+     "n_unverified": 8,
+     "matched_verified": 3,
+     "verified_precision": 0.13,
+     "coverage": 0.6,
+     "n_labels": 5
+    }
+   ]
+  }
+ ]
+}

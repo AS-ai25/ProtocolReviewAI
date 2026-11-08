@@ -16,9 +16,9 @@ Updated 4 November 2026 after Ron's deliverables (knowledge base kb-v2, filled 3
 
 | View | Row | Precision of verified | Recall of labels | Unverified | Tokens in | Runtime |
 |---|---|---|---|---|---|---|
-| charter (all domains) | 2 Single agent + verification (baseline) | 18% (21/120) | 46% (21/46) | 3 | 207k | 568 s |
+| charter (all domains) | 2 Single LLM call + verification (baseline) | 18% (21/120) | 46% (21/46) | 3 | 207k | 568 s |
 | charter (all domains) | 4 Full system | 23% (43/184) | 74% (34/46) | 51 | 1,280k | 2,372 s |
-| scientific only (37 labels) | 2 Single agent + verification (baseline) | 25% (17/68) | 46% (17/37) | 0 | - | - |
+| scientific only (37 labels) | 2 Single LLM call + verification (baseline) | 25% (17/68) | 46% (17/37) | 0 | - | - |
 | scientific only (37 labels) | 4 Full system | **34% (38/112)** | **78% (29/37)** | 50 | - | - |
 
 Before the 4 November correction row 2 read 13% / 46% (all domains) and 18% / 46% (scientific); row 4 is unchanged.
@@ -29,7 +29,7 @@ Against the charter targets:
   reach it); 74% on the all-domain view. The eight misses are all generic `OTHER` labels (section 3).
 * **Precision of verified findings >= 0.80: not met** (23% / 34%). Section 2 explains what this number measures;
   section 2b gives the human evidence check, which is lower still.
-* **+5 pp precision over the Single-Agent Baseline at equal or better recall: met** (+5 pp all-domain, +9 pp scientific;
+* **+5 pp precision over the Single LLM call baseline at equal or better recall: met** (+5 pp all-domain, +9 pp scientific;
   recall +28 pp / +32 pp). The margin is smaller than reported on 30 October (+10 / +16) because the baseline was
   under-scored by the sub-item code bug (section 2.5).
 * **Human check of 30 verified findings (cited passage supports the finding): not met.** 1 yes, 5 partly, 24 no
@@ -152,7 +152,7 @@ rule findings (section 7).
   separate model calls, not one output scored twice, so the difference between them (precision 29% -> 25%, recall
   57% -> 46%) mixes the effect of verification with run-to-run variation of the model; a few points between adjacent
   rows are within that noise, the 32-point recall gap between rows 2 and 4 is not.
-* **Recommendation (tiered).** Default: single agent + code verification (row 2) for triage at ~1/6 of the cost;
+* **Recommendation (tiered).** Default: single LLM call + code verification (row 2) for triage at ~1/6 of the cost;
   full system with the critic for protocols that reach the committee (anything not RETURNED_ADMIN, or on request),
   where recall matters more than cost. The administrative gate stays deterministic in both tiers. In both tiers every
   finding, verified or not, is read by a person before it reaches the committee.

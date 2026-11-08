@@ -276,4 +276,4 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
   blind labeled findings (Ron), ablation table on the real set, 30-finding human check (done 4 Nov: 1 yes / 5 partly / 24 no,
   `eval/human_check/`), demo video. Knowledge base kb-v2 (Ron, `knowledge_base/VERSION.md`); sub-item guideline-code fix and
   re-score of the code-only ablation rows (`reports/results.md`, `reports/CP2_SUMMARY.md`).
-- Final (12 Nov): evaluation vs rule-based and single-agent baselines, results and presentation.
+- Final (12 Nov): evaluation vs rule-based and single LLM call baselines, results and presentation.

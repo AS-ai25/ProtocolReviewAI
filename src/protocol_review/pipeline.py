@@ -1,4 +1,4 @@
-"""Entry points: run the multi-agent review, the rule-based baseline or the single-agent baseline on one PDF."""
+"""Entry points: run the multi-agent review, the rule-based baseline or the single LLM call baseline on one PDF."""
 from __future__ import annotations
 
 import logging

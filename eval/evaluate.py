@@ -3,7 +3,7 @@
     python eval/evaluate.py --mode baseline
     python eval/evaluate.py --mode agents            (needs ANTHROPIC_API_KEY)
     python eval/evaluate.py --mode agents --no-llm   (graph without LLM = sanity check)
-    python eval/evaluate.py --mode single            (single-agent baseline: one LLM call, all tools)
+    python eval/evaluate.py --mode single            (single LLM call baseline: one LLM call, all tools)
     python eval/evaluate.py --mode single --no-llm   (sanity check: rule findings through the single-agent path)
     python eval/evaluate.py --mode agents --force-scientific   (gate bypass: scientific stage runs even when the
                                                                 admin gate fails; decision unchanged)

@@ -61,7 +61,7 @@ def test_dashboard_and_stats_endpoints(flawed_pdf):
                         data={"nct_id": "NCT04470427", "config": "single_verified"})
     assert r.status_code == 200 and r.json()["config"] == "single_verified"
     s1 = client.get(f"/runs/{r.json()['run_id']}/summary").json()
-    assert s1["status"] == "done" and s1["configuration"].startswith("2 single agent") and s1["n_findings"] > 0
+    assert s1["status"] == "done" and s1["configuration"].startswith("2 single LLM call") and s1["n_findings"] > 0
     tr1 = client.get(f"/stats/trace/{r.json()['run_id']}").json()
     assert any(e["agent"] == "single_agent" for e in tr1)
     with open(flawed_pdf, "rb") as fh:

@@ -7,8 +7,8 @@
 Rows (all with the evaluation gate bypass `force_scientific`, so the scientific stage runs even when
 the administrative gate fails and every configuration is scored on the same findings space):
 
-    1. single agent, no code verification       run_single_agent(verify=False)
-    2. single agent + code verification         run_single_agent(verify=True)        (= the Single-Agent Baseline)
+    1. single LLM call, no code verification       run_single_agent(verify=False)
+    2. single LLM call + code verification         run_single_agent(verify=True)        (= the Single LLM call baseline)
     3. full system without the critic           run_review(force_scientific=True, no_critic=True)
     4. full system (four agents, one revision)  run_review(force_scientific=True)
 
@@ -32,9 +32,9 @@ from matching import score_findings  # noqa: E402
 from protocol_review.pipeline import run_review, run_single_agent  # noqa: E402
 
 CONFIGS: list[dict] = [
-    {"key": "single_no_verification", "label": "Single agent, no code verification",
+    {"key": "single_no_verification", "label": "Single LLM call, no code verification",
      "kind": "single", "kwargs": {"verify": False}},
-    {"key": "single_verified", "label": "Single agent + code verification",
+    {"key": "single_verified", "label": "Single LLM call + code verification",
      "kind": "single", "kwargs": {"verify": True}},
     {"key": "agents_no_critic", "label": "Full system without the critic",
      "kind": "agents", "kwargs": {"force_scientific": True, "no_critic": True}},
@@ -126,10 +126,10 @@ def render_markdown(rows: list[dict], cases: list[dict], *, no_llm: bool, starte
                       f"{c['n_unverified']} | {c['tp']}/{c['n_labels']} | {', '.join(x[1] for x in c['missed']) or '-'} | "
                       f"{', '.join(x[1] for x in c['extra']) or '-'} | {c['llm_calls']} | {c['input_tokens']:,} / {c['output_tokens']:,} | {c['runtime_s']} |")
     md += ["", "## Reading the rows", "",
-           "1. **Single agent, no code verification** - one LLM call; the model's own status stands (unmarked findings count as verified). "
+           "1. **Single LLM call, no code verification** - one LLM call; the model's own status stands (unmarked findings count as verified). "
            "Measures how many of the model's claims a human would have to re-check.",
-           "2. **Single agent + code verification** - the same call; a quote the code cannot locate in the PDF or an unknown guideline code "
-           "makes the finding unverified. This is the Single-Agent Baseline of the charter.",
+           "2. **Single LLM call + code verification** - the same call; a quote the code cannot locate in the PDF or an unknown guideline code "
+           "makes the finding unverified. This is the Single LLM call baseline of the charter.",
            "3. **Full system without the critic** - administrative agent + scientific reviewer, code-only verification of the reviewer's "
            "findings, no revision round. Isolates the contribution of the agent split.",
            "4. **Full system** - row 3 plus the Scientific Critic (verdict per finding, missed issues, at most one revision round). "
