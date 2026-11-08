@@ -168,8 +168,13 @@ def view_table(rows: list[dict], title: str, intro: str) -> list[str]:
     return md + [""]
 
 
-MAIN_ROWS = ("agents_full", "agents_full_tools", "agents_no_critic_tools", "single_tools")
-BASE_ROWS = ("single_no_verification", "single_verified", "agents_no_critic", "agents_full")
+FROZEN_BASES = ("single_no_verification", "single_verified", "agents_no_critic")
+# Gaps reported by the bootstrap: the frozen full system against the frozen baselines (mentor M2), and every v1.7
+# tool-use row against the frozen rows and against the other tool-use rows (2' is the fair baseline for 4').
+GAP_PAIRS = ([("agents_full", b) for b in FROZEN_BASES]
+             + [("agents_full_tools", b) for b in FROZEN_BASES + ("agents_full", "single_tools", "agents_no_critic_tools")]
+             + [("agents_no_critic_tools", b) for b in FROZEN_BASES + ("agents_full", "single_tools")]
+             + [("single_tools", b) for b in FROZEN_BASES + ("agents_full",)])
 
 
 def bootstrap(rows: list[dict], B: int = 2000, seed: int = 20261108) -> dict:
@@ -196,17 +201,14 @@ def bootstrap(rows: list[dict], B: int = 2000, seed: int = 20261108) -> dict:
     out = {"B": B, "seed": seed, "n_protocols": n, "rows": {}, "gaps": {}}
     for key, vals in stats.items():
         out["rows"][key] = {"precision_ci95": ci([v[0] for v in vals]), "recall_ci95": ci([v[1] for v in vals])}
-    for main in MAIN_ROWS:
-        if main not in stats:
+    for main, base in GAP_PAIRS:
+        if main not in stats or base not in stats:
             continue
-        for base in BASE_ROWS:
-            if base not in stats or base == main:
-                continue
-            gp = [a[0] - b[0] for a, b in zip(stats[main], stats[base])]
-            gr = [a[1] - b[1] for a, b in zip(stats[main], stats[base])]
-            out["gaps"][f"{main} vs {base}"] = {
-                "precision": {"mean": round(sum(gp) / B, 3), "ci95": ci(gp), "p_le_0": round(sum(1 for g in gp if g <= 0) / B, 3)},
-                "recall": {"mean": round(sum(gr) / B, 3), "ci95": ci(gr), "p_le_0": round(sum(1 for g in gr if g <= 0) / B, 3)}}
+        gp = [a[0] - b[0] for a, b in zip(stats[main], stats[base])]
+        gr = [a[1] - b[1] for a, b in zip(stats[main], stats[base])]
+        out["gaps"][f"{main} vs {base}"] = {
+            "precision": {"mean": round(sum(gp) / B, 3), "ci95": ci(gp), "p_le_0": round(sum(1 for g in gp if g <= 0) / B, 3)},
+            "recall": {"mean": round(sum(gr) / B, 3), "ci95": ci(gr), "p_le_0": round(sum(1 for g in gr if g <= 0) / B, 3)}}
     return out
 
 
