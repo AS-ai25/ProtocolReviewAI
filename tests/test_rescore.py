@@ -25,14 +25,16 @@ def _outputs_present() -> bool:
 def test_rescore_reproduces_the_live_table_and_the_scientific_view(tmp_path):
     summary = json.loads(SUMMARY.read_text(encoding="utf-8"))
     cases = rescore.load_cases(ROOT / "eval" / "labeled_cases", "nct*.json")
-    rows = rescore.rescore(summary, cases, STAMP, outputs=OUTPUTS)
+    rows = rescore.rescore(summary, cases, STAMP, outputs=OUTPUTS, rules_row=False)
     assert [r["key"] for r in rows] == [r["key"] for r in summary["rows"]]
     for new, old in zip(rows, summary["rows"]):
         # the predictions are the saved ones: verified / unverified counts, cost and runtime never change;
         # the matches may (the labels were corrected after the live run - see domain_correction in the files)
         assert (new["n_verified"], new["n_unverified"], new["labels"], new["llm_calls"], new["input_tokens"]) == \
                (old["n_verified"], old["n_unverified"], old["labels"], old["llm_calls"], old["input_tokens"])
-    sci = rescore.rescore(summary, cases, STAMP, domain="scientific", outputs=OUTPUTS)
+    sci = rescore.rescore(summary, cases, STAMP, domain="scientific", outputs=OUTPUTS, rules_row=False)
+    with_rules = rescore.rescore(summary, cases, STAMP, domain="scientific", outputs=OUTPUTS)
+    assert with_rules[0]["key"] == "rules_only" and with_rules[0]["llm_calls"] == 0 and with_rules[0]["tp"] == 1   # row 0: rules alone
     n_sci = sum(1 for c in cases for x in c["expected_findings"] if x["domain"] == "scientific")
     assert all(r["labels"] == n_sci for r in sci) and n_sci == 37
     assert rescore.main(["--stamp", STAMP, "--out", str(tmp_path / "r.md"), "--note", "test", "--outputs", str(OUTPUTS),
