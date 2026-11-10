@@ -72,7 +72,7 @@ def ping():
 def _summary_html(d):
     def esc(x):
         import html
-        return html.escape(str(x or ""))
+        return html.escape("" if x is None else str(x))
     decision = d.get("decision") or "Pending"
     score = d.get("score")
     nct = d.get("nct_id") or "Not supplied"
@@ -211,8 +211,9 @@ def send_email(run_id, recipient, subject, body, explicit_confirm):
 with gr.Blocks(title="Clinical Protocol Review") as demo:
     gr.HTML("<div id='hero'><div style='font-size:12px;letter-spacing:1.5px;color:#cbdce7'>CLINICAL RESEARCH · AI-ASSISTED SCREENING</div><h1>Clinical Protocol Review</h1><p>Structured protocol screening, evidence-linked findings and human oversight.</p></div>")
     gr.HTML("<div class='note'>Decision support only. Not an IRB approval, clinical validation or substitute for expert judgment. Do not upload confidential hospital protocols without organizational authorization.</div>")
-    connected=gr.Textbox(label="Local service connection",value=ping(),interactive=False)
+    connected=gr.Textbox(label="Local service connection",interactive=False)
     gr.Button("Check connection",variant="secondary",size="sm").click(ping,outputs=connected)
+    demo.load(ping,outputs=connected)      # checked on every page load, not once at import time
     run_state=gr.State("")
     summary_state=gr.State({})
     with gr.Tabs():

@@ -24,6 +24,8 @@ Terminal 2: start the product
 
 Open http://127.0.0.1:7860
 
+Gradio 6 is required (`css` and `theme` are `launch()` arguments from Gradio 6 on). The backend's `WEBHOOK_SECRET` from `.env` must be given to the product as `PROTOCOL_WEBHOOK_SECRET`.
+
 If your backend uses a custom `WEBHOOK_SECRET`, set `PROTOCOL_WEBHOOK_SECRET` in terminal 2 before launching. The default matches the project's current `change-me` development setting and **must be replaced for deployment**.
 
 ## Safe demo
