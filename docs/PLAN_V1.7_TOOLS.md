@@ -1,5 +1,11 @@
 # Plan v1.7: real tools for the agents, and the mentor's findings of 8 November
 
+**Status (12 November 2026):** M5, M6 and M7 done by Ron (`reports/CP2_SUMMARY.md` section 9): 40 unmatched verified
+findings classified (31 true but unlabeled / 5 wrong / 4 cannot tell), finding-correctness column filled, business value
+hypothesis written. Second human check of row 4': evidence 1 yes / 12 partly / 17 no against 1 / 5 / 24 for row 4; the gain
+is administrative (code floor), not scientific (tool calling); the success criterion below (yes+partly >= 15 of 30) is not
+met (13). Decision: row 4 stays the headline. Open: M2c, M3, M4, M8.
+
 **Status (8 November 2026, evening):** steps A and B built, tested and run live the same day as rows 2', 3', 4'
 (`reports/results.md`; reading in `reports/CP2_SUMMARY.md` section 8; charter v1.7). Mentor items done: M1, M2 (a, b, d),
 M9, M11 (the change). Open: M2c repeat runs, M3, M4, M5, M6, M7, M8, M10 slide, M12, M13. Result in one line: the tools

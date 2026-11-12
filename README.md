@@ -113,6 +113,7 @@ src/protocol_review/
 knowledge_base/       administrative/admin_checklist.md, scientific/spirit_checklist.md, ich_gcp_key_points.md
 samples/              make_sample_protocols.py -> two synthetic PDFs (good / flawed)
 eval/                 labeled_cases/*.json, evaluate.py, matching.py (locked matching rule), category_aliases.json, ablation.py
+gradio_app.py         end-user product (Gradio) on top of the FastAPI service: upload, review, saved runs, report, email on request
 reports/results.md    8-row ablation table (0 rules only, 1-4 frozen, 2'/3'/4' tool use) with bootstrap intervals, eval/rescore.py
 tests/                65 pytest tests (MockLLM, no network)
 outputs/<run_id>/     final_report.md/.pdf, administrative_report.md/.pdf, scientific_report.md/.pdf, protocol.json, findings.json, state.json, email.eml
@@ -285,4 +286,6 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
 - 8 Nov (mentoring session, charter v1.7): agent failure never ends in PASS (M1); row 0 and protocol-level bootstrap in the
   evaluation (M2, M9); deterministic evidence tools and LLM tool calling (`tools/evidence_tools.py`, `tools/agent_tools.py`)
   run live as rows 2' 3' 4' (`reports/results.md`, `reports/CP2_SUMMARY.md` section 8) - **done**.
-- Final (12 Nov): evaluation vs rule-based and single LLM call baselines, results and presentation.
+- Final (12 Nov, charter v1.8): second round of human evaluation by Ron (`eval/human_check/HUMAN_CHECK_ROUND2_SUMMARY.md`,
+  `reports/CP2_SUMMARY.md` section 9), business value hypothesis (`reports/BUSINESS_VALUE_HYPOTHESIS.md`), end-user Gradio
+  product (`gradio_app.py`, see `GRADIO_PRODUCT_README.md`); row 4 stays the headline result - **done**. Presentation 15 / 18 Nov.
