@@ -20,10 +20,13 @@ start "Protocol Review product (port 7860)" cmd /k ".venv\Scripts\python.exe gra
 echo Waiting for the product ...
 timeout /t 12 /nobreak >nul
 
+rem The dashboard upload form asks for the webhook secret: put it on the clipboard so it can be pasted (Ctrl+V).
+echo|set /p="%PROTOCOL_WEBHOOK_SECRET%"|clip
 start "" "http://127.0.0.1:7860/"
 start "" "http://localhost:8040/dashboard#review"
 echo.
 echo Product (end user):   http://127.0.0.1:7860/
 echo Dashboard (research): http://localhost:8040/dashboard
 echo Two windows are running the servers. Close them to stop.
+echo The webhook secret is on the clipboard: paste it (Ctrl+V) into the "webhook secret" field of the dashboard.
 timeout /t 5 >nul
