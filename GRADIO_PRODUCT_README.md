@@ -28,6 +28,10 @@ Gradio 6 is required (`css` and `theme` are `launch()` arguments from Gradio 6 o
 
 If your backend uses a custom `WEBHOOK_SECRET`, set `PROTOCOL_WEBHOOK_SECRET` in terminal 2 before launching. The default matches the project's current `change-me` development setting and **must be replaced for deployment**.
 
+## Live progress
+
+After **Start full protocol review** the page follows the run by itself: a *Live progress* box shows the current stage (intake, administrative screening, scientific review, critic, decision) and the latest pipeline steps, refreshed every few seconds with read-only calls. When the review finishes, the results open automatically in the *Review Results* tab. On Windows, `start_demo.bat` starts the service and this product together and opens both pages.
+
 ## Safe demo
 
 Opening the product, refreshing history, loading a saved run, and downloading its report do not trigger LLM calls. Only clicking **Start full protocol review** triggers a new paid review. You must tick a confirmation checkbox first. This interface deliberately excludes force-scientific evaluation bypass, experimental model configurations and developer statistics.

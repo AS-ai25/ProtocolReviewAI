@@ -9,6 +9,7 @@ import os
 import re
 import smtplib
 import tempfile
+import time
 from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -19,6 +20,7 @@ import httpx
 API_URL = os.getenv("PROTOCOL_API_URL", "http://127.0.0.1:8040").rstrip("/")
 API_SECRET = os.getenv("PROTOCOL_WEBHOOK_SECRET", "change-me")
 CONNECT_TIMEOUT = 12.0
+POLL_SECONDS = 4          # live progress: how often the page asks the service where the review stands
 SMTP_HOST = os.getenv("PROTOCOL_UI_SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("PROTOCOL_UI_SMTP_PORT", "587"))
 SMTP_USER = os.getenv("PROTOCOL_UI_SMTP_USER", "")
@@ -139,7 +141,58 @@ def start_review(pdf_path, nct_id, confirmation):
         data = _request("POST", "/webhook/protocol", protected=True,
                         files={"file":(p.name,f,"application/pdf")},
                         data={"nct_id":nct_id,"source":"gradio_product","config":"agents_full","force_scientific":"false"}).json()
-    return data["run_id"],f"Review queued. Run ID: {data['run_id']}. Select 'Load review results' to check its status."
+    return data["run_id"],(f"Review started. Run ID: {data['run_id']}. This page follows the review live; the results open "
+                           "automatically when it finishes (about one minute if the submission is returned at the administrative "
+                           "gate, up to about eight minutes for a full review).")
+
+
+STAGES = [("coordinator", "intake", "1. Intake and document checks"),
+          ("administrative", None, "2. Administrative screening"),
+          ("scientific_reviewer", None, "3. Scientific review"),
+          ("scientific_critic", None, "4. Critic and evidence checks"),
+          ("coordinator", "decision", "5. Decision and reports")]
+
+
+def _progress_text(events, started_at):
+    """Plain-text view of where the review stands, from the service's trace (pipeline steps and LLM calls)."""
+    stage, rounds = STAGES[0][2], 0
+    lines = []
+    for e in events:
+        agent, kind, event = e.get("agent") or "", e.get("kind"), e.get("event") or ""
+        clock = (e.get("t") or "")[11:19]
+        if kind == "step":
+            if agent == "coordinator" and event == "revise_round":
+                rounds += 1
+            for a, ev, label in STAGES:
+                if agent == a and (ev is None or event == ev or (ev == "decision" and event in ("decision", "reports_written", "notified"))):
+                    stage = label + (f" (revision round {rounds})" if rounds and a.startswith("scientific") else "")
+            lines.append(f"{clock}  {agent}: {event} {(e.get('detail') or '')[:110]}".rstrip())
+        elif kind == "llm_call":
+            lines.append(f"{clock}  {agent}: model call finished ({e.get('input_tokens', 0):,} tokens in, "
+                         f"{e.get('output_tokens', 0):,} out, {round(e.get('duration_s') or 0)} s)")
+    elapsed = int(time.time() - started_at) if started_at else 0
+    head = f"Current stage: {stage}   |   elapsed {elapsed // 60}:{elapsed % 60:02d}"
+    return head + "\n\n" + "\n".join(lines[-9:])
+
+
+def poll_review(run_id, started_at):
+    """Timer tick while a review started from this page is running: refresh the live progress; when the review has
+    finished, load its results, open the results tab and stop the timer. Read-only calls, no model call."""
+    keep = gr.update()
+    if not run_id:
+        return keep, keep, keep, keep, keep, keep, keep, keep, gr.Timer(active=False)
+    try:
+        summary = _request("GET", f"/runs/{run_id}/summary").json()
+        events = _request("GET", f"/stats/trace/{run_id}").json()
+    except Exception:
+        return keep, "Waiting for the service ...", keep, keep, keep, keep, keep, keep, keep
+    progress = _progress_text(events, started_at)
+    if summary.get("status") not in ("done", "failed"):
+        return keep, progress, keep, keep, keep, keep, keep, keep, keep
+    summary, detail, html, narrative, rows, warning = _read_summary(run_id)
+    done = (f"Review finished: {summary.get('decision') or summary.get('status')}. {summary.get('n_findings', 0)} findings. "
+            "The results are open in the Review Results tab.")
+    return done, progress, html, narrative, rows, warning, summary, gr.Tabs(selected="results"), gr.Timer(active=False)
 
 
 def history():
@@ -216,8 +269,9 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
     demo.load(ping,outputs=connected)      # checked on every page load, not once at import time
     run_state=gr.State("")
     summary_state=gr.State({})
-    with gr.Tabs():
-        with gr.Tab("New Review"):
+    started_state=gr.State(0.0)
+    with gr.Tabs() as tabs:
+        with gr.Tab("New Review",id="new"):
             gr.Markdown("### Start a protocol review")
             gr.Markdown("Only the full review workflow is available here. Experimental configurations and administrative gate bypass are intentionally hidden.")
             with gr.Row():
@@ -227,10 +281,11 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
                     authorized=gr.Checkbox(label="I confirm I am authorized to process this document and understand this starts a paid LLM review.")
                     start=gr.Button("Start full protocol review",variant="primary")
                     start_feedback=gr.Textbox(label="Run status",interactive=False)
+                    progress=gr.Textbox(label="Live progress (updates every few seconds while a review is running)",lines=12,interactive=False)
+                    timer=gr.Timer(POLL_SECONDS,active=False)
                 with gr.Column(scale=1):
                     gr.Markdown("### What happens next?\n1. Intake and document checks\n2. Administrative screening\n3. Scientific review, when applicable\n4. Critic and evidence checks\n5. Decision support report\n\n**Important:** a failed agent requires human review. A technical failure must never mean PASS.")
-            start.click(start_review,inputs=[uploaded,nct,authorized],outputs=[run_state,start_feedback])
-        with gr.Tab("Review Results"):
+        with gr.Tab("Review Results",id="results"):
             gr.Markdown("### Review outcome and findings")
             with gr.Row():
                 past=gr.Dropdown(label="Previously saved reviews",choices=[],interactive=True,scale=4)
@@ -242,11 +297,11 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             load=gr.Button("Load review results",variant="primary")
             overview=gr.HTML('<div class="note">Choose a saved review or enter a Run ID.</div>')
             warning=gr.Markdown()
-            narrative=gr.Textbox(label="Executive summary",lines=9,interactive=False)
+            narrative=gr.Textbox(label="Executive summary",lines=9,max_lines=80,interactive=False)   # grows with the text, never cut
             finding_table=gr.Dataframe(headers=["Domain","Severity","Verification","Finding","Page(s)","Guideline","Evidence excerpt"],datatype=["str"]*7,interactive=False,wrap=True,label="Evidence-linked findings")
             get_run=lambda rid1,rid2: (rid2 or rid1 or "").strip()
             load.click(get_run,inputs=[run_state,manual_id],outputs=run_state).then(fetch_run,inputs=run_state,outputs=[overview,narrative,finding_table,warning,summary_state])
-        with gr.Tab("Reports & Email"):
+        with gr.Tab("Reports & Email",id="reports"):
             gr.Markdown("### Share a completed review")
             gr.Markdown("Reports are **never emailed automatically** by this product. To share one, select a recipient, preview the message, review the report, confirm, and click **Send email**. Sending requires approved SMTP configuration.")
             export=gr.Button("Prepare final report for download")
@@ -257,7 +312,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             recipient=gr.Textbox(label="Recipient email",placeholder="research.team@your-organization.org")
             preview=gr.Button("Generate email preview")
             subject=gr.Textbox(label="Subject")
-            email_body=gr.Textbox(label="Message (editable)",lines=8)
+            email_body=gr.Textbox(label="Message (editable)",lines=8,max_lines=60)
             email_status=gr.Textbox(label="Email status",interactive=False)
             preview.click(prepare_email,inputs=[run_state,recipient],outputs=[subject,email_body,email_status])
             email_confirm=gr.Checkbox(label="I reviewed the recipient, message and attached report, and explicitly authorize sending this email.")
@@ -267,8 +322,13 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             for field in (recipient, subject, email_body, run_state):
                 field.change(lambda: False, outputs=email_confirm)
             send.click(send_email,inputs=[run_state,recipient,subject,email_body,email_confirm],outputs=email_status)
-        with gr.Tab("About"):
+        with gr.Tab("About",id="about"):
             gr.Markdown("### Designed for clinical research teams\nThis product is a user-facing layer over the project's existing FastAPI and Multi-Agent review engine. It does not expose evaluation configurations or model costs to end users.\n\n**What the output means**\n- PASS means screening criteria were met, not that the study is approved.\n- RETURNED_ADMIN flags administrative issues.\n- NEEDS_HUMAN_REVIEW requires human assessment.\n- MAJOR_CONCERNS flags substantial issues.\n- 'Verified' is a technical system status. It does not guarantee that the finding is correct or that the quote supports it.\n\n**Deployment**\nUse on localhost for demonstration. Organizational authentication, access controls, data retention policies, and approved email integration are required before real hospital deployment.")
+    # Live follow-up of a review started from this page: the timer runs only between the click and the end of the review.
+    start.click(start_review,inputs=[uploaded,nct,authorized],outputs=[run_state,start_feedback]).success(
+        lambda: (time.time(),"Review accepted by the service ...",gr.Timer(active=True)),outputs=[started_state,progress,timer])
+    timer.tick(poll_review,inputs=[run_state,started_state],
+               outputs=[start_feedback,progress,overview,narrative,finding_table,warning,summary_state,tabs,timer])
     gr.HTML("<div id='footer'>Clinical Protocol Review · Research prototype · Decision support only · No model calls until Start full protocol review is clicked.</div>")
 
 if __name__=="__main__":
