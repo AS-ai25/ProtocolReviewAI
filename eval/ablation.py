@@ -63,10 +63,15 @@ MODEL_CONFIGS: list[dict] = [
     {"key": "agents_full_haiku", "label": "Full system, current code, Claude Haiku 5.5",
      "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-haiku-5-5", "fallbacks": False},   # no server-side fallback on Haiku 5.5
 ]
+MODEL_CONFIGS.append(
+    # the assignment the model comparison points to: the model where the recall is, a cheaper one where the rules carry the gate
+    {"key": "agents_full_hybrid", "label": "Full system, current code, Opus for the scientific agents, Sonnet for the coordinator and the administrative agent",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5",
+     "agent_models": {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}})
 ALL_CONFIGS: list[dict] = CONFIGS + MODEL_CONFIGS
 ROW_NUM = {"rules_only": "0", "single_no_verification": "1", "single_verified": "2", "agents_no_critic": "3", "agents_full": "4",
            "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'",
-           "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H"}
+           "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H", "agents_full_hybrid": "4-M"}
 
 
 def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
@@ -181,15 +186,18 @@ def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registr
             continue
         print(f"[{cfg['key']}] {cfg['label']}")
         llm = llm_factory() if llm_factory else None
-        saved = (settings.llm_model, settings.llm_fallbacks)
+        saved = (settings.llm_model, settings.llm_fallbacks, settings.llm_agent_models)
         try:
             if cfg.get("model"):                       # same code and settings, another model for this row only
                 settings.llm_model = cfg["model"]
                 settings.llm_fallbacks = cfg.get("fallbacks", saved[1])
+                settings.llm_agent_models = dict(cfg.get("agent_models") or {})
             row = run_config(cfg, cases, no_llm=no_llm, registry_fetch=registry_fetch, llm=llm, stamp=stamp)
             row["model"] = "mock" if no_llm else settings.llm_model
+            if cfg.get("agent_models"):
+                row["agent_models"] = cfg["agent_models"]
         finally:
-            settings.llm_model, settings.llm_fallbacks = saved
+            settings.llm_model, settings.llm_fallbacks, settings.llm_agent_models = saved
         rows.append(row)
     model = "mock" if no_llm else settings.llm_model
     md = render_markdown(rows, cases, no_llm=no_llm, started=started, model=model)
@@ -215,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-registry", action="store_true", help="do not call ClinicalTrials.gov (registry record = not available)")
     ap.add_argument("--only", nargs="*", choices=[c["key"] for c in ALL_CONFIGS],
                     help="run a subset of the configurations; the model-comparison rows (agents_full_sonnet, agents_full_haiku, "
-                         "agents_full_v17) run only when named here")
+                         "agents_full_hybrid, agents_full_v17) run only when named here")
     ap.add_argument("--cases-glob", default="*.json",
                     help="case files to load, e.g. 'nct*.json' for the real-protocol set only (default: all)")
     a = ap.parse_args(argv)

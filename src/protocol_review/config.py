@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     llm_effort: str = "medium"
     llm_max_tokens: int = 16000
     llm_fallbacks: bool = True
+    # Optional model per agent, e.g. {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"};
+    # agents not named use llm_model. Empty = one model for every agent (the configuration of every frozen row).
+    llm_agent_models: dict[str, str] = {}
     no_llm: bool = False
 
     # Webhook

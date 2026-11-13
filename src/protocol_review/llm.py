@@ -9,6 +9,8 @@
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import json
 import logging
 import time
@@ -82,13 +84,35 @@ class LLM:
     ):
         self.client = client or anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
         self.model = model or settings.llm_model
+        self.agent_models = dict(settings.llm_agent_models or {})     # optional model per agent; others use self.model
+        self._active_model = self.model
         self.effort = effort or settings.llm_effort
         self.max_tokens = max_tokens or settings.llm_max_tokens
         self.fallbacks = settings.llm_fallbacks if fallbacks is None else fallbacks
         self.on_interaction = on_interaction
 
     # ------------------------------------------------------------------ public
+    @contextmanager
+    def _for_agent(self, agent: str):
+        """The model of this call: the agent's own model when one is configured, else the default."""
+        previous = self._active_model
+        self._active_model = self.agent_models.get(agent) or self.model
+        try:
+            yield
+        finally:
+            self._active_model = previous
+
     def structured(self, *, agent: str, system: str, user: str, schema: type[T]) -> T:
+        with self._for_agent(agent):
+            return self._structured(agent=agent, system=system, user=user, schema=schema)
+
+    def structured_with_tools(self, *, agent: str, system: str, user: str, schema: type[T], tools: list[dict],
+                              executor: Callable[[str, dict], str], max_tool_calls: int = 6) -> T:
+        with self._for_agent(agent):
+            return self._structured_with_tools(agent=agent, system=system, user=user, schema=schema, tools=tools,
+                                               executor=executor, max_tool_calls=max_tool_calls)
+
+    def _structured(self, *, agent: str, system: str, user: str, schema: type[T]) -> T:
         """One request -> validated `schema` instance. One repair retry on bad JSON."""
         started = time.perf_counter()
         text, usage, fallback_used, model_used = self._call(system, user, schema, use_format=True)
@@ -122,7 +146,7 @@ class LLM:
                 log.exception("on_interaction hook failed")
         return obj
 
-    def structured_with_tools(self, *, agent: str, system: str, user: str, schema: type[T], tools: list[dict],
+    def _structured_with_tools(self, *, agent: str, system: str, user: str, schema: type[T], tools: list[dict],
                               executor: Callable[[str, dict], str], max_tool_calls: int = 6) -> T:
         """v1.7 tool use: the model may call the given tools (it decides which and when, up to `max_tool_calls`);
         the code executes them and feeds the results back; then one final request without tools returns the
@@ -190,7 +214,7 @@ class LLM:
     def _request_kwargs(self, system: str, messages: list[dict], schema: type[BaseModel], use_format: bool,
                         tools: list[dict] | None = None) -> dict:
         kwargs: dict[str, Any] = dict(
-            model=self.model,
+            model=self._active_model,
             max_tokens=self.max_tokens,
             system=system,
             messages=messages,

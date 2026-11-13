@@ -176,8 +176,9 @@ GAP_PAIRS = ([("agents_full", b) for b in FROZEN_BASES]
              + [("agents_no_critic_tools", b) for b in FROZEN_BASES + ("agents_full", "single_tools")]
              + [("single_tools", b) for b in FROZEN_BASES + ("agents_full",)]
              # model comparison (mentor M8): another model in the full system against Opus (frozen row 4 and the tool-use row 4')
-             + [(m, b) for m in ("agents_full_v17", "agents_full_sonnet", "agents_full_haiku")
+             + [(m, b) for m in ("agents_full_v17", "agents_full_sonnet", "agents_full_haiku", "agents_full_hybrid")
                 for b in ("single_verified", "agents_full", "agents_full_tools")]
+             + [("agents_full_hybrid", "agents_full_sonnet"), ("agents_full_hybrid", "agents_full_v17")]
              + [("agents_full_sonnet", "agents_full_v17"), ("agents_full_haiku", "agents_full_v17"),
                 ("agents_full_sonnet", "agents_full_haiku")])
 

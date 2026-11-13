@@ -131,5 +131,5 @@ def test_model_comparison_rows_are_opt_in_and_restore_the_model(tmp_path, regist
                                     results_dir=tmp_path / "results", pattern="synthetic_*.json", only=["agents_full_haiku"])
     assert [r["key"] for r in summary["rows"]] == ["agents_full_haiku"] and summary["rows"][0]["model"] == "mock"
     assert (settings.llm_model, settings.llm_fallbacks) == before
-    assert {c["key"] for c in ablation.MODEL_CONFIGS} == {"agents_full_v17", "agents_full_sonnet", "agents_full_haiku"}
+    assert {c["key"] for c in ablation.MODEL_CONFIGS} == {"agents_full_v17", "agents_full_sonnet", "agents_full_haiku", "agents_full_hybrid"}
     assert ablation.ROW_NUM["agents_full_sonnet"] == "4-S"
