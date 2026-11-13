@@ -13,7 +13,8 @@ Updated 4 November 2026 after Ron's deliverables (knowledge base kb-v2, filled 3
 `reports/EVALUATION_AND_LIMITATIONS.md`, `reports/ABLATION_ANALYSIS.md`, `docs/CHARTER_CONSISTENCY_AUDIT.md`).
 Updated 8 November 2026 after the mentoring session: section 8 (row 0, bootstrap uncertainty, and the v1.7 tool-use rows
 2', 3', 4' run the same day). Sections 1-6 describe the frozen rows 1-4 and are unchanged.
-Updated 13 November 2026: section 10, the model comparison (full system with Sonnet 5.5 and Haiku 5.5, mentor M8).
+Updated 13 November 2026: section 10, the model comparison (full system with Sonnet 5.5 and Haiku 5.5, mentor M8), and
+section 10.5, the hybrid assignment (Opus for the scientific agents, Sonnet for the other two): recall 89% / 80%.
 Updated 12 November 2026: section 9, Ron's second round of human evaluation (finding correctness on the 30 findings of
 4 November, 30 findings of row 4', 40 unmatched verified findings) and the business value hypothesis.
 
@@ -489,9 +490,8 @@ input / output tokens). Protocol-level bootstrap (B = 2000), scientific view:
 * Keep Opus for the scientific reviewer and the critic. That is where the model earns its price: the recall gap is the
    largest and the most stable difference in the whole table.
 * The coordinator's model call only writes the final summary, and the administrative gate rests on the 29 rules; a
-  cheaper model there (Sonnet, not Haiku, given the gate observation) would save about 10% of the cost. This hybrid was
-  **not run**: the comparison replaced the model in all four agents at once, so the saving is computed, the quality is
-  inferred.
+  cheaper model there (Sonnet, not Haiku, given the gate observation) was computed to save about 10% of the cost. This
+  hybrid was then run and measured: section 10.5 (saving 7%, no measurable loss).
 * If cost is the constraint, the choice on this evidence is not "the full system on a cheaper model": it is the single
   Opus call (row 2) at USD 0.43, or the full system on Haiku at USD 0.09, which measure the same on this set.
 
@@ -503,3 +503,44 @@ tool calling). The matching Opus row without tool calling on the current code (`
 was not run (about USD 10.5); recall is barely affected by the evidence floor, so the recall comparison against row 4
 stands without it. Effort was left at `medium` for all three models; Sonnet 5.5 and Haiku 5.5 calibrate effort levels
 differently from Opus, and a higher effort setting for them was not tried.
+
+### 10.5 The hybrid assignment, measured (row 4-M, run of 13 November, stamp `20261113-125723`)
+
+Section 10.3 computed a hybrid and did not measure it. It was run the same day: `claude-opus-5-5` for the scientific
+reviewer and the critic, `claude-sonnet-5-5` for the coordinator and the administrative agent, current code, kb-v2, no
+tool calling (`eval/ablation.py --only agents_full_hybrid`; the model per agent is the optional setting
+`llm_agent_models`, empty by default).
+
+| Row | Precision of verified (scientific) | Recall (scientific) | Recall (all domains) | Administrative labels found | Cost per protocol | Time per protocol |
+|---|---|---|---|---|---|---|
+| 4 Full system, Opus (frozen, v1.6 code) | 34% (38/112) | 78% (29/37) | 74% (34/46) | 5 of 9 | USD 2.11 | 474 s |
+| 4' Full system with tool use, Opus | 36% (13/36) | 70% (26/37) | 65% (30/46) | 4 of 9 | USD 4.48 | 684 s |
+| 4-S Full system, Sonnet everywhere | 23% (7/30) | 57% (21/37) | 52% (24/46) | 3 of 9 | USD 0.69 | 139 s |
+| **4-M Hybrid: Opus scientific, Sonnet coordinator + administrative** | 32% (12/37) | **89% (33/37)** | **80% (37/46)** | 4 of 9 | USD 2.09 | 442 s |
+
+Bootstrap, scientific view: 4-M vs 4-S recall +32 pp (19 to 49), P = 0.00; 4-M vs 4' recall +19 pp (0 to 38), P = 0.04;
+4-M vs 4 recall +11 pp (-5 to +30), P = 0.14; precision gaps against rows 4 and 4' within noise (-2 pp and -4 pp).
+Interval of row 4-M: recall 77% to 100% (scientific), 73% to 87% (all domains). No agent failed; two answers were cut at
+the output cap and succeeded on retry.
+
+Reading:
+
+1. **Sonnet in the coordinator and the administrative agent costs nothing measurable.** Administrative labels found: 4 of
+   9, as with Opus (4 and 5). The scientific recall is the highest of the table, so nothing was lost upstream either.
+2. **The saving is small.** USD 2.09 per protocol; the same tokens priced on Opus alone would be USD 2.25, so the hybrid
+   saves about 7% (16 cents per protocol), less than the 10% computed in 10.3, because the scientific agents wrote more in
+   this run. The two agents moved to Sonnet were never where the money goes.
+3. **This is, in effect, the first measured row of the product configuration**: Opus scientific agents on the current
+   code, deterministic evidence floor, no tool calling. It reaches the charter's recall target for the first time
+   (89% scientific, 80% all domains, target 80%). Precision of verified findings stays far from its target (32%).
+4. **Tool calling is what lowered recall, not the evidence floor.** Rows 4-M and 4' share the code floor and kb-v2 and
+   differ in tool calling (and in the model of the two non-scientific agents): recall 89% against 70%, P = 0.04. With
+   section 9.1 (tool calling did not improve the evidence of scientific findings) and its 2.1x cost, the evidence on this
+   set is against tool calling in the reviewer and the critic.
+
+Limits, stated plainly. One run. The gain over the frozen row 4 is not distinguishable from noise (P = 0.14): the claim
+that holds is "at least as good as row 4", not "better". The evidence floor and kb-v2 were developed after reading the
+system's output on these same five protocols, so this is not a held-out test of the current code; the floor changes the
+verification status of findings, not which findings are raised, and recall counts both, but the caveat stands. The row
+mixes two changes against row 4' (no tool calling, Sonnet in two agents); the Opus-only row on the current code
+(`agents_full_v17`) was still not run.
