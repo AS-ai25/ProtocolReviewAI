@@ -132,7 +132,10 @@ copy .env.example .env                            # then fill ANTHROPIC_API_KEY,
 Windows note: Smart App Control blocks venv `.exe` stubs, so always call tools as
 `python -m uvicorn`, `python -m pytest`, etc.
 
-Model: `LLM_MODEL=claude-opus-5-5` by default (set `claude-sonnet-5-5` for cheaper runs). Server-side
+Model: `LLM_MODEL=claude-opus-5-5` for the scientific reviewer and the critic; since 13 November 2026 the coordinator and the
+administrative agent use `claude-sonnet-5-5` by default (`LLM_AGENT_MODELS`, a JSON object agent -> model; `LLM_AGENT_MODELS={}`
+puts every agent back on `LLM_MODEL`). This is row 4-M of the evaluation (`reports/CP2_SUMMARY.md` section 10.5); the
+evaluation runner sets the models per row, so no other row is affected. Server-side
 refusal fallbacks are enabled (`LLM_FALLBACKS=true`); set `false` when running through Bedrock / Vertex.
 `NO_LLM=true` runs the full graph with deterministic checks only.
 

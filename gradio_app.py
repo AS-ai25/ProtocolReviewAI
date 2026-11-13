@@ -187,8 +187,12 @@ def ping():
     try:
         data = _request("GET", "/health").json()
         mail = "automatic email off (dry-run)" if data.get("email_dry_run", True) else "AUTOMATIC EMAIL ON"
+        agent_models = data.get("agent_models") or {}
+        others = sorted({m for m in agent_models.values() if m != data.get("model")})
+        models = esc(data.get("model", "-")) + "".join(
+            f' + {esc(m)} ({esc(", ".join(a for a, v in agent_models.items() if v == m))})' for m in others)
         return (f'<span class="pr-pill" style="--c:#2e9d5b"><i></i>Connected to the review service'
-                f'<span>· model {esc(data.get("model", "-"))} · {esc(mail)}</span></span>')
+                f'<span>· model {models} · {esc(mail)}</span></span>')
     except Exception:
         return ('<span class="pr-pill" style="--c:#d64545"><i></i>Not connected'
                 '<span>· start the review service on port 8040, then check again</span></span>')

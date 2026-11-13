@@ -544,3 +544,8 @@ system's output on these same five protocols, so this is not a held-out test of 
 verification status of findings, not which findings are raised, and recall counts both, but the caveat stands. The row
 mixes two changes against row 4' (no tool calling, Sonnet in two agents); the Opus-only row on the current code
 (`agents_full_v17`) was still not run.
+
+**Adopted as the product default on 13 November 2026** (decision of the team, charter open decision 12): the service and
+the end-user product now run this assignment (`llm_agent_models` in `config.py`; `LLM_AGENT_MODELS={}` restores one model
+for every agent). The evaluation runner sets the models of every row explicitly, so the frozen rows and the other rows
+are not affected by the default. The product therefore runs the configuration that row 4-M measured.

@@ -188,10 +188,12 @@ def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registr
         llm = llm_factory() if llm_factory else None
         saved = (settings.llm_model, settings.llm_fallbacks, settings.llm_agent_models)
         try:
+            # every row runs with exactly the models it names: one model for all agents unless the row lists agent models
+            # (the product default is the hybrid assignment, and it must not leak into the single-model rows)
+            settings.llm_agent_models = dict(cfg.get("agent_models") or {})
             if cfg.get("model"):                       # same code and settings, another model for this row only
                 settings.llm_model = cfg["model"]
                 settings.llm_fallbacks = cfg.get("fallbacks", saved[1])
-                settings.llm_agent_models = dict(cfg.get("agent_models") or {})
             row = run_config(cfg, cases, no_llm=no_llm, registry_fetch=registry_fetch, llm=llm, stamp=stamp)
             row["model"] = "mock" if no_llm else settings.llm_model
             if cfg.get("agent_models"):

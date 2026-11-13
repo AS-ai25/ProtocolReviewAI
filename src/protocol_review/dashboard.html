@@ -256,7 +256,7 @@ const hhmm=iso=>iso?new Date(iso).toLocaleTimeString([], {hour12:false}):"--:--:
 
 async function j(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({detail:r.status}))).detail||r.status);return r.json();}
 
-async function loadHealth(){try{const h=await j("/health");$("#health").textContent=`${t("model")} ${h.model}${h.no_llm?" · "+t("NO LLM"):""}${h.email_dry_run?" · "+t("email dry-run"):""}`;}catch(e){$("#health").textContent=t("server unreachable");}}
+async function loadHealth(){try{const h=await j("/health");const am=h.agent_models||{};const others=[...new Set(Object.values(am))].filter(m=>m!==h.model).map(m=>`${m} (${Object.keys(am).filter(a=>am[a]===m).join(", ")})`).join(" · ");$("#health").textContent=`${t("model")} ${h.model}${others?" + "+others:""}${h.no_llm?" · "+t("NO LLM"):""}${h.email_dry_run?" · "+t("email dry-run"):""}`;}catch(e){$("#health").textContent=t("server unreachable");}}
 
 async function loadRuns(keep){const runs=await j("/runs?limit=60");const sel=$("#runs");const prev=keep||sel.value;sel.innerHTML="";
   for(const r of runs){const o=document.createElement("option");o.value=r.id;o.textContent=`${r.id}  ·  ${r.status}${r.decision?" · "+r.decision:""}${r.nct_id?" · "+r.nct_id:""}`;sel.appendChild(o);}

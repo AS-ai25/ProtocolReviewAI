@@ -19,9 +19,11 @@ class Settings(BaseSettings):
     llm_effort: str = "medium"
     llm_max_tokens: int = 16000
     llm_fallbacks: bool = True
-    # Optional model per agent, e.g. {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"};
-    # agents not named use llm_model. Empty = one model for every agent (the configuration of every frozen row).
-    llm_agent_models: dict[str, str] = {}
+    # Model per agent; agents not named use llm_model. Product default since 13 November 2026 (charter v1.9, row 4-M of the
+    # evaluation): Opus for the scientific reviewer and the critic, Sonnet for the coordinator and the administrative agent.
+    # LLM_AGENT_MODELS={} in .env puts every agent back on llm_model. The evaluation runner sets this per row, so the
+    # frozen rows and every other row keep exactly the models they name.
+    llm_agent_models: dict[str, str] = {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}
     no_llm: bool = False
 
     # Webhook

@@ -401,7 +401,8 @@ def deactivate(memory_id: int, body: MemoryDecision):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": settings.llm_model, "no_llm": settings.no_llm, "email_dry_run": settings.email_dry_run}
+    return {"status": "ok", "model": settings.llm_model, "agent_models": dict(settings.llm_agent_models or {}),
+            "no_llm": settings.no_llm, "email_dry_run": settings.email_dry_run}
 
 
 @app.exception_handler(Exception)
