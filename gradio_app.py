@@ -62,11 +62,19 @@ STATUS_FILTERS = {"All": None, "Evidence located (verified)": {"verified"},
 CSS = """
 :root{--brand:#183b5b;--accent:#0f766e;}
 .gradio-container{max-width:1240px!important;margin:auto!important;font-family:Inter,'Segoe UI',Arial,sans-serif!important}
-#hero{background:linear-gradient(110deg,#102b47,#214c6a);color:white;border-radius:18px;padding:24px 28px;margin-bottom:10px}
-#hero h1{color:white!important;font-size:27px!important;margin:0!important}
-#hero p{color:#d7e4ec!important;margin:7px 0 0!important}
+#hero{background:linear-gradient(110deg,#102b47,#214c6a);color:white;border-radius:14px;padding:14px 22px;margin-bottom:2px}
+#hero .eyebrow{font-size:11px;letter-spacing:1.5px;color:#cbdce7}
+#hero h1{color:white!important;font-size:22px!important;margin:2px 0 0!important}
+#hero p{color:#d7e4ec!important;margin:3px 0 0!important;font-size:13.5px}
+#hero .disclaimer{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9cddb}
+/* connection: a small status pill and a small button on one line */
+#topbar{align-items:center!important;gap:10px!important;margin:2px 0 4px}
+#topbar>div{min-width:0!important}
+.pr-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:4px 14px;font-size:12.5px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--body-text-color)}
+.pr-pill i{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+.pr-pill span{opacity:.75}
 .section-title{font-size:20px;font-weight:700;color:#15304b;margin:6px 0 12px}
-.note{padding:12px 16px;border-left:3px solid #0f766e;background:#f1f7f7;border-radius:8px;color:#305261}
+.note{padding:9px 14px;border-left:3px solid #0f766e;background:color-mix(in srgb,#0f766e 13%,transparent);border-radius:8px;color:var(--body-text-color);font-size:13px}
 #footer{font-size:12px;color:#64748b;margin:24px 0 0}
 
 /* live progress: stage chips and the coloured agent log (colours of the research dashboard) */
@@ -141,11 +149,15 @@ def _request(method: str, endpoint: str, *, protected=False, **kwargs):
 
 
 def ping():
+    """Connection status as a small pill: green when the local service answers, red otherwise."""
     try:
         data = _request("GET", "/health").json()
-        return f"Connected to local server | Model: {data.get('model','-')} | Email dry-run: {data.get('email_dry_run', True)}"
-    except Exception as exc:
-        return f"Not connected: {exc}"
+        mail = "automatic email off (dry-run)" if data.get("email_dry_run", True) else "AUTOMATIC EMAIL ON"
+        return (f'<span class="pr-pill" style="--c:#2e9d5b"><i></i>Connected to the review service'
+                f'<span>· model {esc(data.get("model", "-"))} · {esc(mail)}</span></span>')
+    except Exception:
+        return ('<span class="pr-pill" style="--c:#d64545"><i></i>Not connected'
+                '<span>· start the review service on port 8040, then check again</span></span>')
 
 
 # ------------------------------------------------------------------ results: decision card, numbers, findings
@@ -469,10 +481,14 @@ def send_email(run_id, recipient, subject, body, explicit_confirm):
 
 
 with gr.Blocks(title="Clinical Protocol Review") as demo:
-    gr.HTML("<div id='hero'><div style='font-size:12px;letter-spacing:1.5px;color:#cbdce7'>CLINICAL RESEARCH · AI-ASSISTED SCREENING</div><h1>Clinical Protocol Review</h1><p>Structured protocol screening, evidence-linked findings and human oversight.</p></div>")
-    gr.HTML("<div class='note'>Decision support only. Not an IRB approval, clinical validation or substitute for expert judgment. Do not upload confidential hospital protocols without organizational authorization.</div>")
-    connected=gr.Textbox(label="Local service connection",interactive=False)
-    gr.Button("Check connection",variant="secondary",size="sm").click(ping,outputs=connected)
+    gr.HTML("<div id='hero'><div class='eyebrow'>CLINICAL RESEARCH · AI-ASSISTED SCREENING</div><h1>Clinical Protocol Review</h1>"
+            "<p>Structured protocol screening, evidence-linked findings and human oversight.</p>"
+            "<div class='disclaimer'>Decision support only. Not an IRB approval, clinical validation or substitute for expert judgment. "
+            "Do not upload confidential hospital protocols without organizational authorization.</div></div>")
+    with gr.Row(elem_id="topbar"):
+        connected=gr.HTML('<span class="pr-pill" style="--c:#7b8794"><i></i>Checking the connection ...</span>')
+        check=gr.Button("Check connection",variant="secondary",size="sm",scale=0,min_width=150)
+    check.click(ping,outputs=connected)
     demo.load(ping,outputs=connected)      # checked on every page load, not once at import time
     run_state=gr.State("")
     summary_state=gr.State({})
@@ -498,12 +514,13 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("### Review outcome and findings")
             with gr.Row():
                 past=gr.Dropdown(label="Previously saved reviews",choices=[],interactive=True,scale=4)
-                refresh=gr.Button("Refresh history",scale=1)
+                refresh=gr.Button("Refresh history",size="sm",scale=0,min_width=150)
             history_message=gr.Markdown()
             refresh.click(history,outputs=[past,history_message])
             past.change(lambda v:v or "",inputs=past,outputs=run_state)
-            manual_id=gr.Textbox(label="Or enter an existing Run ID",placeholder="run-id")
-            load=gr.Button("Load review results",variant="primary")
+            with gr.Row():
+                manual_id=gr.Textbox(label="Or enter an existing Run ID",placeholder="run-id",scale=4)
+                load=gr.Button("Load review results",variant="primary",size="sm",scale=0,min_width=190)
             overview=gr.HTML('<div class="note">Choose a saved review or enter a Run ID.</div>')
             warning=gr.Markdown()
             pdf_reports=gr.File(label="Reports (PDF): final, administrative, scientific",file_count="multiple",interactive=False)
@@ -522,19 +539,22 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
         with gr.Tab("Reports & Email",id="reports"):
             gr.Markdown("### Share a completed review")
             gr.Markdown("Reports are **never emailed automatically** by this product. To share one, select a recipient, preview the message, review the report, confirm, and click **Send email**. Sending requires approved SMTP configuration.")
-            export=gr.Button("Prepare final report for download")
+            with gr.Row():
+                export=gr.Button("Prepare final report for download",size="sm",scale=0,min_width=270)
             report_file=gr.File(label="Download final report",interactive=False)
             export_status=gr.Textbox(label="Report status",interactive=False)
             export.click(get_report,inputs=run_state,outputs=[report_file,export_status])
             gr.Markdown("### Email preview")
             recipient=gr.Textbox(label="Recipient email",placeholder="research.team@your-organization.org")
-            preview=gr.Button("Generate email preview")
+            with gr.Row():
+                preview=gr.Button("Generate email preview",size="sm",scale=0,min_width=210)
             subject=gr.Textbox(label="Subject")
             email_body=gr.Textbox(label="Message (editable)",lines=8,max_lines=60)
             email_status=gr.Textbox(label="Email status",interactive=False)
             preview.click(prepare_email,inputs=[run_state,recipient],outputs=[subject,email_body,email_status])
             email_confirm=gr.Checkbox(label="I reviewed the recipient, message and attached report, and explicitly authorize sending this email.")
-            send=gr.Button("Send email",variant="primary")
+            with gr.Row():
+                send=gr.Button("Send email",variant="primary",size="sm",scale=0,min_width=150)
             # Any modification invalidates the previous approval. Confirmation is
             # required for the exact recipient, message and selected review.
             for field in (recipient, subject, email_body, run_state):
