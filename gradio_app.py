@@ -5,11 +5,13 @@ Launch FastAPI first on http://127.0.0.1:8040, then run this file.
 """
 from __future__ import annotations
 
+import html as html_lib
 import os
 import re
 import smtplib
 import tempfile
 import time
+from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -28,6 +30,35 @@ SMTP_PASSWORD = os.getenv("PROTOCOL_UI_SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("PROTOCOL_UI_SMTP_FROM", "")
 ALLOW_EMAIL = os.getenv("PROTOCOL_UI_ALLOW_EMAIL", "false").lower() == "true"
 
+# Stage colours: the same ones as the research dashboard, so the two screens read as one system.
+STAGE_COLORS = {"intake": "#5eead4", "administrative": "#ffc857", "scientific_reviewer": "#5cc8ff",
+                "scientific_critic": "#b89cff", "revision": "#ff6b6b", "final": "#7bd389"}
+STATIONS = [("intake", "Intake + validation"), ("administrative", "Administrative gate"),
+            ("scientific_reviewer", "Scientific reviewer"), ("scientific_critic", "Critic"),
+            ("revision", "Revision round"), ("final", "Decision + reports")]
+AGENT_LABELS = {"coordinator": "Coordinator", "administrative": "Administrative agent",
+                "scientific_reviewer": "Scientific reviewer", "scientific_critic": "Scientific critic"}
+DECISIONS = {
+    "PASS": ("#2e9d5b", "Screening criteria met",
+             "The screening criteria were met. This is not an approval: the committee still reviews the protocol."),
+    "NEEDS_HUMAN_REVIEW": ("#d9902b", "Needs human review",
+                           "Some findings could not be confirmed automatically. A reviewer should read the findings marked "
+                           "\"needs human review\" before the protocol moves on."),
+    "MAJOR_CONCERNS": ("#d64545", "Major concerns",
+                       "The review found substantial issues with located evidence. They should be resolved or answered before "
+                       "committee review."),
+    "RETURNED_ADMIN": ("#4c7fd1", "Returned to the submitter",
+                       "The submission is not administratively complete, so it is returned to the submitter. The scientific "
+                       "review starts once the missing items are provided."),
+}
+SEVERITY_COLORS = {"critical": "#d64545", "major": "#e0822b", "minor": "#4c7fd1", "info": "#7b8794"}
+SEVERITY_ORDER = {"critical": 0, "major": 1, "minor": 2, "info": 3}
+STATUS_VIEW = {"verified": ("#2e9d5b", "evidence located"), "unverified": ("#d9902b", "needs human review"),
+               "revise": ("#d9902b", "needs human review"), "proposed": ("#d9902b", "needs human review"),
+               "rejected": ("#7b8794", "rejected"), "withdrawn": ("#7b8794", "withdrawn")}
+STATUS_FILTERS = {"All": None, "Evidence located (verified)": {"verified"},
+                  "Needs human review": {"unverified", "revise", "proposed"}, "Rejected / withdrawn": {"rejected", "withdrawn"}}
+
 CSS = """
 :root{--brand:#183b5b;--accent:#0f766e;}
 .gradio-container{max-width:1240px!important;margin:auto!important;font-family:Inter,'Segoe UI',Arial,sans-serif!important}
@@ -37,7 +68,53 @@ CSS = """
 .section-title{font-size:20px;font-weight:700;color:#15304b;margin:6px 0 12px}
 .note{padding:12px 16px;border-left:3px solid #0f766e;background:#f1f7f7;border-radius:8px;color:#305261}
 #footer{font-size:12px;color:#64748b;margin:24px 0 0}
+
+/* live progress: stage chips and the coloured agent log (colours of the research dashboard) */
+.pr-head{font-size:14px;margin:2px 0 8px;color:var(--body-text-color)}
+.pr-steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.pr-step{flex:1;min-width:118px;text-align:center;padding:9px 6px;border-radius:10px;font-size:13px;line-height:1.25;
+  border:1px solid var(--border-color-primary,#cbd5e1);color:var(--body-text-color-subdued,#64748b);background:transparent}
+.pr-step small{display:block;font-size:10.5px;letter-spacing:.5px;opacity:.85}
+.pr-step.done{border-color:var(--c);background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--body-text-color)}
+.pr-step.now{border-color:var(--c);background:var(--c);color:#0e1420;font-weight:700;animation:pr-pulse 1.4s infinite}
+.pr-step.skip{opacity:.5;border-style:dashed}
+@keyframes pr-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 70%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+.pr-log{display:flex;flex-direction:column;gap:4px}
+.pr-ev{border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 11%,transparent);border-radius:0 7px 7px 0;
+  padding:5px 10px;font-size:13px;color:var(--body-text-color);display:flex;gap:9px;align-items:baseline}
+.pr-ev .t{font-family:Consolas,monospace;font-size:12px;opacity:.7;white-space:nowrap}
+.pr-ev .a{background:var(--c);color:#0e1420;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pr-ev .x{flex:1;word-break:break-word}
+.pr-empty{padding:14px;border:1px dashed var(--border-color-primary,#cbd5e1);border-radius:10px;color:var(--body-text-color-subdued,#64748b);font-size:13px}
+
+/* results: decision card, numbers, findings */
+.pr-card{border-left:8px solid var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);border-radius:12px;padding:18px 20px;color:var(--body-text-color)}
+.pr-card .k{font-size:11.5px;letter-spacing:1px;opacity:.75}
+.pr-card .d{display:inline-block;background:var(--c);color:#fff;border-radius:9px;padding:3px 14px;font-size:21px;font-weight:700;margin:7px 0 4px}
+.pr-card .code{font-family:Consolas,monospace;font-size:12px;opacity:.7;margin-left:8px}
+.pr-card p{margin:6px 0 0;font-size:14.5px}
+.pr-card .meta{font-size:13px;opacity:.85;margin-top:8px}
+.pr-card .warn{margin-top:10px;color:#d64545;font-weight:700}
+.pr-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.pr-kpi{flex:1;min-width:120px;border:1px solid var(--border-color-primary,#cbd5e1);border-radius:10px;padding:10px 12px;text-align:center;color:var(--body-text-color)}
+.pr-kpi b{display:block;font-size:26px;line-height:1.1;color:var(--c,inherit)}
+.pr-kpi span{font-size:12px;opacity:.8}
+.pr-legend{font-size:12.5px;color:var(--body-text-color-subdued,#64748b);margin:8px 0 6px}
+.pr-f{border:1px solid var(--border-color-primary,#cbd5e1);border-left:5px solid var(--c);border-radius:8px;margin:5px 0;color:var(--body-text-color)}
+.pr-f summary{cursor:pointer;padding:8px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+.pr-f summary .ti{flex:1;min-width:220px;font-weight:600}
+.pr-f summary .pg{font-size:12px;opacity:.7;white-space:nowrap}
+.pr-b{border-radius:9px;padding:1px 9px;font-size:11.5px;font-weight:700;color:#fff;background:var(--c);white-space:nowrap}
+.pr-o{border-radius:9px;padding:0 8px;font-size:11.5px;border:1px solid var(--c);color:var(--body-text-color);white-space:nowrap}
+.pr-o i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:5px}
+.pr-f .body{padding:4px 14px 12px;font-size:13.5px;line-height:1.5}
+.pr-f .body h5{margin:9px 0 2px;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;opacity:.7}
+.pr-f blockquote{margin:4px 0;padding:6px 10px;border-left:3px solid var(--border-color-primary,#cbd5e1);background:color-mix(in srgb,var(--body-text-color) 6%,transparent);border-radius:0 6px 6px 0;font-size:13px}
 """
+
+
+def esc(x) -> str:
+    return html_lib.escape("" if x is None else str(x))
 
 
 def _check_local_api() -> None:
@@ -71,33 +148,100 @@ def ping():
         return f"Not connected: {exc}"
 
 
+# ------------------------------------------------------------------ results: decision card, numbers, findings
 def _summary_html(d):
-    def esc(x):
-        import html
-        return html.escape("" if x is None else str(x))
-    decision = d.get("decision") or "Pending"
+    """Decision card in the decision's colour, one plain sentence on what it means, and the four numbers."""
+    decision = d.get("decision") or ""
+    status = d.get("status") or ""
+    if status == "failed" or not decision:
+        color, label, sentence = "#7b8794", ("Review failed" if status == "failed" else "Pending"), (
+            "The review did not finish (technical failure). No decision was produced; a person must review this protocol."
+            if status == "failed" else "The review has not produced a decision yet.")
+    else:
+        color, label, sentence = DECISIONS.get(decision, ("#7b8794", decision, ""))
+    if decision == "RETURNED_ADMIN" and d.get("force_scientific"):
+        sentence += " (Evaluation run: the scientific review was run anyway, for information.)"
+    by_status, by_sev = d.get("by_status") or {}, d.get("by_severity") or {}
+    human = sum(by_status.get(k, 0) for k in ("unverified", "revise", "proposed"))
     score = d.get("score")
-    nct = d.get("nct_id") or "Not supplied"
-    warnings = d.get("agent_failures") or []
-    warn = '<div style="margin-top:14px;color:#9a3412;font-weight:600">Agent failure detected. Human review required.</div>' if warnings else ""
-    return (f'<div style="padding:21px;background:#f5f9fc;border-radius:14px;border:1px solid #dbe5eb">'
-            f'<div style="font-size:12px;color:#49677e">REVIEW OUTCOME · {esc(d.get("status"))}</div>'
-            f'<h2 style="color:#143b59;margin:7px 0">{esc(decision)}</h2>'
-            f'<div style="color:#334155">Study: {esc(nct)} · Score: {esc(score if score is not None else "Not available")}'
-            f' · Findings: {esc(d.get("n_findings",0))}</div>{warn}</div>')
+    failures = d.get("agent_failures") or []
+    warn = (f'<div class="warn">An agent did not run ({esc(", ".join(failures))}). The review is incomplete: human review required.</div>'
+            if failures or d.get("error") else "")
+    kpis = [("Findings", d.get("n_findings", 0), ""), ("Evidence located", by_status.get("verified", 0), "#2e9d5b"),
+            ("Need human review", human, "#d9902b"), ("Critical + major", by_sev.get("critical", 0) + by_sev.get("major", 0), "#d64545"),
+            ("Score / 100", "-" if score is None else score, "")]
+    tiles = "".join(f'<div class="pr-kpi" style="--c:{c or "inherit"}"><b>{esc(v)}</b><span>{esc(k)}</span></div>' for k, v, c in kpis)
+    return (f'<div class="pr-card" style="--c:{color}"><div class="k">REVIEW OUTCOME · {esc(status)}</div>'
+            f'<div><span class="d">{esc(label)}</span><span class="code">{esc(decision)}</span></div>'
+            f'<p>{esc(sentence)}</p>'
+            f'<div class="meta">Study: {esc(d.get("nct_id") or "not supplied")} · {esc(d.get("decision_rationale") or "")}</div>{warn}</div>'
+            f'<div class="pr-kpis">{tiles}</div>')
 
 
-def _findings_rows(data):
-    state = data.get("state") or {}
-    fs = state.get("findings") or []
-    rows=[]
-    for f in fs:
-        evidence = f.get("evidence") or []
-        pages = ", ".join(str(e.get("page", "")) for e in evidence if isinstance(e,dict))
-        quote = " | ".join(str(e.get("quote", "")) for e in evidence if isinstance(e,dict))
-        rows.append([str(f.get("domain") or ""),str(f.get("severity") or ""),str(f.get("status") or ""),
-                     str(f.get("title") or f.get("category") or ""),pages,str(f.get("guideline_ref") or ""),quote[:350]])
-    return rows
+def render_findings(findings, domain="All", severity="All", status="All"):
+    """Findings as expandable rows with severity and status badges; three filters; most severe first."""
+    findings = findings or []
+    wanted = STATUS_FILTERS.get(status)
+    shown = [f for f in findings
+             if (domain == "All" or f.get("domain") == domain)
+             and (severity == "All" or f.get("severity") == severity)
+             and (wanted is None or f.get("status") in wanted)]
+    shown.sort(key=lambda f: (SEVERITY_ORDER.get(f.get("severity"), 9), f.get("domain") or "", str(f.get("id") or "")))
+    legend = ('<div class="pr-legend"><b>How to read the status.</b> "Evidence located" means the quoted passage was found on the '
+              'cited page and the guideline code exists; "rule check" means a deterministic check of the document fired. Neither proves '
+              f'that the finding is correct: every finding is read by a person. Showing {len(shown)} of {len(findings)} findings; click a row for the details.</div>')
+    if not findings:
+        return '<div class="pr-empty">No findings to show yet.</div>'
+    rows = []
+    for f in shown:
+        sev = f.get("severity") or "info"
+        scol = SEVERITY_COLORS.get(sev, "#7b8794")
+        stcol, stlabel = STATUS_VIEW.get(f.get("status"), ("#7b8794", f.get("status") or "-"))
+        if f.get("status") == "verified" and f.get("source") == "rule":     # a deterministic check fired: there is no quote to locate
+            stlabel = "rule check"
+        evidence = [e for e in (f.get("evidence") or []) if isinstance(e, dict)]
+        pages = ", ".join(str(e.get("page")) for e in evidence if e.get("page"))
+        quotes = "".join(f'<blockquote>p. {esc(e.get("page") or "?")}: {esc(e.get("quote") or "")}</blockquote>'
+                         for e in evidence if e.get("quote")) or '<div style="opacity:.7">No quoted passage.</div>'
+        title = f.get("title") or f.get("category") or ""
+        if title.lower().startswith("issue raised by the critic"):      # generic title: show what the issue is
+            title = "Critic: " + (f.get("description") or "")[:120]
+        body = [f'<h5>What was found</h5>{esc(f.get("description") or f.get("title") or "")}', f'<h5>Evidence in the protocol</h5>{quotes}']
+        if f.get("guideline_ref"):
+            body.append(f'<h5>Guideline</h5>{esc(f.get("guideline_ref"))}')
+        if f.get("recommendation"):
+            body.append(f'<h5>Suggested action</h5>{esc(f.get("recommendation"))}')
+        if f.get("critic_notes"):
+            body.append(f'<h5>Why this status</h5>{esc(f.get("critic_notes"))}')
+        rows.append(
+            f'<details class="pr-f" style="--c:{scol}"><summary>'
+            f'<span class="pr-b" style="--c:{scol}">{esc(sev)}</span>'
+            f'<span class="pr-o" style="--c:{stcol}"><i></i>{esc(stlabel)}</span>'
+            f'<span class="pr-o" style="--c:#7b8794">{esc(f.get("domain") or "")}</span>'
+            f'<span class="ti">{esc(title)}</span>'
+            f'<span class="pg">{esc(f.get("id") or "")}{" · p. " + esc(pages) if pages else ""}</span>'
+            f'</summary><div class="body">{"".join(body)}</div></details>')
+    return legend + "".join(rows)
+
+
+def _pdf_reports(run_id, summary):
+    """The PDF reports of a finished review, copied to a private temporary folder for download."""
+    if summary.get("status") != "done":
+        return None
+    folder = Path(tempfile.mkdtemp(prefix="protocol_report_"))
+    folder.chmod(0o700)
+    name = re.sub(r"[^A-Za-z0-9_-]", "", summary.get("nct_id") or "") or "protocol"
+    files = []
+    for kind, label in (("final_report_pdf", "final_report"), ("administrative_report_pdf", "administrative_report"),
+                        ("scientific_report_pdf", "scientific_report")):
+        try:
+            content = _request("GET", f"/runs/{run_id}/report?kind={kind}").content
+        except Exception:       # the scientific report does not exist when the submission was returned at the gate
+            continue
+        out = folder / f"{name}_{label}.pdf"
+        out.write_bytes(content)
+        files.append(str(out))
+    return files or None
 
 
 def _read_summary(run_id):
@@ -112,12 +256,20 @@ def _read_summary(run_id):
     if summary.get("decision") == "PASS" and (summary.get("agent_failures") or summary.get("error")):
         warning += " SAFETY WARNING: decision conflicts with error state."
     output = summary.get("final_summary") or summary.get("decision_rationale") or "No final narrative available yet."
-    return summary, detail, _summary_html(summary), output, _findings_rows(detail), warning
+    findings = (detail.get("state") or {}).get("findings") or []
+    return summary, findings, _summary_html(summary), output, warning
+
+
+def _results_bundle(run_id):
+    """Everything the results tab shows for one review: card, summary text, findings, warning, states, PDFs, filters reset."""
+    summary, findings, card, narrative, warning = _read_summary(run_id)
+    reset = gr.update(value="All")
+    return (card, narrative, render_findings(findings), warning, summary, findings, _pdf_reports(run_id, summary),
+            reset, reset, reset)
 
 
 def fetch_run(run_id):
-    summary, detail, html, narrative, rows, warning = _read_summary(run_id)
-    return html, narrative, rows, warning, summary
+    return _results_bundle(run_id)
 
 
 def start_review(pdf_path, nct_id, confirmation):
@@ -146,53 +298,108 @@ def start_review(pdf_path, nct_id, confirmation):
                            "gate, up to about eight minutes for a full review).")
 
 
-STAGES = [("coordinator", "intake", "1. Intake and document checks"),
-          ("administrative", None, "2. Administrative screening"),
-          ("scientific_reviewer", None, "3. Scientific review"),
-          ("scientific_critic", None, "4. Critic and evidence checks"),
-          ("coordinator", "decision", "5. Decision and reports")]
+# ------------------------------------------------------------------ live progress: stage chips + coloured agent log
+def _event_stage(e) -> str:
+    agent, event = e.get("agent") or "", e.get("event") or ""
+    if agent == "coordinator":
+        if event == "revise_round":
+            return "revision"
+        if event in ("decision", "reports_written", "notified"):
+            return "final"
+        return "intake"
+    return agent if agent in STAGE_COLORS else "intake"
 
 
-def _progress_text(events, started_at):
-    """Plain-text view of where the review stands, from the service's trace (pipeline steps and LLM calls)."""
-    stage, rounds = STAGES[0][2], 0
+def _event_text(e) -> str:
+    """One readable line per pipeline step or model call; no local paths, no addresses."""
+    if e.get("kind") == "llm_call":
+        return (f"model call finished · {e.get('input_tokens', 0):,} tokens in · {e.get('output_tokens', 0):,} out · "
+                f"{round(e.get('duration_s') or 0)} s")
+    event, detail = e.get("event") or "", e.get("detail") or ""
+    if event == "notified":
+        return "notification prepared (not sent automatically)"
+    if event == "reports_written":
+        return "reports written: final, administrative" + (", scientific" if "scientific_report" in detail else "")
+    if event == "revise_round":
+        return "the critic asked for a focused re-check: revision round " + (detail.replace("round=", "") or "1")
+    if event == "decision":          # "RETURNED_ADMIN [reason]; Score: ..." -> the decision and its reason only
+        return "decision: " + detail.split(";")[0].replace("[", "(").replace("]", ")")
+    return (event.replace("_", " ") + (": " + detail if detail else ""))[:180]
+
+
+def _elapsed(events, started_at, finished) -> int:
+    stamps = [e.get("t") for e in events if e.get("t")]
+    if finished and len(stamps) >= 2:
+        try:
+            return int((datetime.fromisoformat(stamps[-1]) - datetime.fromisoformat(stamps[0])).total_seconds())
+        except ValueError:
+            pass
+    return int(time.time() - started_at) if started_at else 0
+
+
+def progress_html(events, started_at=0.0, finished=False):
+    """Stage chips (pending / running / done / not run) and the latest pipeline lines, each in its agent's colour."""
+    steps = [e for e in (events or []) if e.get("kind") in ("step", "llm_call")]
+    seen, current, in_revision = [], "intake", False
+    for e in steps:
+        stage = _event_stage(e)
+        if stage == "revision":
+            in_revision = True
+        elif stage == "final":
+            in_revision = False
+        current = "revision" if in_revision and stage in ("scientific_reviewer", "scientific_critic", "revision") else stage
+        for s in (stage, current):
+            if s not in seen:
+                seen.append(s)
+    chips = []
+    for n, (key, label) in enumerate(STATIONS, 1):
+        if finished:
+            state, note = ("done", "done") if key in seen else ("skip", "not run")
+        elif key == current:
+            state, note = "now", "running"
+        elif key in seen:
+            state, note = "done", "done"
+        else:
+            state, note = "todo", "waiting"
+        chips.append(f'<div class="pr-step {state}" style="--c:{STAGE_COLORS[key]}"><small>STEP {n} · {note.upper()}</small>{esc(label)}</div>')
+    secs = _elapsed(steps, started_at, finished)
+    label = "finished" if finished else dict(STATIONS).get(current, current)
+    head = f'<div class="pr-head">Current stage: <b>{esc(label)}</b> &nbsp;·&nbsp; elapsed {secs // 60}:{secs % 60:02d}</div>'
     lines = []
-    for e in events:
-        agent, kind, event = e.get("agent") or "", e.get("kind"), e.get("event") or ""
-        clock = (e.get("t") or "")[11:19]
-        if kind == "step":
-            if agent == "coordinator" and event == "revise_round":
-                rounds += 1
-            for a, ev, label in STAGES:
-                if agent == a and (ev is None or event == ev or (ev == "decision" and event in ("decision", "reports_written", "notified"))):
-                    stage = label + (f" (revision round {rounds})" if rounds and a.startswith("scientific") else "")
-            lines.append(f"{clock}  {agent}: {event} {(e.get('detail') or '')[:110]}".rstrip())
-        elif kind == "llm_call":
-            lines.append(f"{clock}  {agent}: model call finished ({e.get('input_tokens', 0):,} tokens in, "
-                         f"{e.get('output_tokens', 0):,} out, {round(e.get('duration_s') or 0)} s)")
-    elapsed = int(time.time() - started_at) if started_at else 0
-    head = f"Current stage: {stage}   |   elapsed {elapsed // 60}:{elapsed % 60:02d}"
-    return head + "\n\n" + "\n".join(lines[-9:])
+    for e in steps[-12:]:
+        color = STAGE_COLORS[_event_stage(e)]
+        agent = AGENT_LABELS.get(e.get("agent") or "", e.get("agent") or "")
+        lines.append(f'<div class="pr-ev" style="--c:{color}"><span class="t">{esc((e.get("t") or "")[11:19])}</span>'
+                     f'<span class="a">{esc(agent)}</span><span class="x">{esc(_event_text(e))}</span></div>')
+    log = "".join(lines) or '<div class="pr-empty">Waiting for the first step ...</div>'
+    return head + f'<div class="pr-steps">{"".join(chips)}</div><div class="pr-log">{log}</div>'
+
+
+IDLE_PROGRESS = ('<div class="pr-steps">' + "".join(
+    f'<div class="pr-step todo" style="--c:{STAGE_COLORS[k]}"><small>STEP {n}</small>{esc(label)}</div>' for n, (k, label) in enumerate(STATIONS, 1))
+    + '</div><div class="pr-empty">The stages light up here, in each agent\'s colour, once a review is started.</div>')
 
 
 def poll_review(run_id, started_at):
     """Timer tick while a review started from this page is running: refresh the live progress; when the review has
     finished, load its results, open the results tab and stop the timer. Read-only calls, no model call."""
     keep = gr.update()
+    idle = (keep,) * 10
     if not run_id:
-        return keep, keep, keep, keep, keep, keep, keep, keep, gr.Timer(active=False)
+        return (keep, keep) + idle + (keep, gr.Timer(active=False))
     try:
         summary = _request("GET", f"/runs/{run_id}/summary").json()
         events = _request("GET", f"/stats/trace/{run_id}").json()
     except Exception:
-        return keep, "Waiting for the service ...", keep, keep, keep, keep, keep, keep, keep
-    progress = _progress_text(events, started_at)
-    if summary.get("status") not in ("done", "failed"):
-        return keep, progress, keep, keep, keep, keep, keep, keep, keep
-    summary, detail, html, narrative, rows, warning = _read_summary(run_id)
+        return (keep, '<div class="pr-empty">Waiting for the service ...</div>') + idle + (keep, keep)
+    finished = summary.get("status") in ("done", "failed")
+    progress = progress_html(events, started_at, finished)
+    if not finished:
+        return (keep, progress) + idle + (keep, keep)
+    bundle = _results_bundle(run_id)
     done = (f"Review finished: {summary.get('decision') or summary.get('status')}. {summary.get('n_findings', 0)} findings. "
             "The results are open in the Review Results tab.")
-    return done, progress, html, narrative, rows, warning, summary, gr.Tabs(selected="results"), gr.Timer(active=False)
+    return (done, progress) + bundle + (gr.Tabs(selected="results"), gr.Timer(active=False))
 
 
 def history():
@@ -269,6 +476,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
     demo.load(ping,outputs=connected)      # checked on every page load, not once at import time
     run_state=gr.State("")
     summary_state=gr.State({})
+    findings_state=gr.State([])
     started_state=gr.State(0.0)
     with gr.Tabs() as tabs:
         with gr.Tab("New Review",id="new"):
@@ -281,10 +489,11 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
                     authorized=gr.Checkbox(label="I confirm I am authorized to process this document and understand this starts a paid LLM review.")
                     start=gr.Button("Start full protocol review",variant="primary")
                     start_feedback=gr.Textbox(label="Run status",interactive=False)
-                    progress=gr.Textbox(label="Live progress (updates every few seconds while a review is running)",lines=12,interactive=False)
-                    timer=gr.Timer(POLL_SECONDS,active=False)
                 with gr.Column(scale=1):
                     gr.Markdown("### What happens next?\n1. Intake and document checks\n2. Administrative screening\n3. Scientific review, when applicable\n4. Critic and evidence checks\n5. Decision support report\n\n**Important:** a failed agent requires human review. A technical failure must never mean PASS.")
+            gr.Markdown("### Live progress\nThe stages and the agents' steps appear here while the review runs; the page refreshes by itself every few seconds.")
+            progress=gr.HTML(IDLE_PROGRESS)
+            timer=gr.Timer(POLL_SECONDS,active=False)
         with gr.Tab("Review Results",id="results"):
             gr.Markdown("### Review outcome and findings")
             with gr.Row():
@@ -297,10 +506,19 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             load=gr.Button("Load review results",variant="primary")
             overview=gr.HTML('<div class="note">Choose a saved review or enter a Run ID.</div>')
             warning=gr.Markdown()
+            pdf_reports=gr.File(label="Reports (PDF): final, administrative, scientific",file_count="multiple",interactive=False)
             narrative=gr.Textbox(label="Executive summary",lines=9,max_lines=80,interactive=False)   # grows with the text, never cut
-            finding_table=gr.Dataframe(headers=["Domain","Severity","Verification","Finding","Page(s)","Guideline","Evidence excerpt"],datatype=["str"]*7,interactive=False,wrap=True,label="Evidence-linked findings")
+            gr.Markdown("### Evidence-linked findings")
+            with gr.Row():
+                f_domain=gr.Dropdown(["All","administrative","scientific"],value="All",label="Domain",filterable=False)
+                f_severity=gr.Dropdown(["All","critical","major","minor","info"],value="All",label="Severity",filterable=False)
+                f_status=gr.Dropdown(list(STATUS_FILTERS),value="All",label="Status",filterable=False)
+            findings_view=gr.HTML('<div class="pr-empty">No findings to show yet.</div>')
+            for flt in (f_domain,f_severity,f_status):
+                flt.change(render_findings,inputs=[findings_state,f_domain,f_severity,f_status],outputs=findings_view)
+            results_out=[overview,narrative,findings_view,warning,summary_state,findings_state,pdf_reports,f_domain,f_severity,f_status]
             get_run=lambda rid1,rid2: (rid2 or rid1 or "").strip()
-            load.click(get_run,inputs=[run_state,manual_id],outputs=run_state).then(fetch_run,inputs=run_state,outputs=[overview,narrative,finding_table,warning,summary_state])
+            load.click(get_run,inputs=[run_state,manual_id],outputs=run_state).then(fetch_run,inputs=run_state,outputs=results_out)
         with gr.Tab("Reports & Email",id="reports"):
             gr.Markdown("### Share a completed review")
             gr.Markdown("Reports are **never emailed automatically** by this product. To share one, select a recipient, preview the message, review the report, confirm, and click **Send email**. Sending requires approved SMTP configuration.")
@@ -326,9 +544,8 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("### Designed for clinical research teams\nThis product is a user-facing layer over the project's existing FastAPI and Multi-Agent review engine. It does not expose evaluation configurations or model costs to end users.\n\n**What the output means**\n- PASS means screening criteria were met, not that the study is approved.\n- RETURNED_ADMIN flags administrative issues.\n- NEEDS_HUMAN_REVIEW requires human assessment.\n- MAJOR_CONCERNS flags substantial issues.\n- 'Verified' is a technical system status. It does not guarantee that the finding is correct or that the quote supports it.\n\n**Deployment**\nUse on localhost for demonstration. Organizational authentication, access controls, data retention policies, and approved email integration are required before real hospital deployment.")
     # Live follow-up of a review started from this page: the timer runs only between the click and the end of the review.
     start.click(start_review,inputs=[uploaded,nct,authorized],outputs=[run_state,start_feedback]).success(
-        lambda: (time.time(),"Review accepted by the service ...",gr.Timer(active=True)),outputs=[started_state,progress,timer])
-    timer.tick(poll_review,inputs=[run_state,started_state],
-               outputs=[start_feedback,progress,overview,narrative,finding_table,warning,summary_state,tabs,timer])
+        lambda: (time.time(),progress_html([],time.time()),gr.Timer(active=True)),outputs=[started_state,progress,timer])
+    timer.tick(poll_review,inputs=[run_state,started_state],outputs=[start_feedback,progress]+results_out+[tabs,timer])
     gr.HTML("<div id='footer'>Clinical Protocol Review · Research prototype · Decision support only · No model calls until Start full protocol review is clicked.</div>")
 
 if __name__=="__main__":

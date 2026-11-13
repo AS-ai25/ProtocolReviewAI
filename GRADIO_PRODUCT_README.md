@@ -28,9 +28,16 @@ Gradio 6 is required (`css` and `theme` are `launch()` arguments from Gradio 6 o
 
 If your backend uses a custom `WEBHOOK_SECRET`, set `PROTOCOL_WEBHOOK_SECRET` in terminal 2 before launching. The default matches the project's current `change-me` development setting and **must be replaced for deployment**.
 
-## Live progress
+## Live progress and results view
 
-After **Start full protocol review** the page follows the run by itself: a *Live progress* box shows the current stage (intake, administrative screening, scientific review, critic, decision) and the latest pipeline steps, refreshed every few seconds with read-only calls. When the review finishes, the results open automatically in the *Review Results* tab. On Windows, `start_demo.bat` starts the service and this product together and opens both pages.
+After **Start full protocol review** the page follows the run by itself (read-only calls every few seconds):
+
+- six stage chips in the colours of the research dashboard (intake, administrative gate, scientific reviewer, critic, revision round, decision + reports): waiting, running (pulsing), done, or not run when the submission is returned at the gate;
+- the latest pipeline steps and model calls, one line each, in the colour of the agent that produced them.
+
+When the review finishes, the *Review Results* tab opens automatically with: a decision card in the decision's colour and one plain sentence on what it means; five numbers (findings, evidence located, need human review, critical + major, score); the PDF reports (final, administrative, scientific) ready to download; the executive summary; and the findings as expandable rows with severity and status badges, most severe first, with three filters (domain, severity, status). The status legend says it on the page: "evidence located" and "rule check" do not prove that a finding is correct.
+
+On Windows, `start_demo.bat` starts the service and this product together and opens both pages. The version before this redesign is tagged `gradio-before-redesign`.
 
 ## Safe demo
 
