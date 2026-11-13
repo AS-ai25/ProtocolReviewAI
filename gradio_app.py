@@ -431,7 +431,8 @@ SIDE_CARD = ('<div class="pr-side"><b>What happens next</b><ol>'
 
 
 def note(text) -> str:
-    return f'<div class="note">{esc(text)}</div>' if text else ""
+    """The run status line with its label; nothing at all when there is no status yet."""
+    return f'<div class="pr-lab" style="margin:2px 0 5px">Run status</div><div class="note">{esc(text)}</div>' if text else ""
 
 
 IDLE_PROGRESS = ('<div class="pr-steps">' + "".join(
