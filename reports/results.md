@@ -4,7 +4,7 @@ Generated 2026-10-29 20:59 by `eval/ablation.py`, model `claude-opus-5-5`.
 Test set: 5 labeled case(s) - `nct01977547` (9 labels), `nct04084990` (9 labels), `nct05199324` (9 labels), `nct05698277` (10 labels), `nct06846736` (9 labels).
 All rows run with the evaluation gate bypass (`force_scientific`): the scientific stage runs even when the administrative gate fails; the decision stays RETURNED_ADMIN in that case.
 
-Re-scored 2026-11-08 17:21 by `eval/rescore.py` from the saved findings of run(s) `20261029-205913`, `20261108-154153` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; rows 2 and 3 re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call'; row 0 (rules only) and the protocol-level bootstrap added (mentor M2, M9); rows 2', 3', 4' are the v1.7 run of 8 November (tool use + deterministic evidence tools, knowledge base kb-v2). Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified. Row 0 (rules only) is computed from the deterministic findings saved with the runs.
+Re-scored 2026-11-13 12:23 by `eval/rescore.py` from the saved findings of run(s) `20261029-205913`, `20261108-154153`, `20261113-115645` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; rows 2 and 3 re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call'; row 0 (rules only) and the protocol-level bootstrap added (mentor M2, M9); rows 2', 3', 4' are the v1.7 run of 8 November (tool use + deterministic evidence tools, knowledge base kb-v2). 2026-11-13: rows 4-S and 4-H are the model comparison (mentor M8): the full system on the current code and kb-v2 with Claude Sonnet 5.5 and Claude Haiku 5.5, same settings as the Opus rows. Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified. Row 0 (rules only) is computed from the deterministic findings saved with the runs.
 
 ## Ablation table
 
@@ -18,6 +18,8 @@ Re-scored 2026-11-08 17:21 by `eval/rescore.py` from the saved findings of run(s
 | 2' | Single agent with tool use + code verification | 18% (10/57) | 46% (21/46) | 48 | 5 | 728,543 / 101,466 | 882 s |
 | 3' | Full system without the critic, reviewer with tool use | 17% (12/70) | 59% (27/46) | 79 | 15 | 1,042,678 / 133,876 | 1190 s |
 | 4' | Full system, reviewer and critic with tool use | 21% (17/80) | 65% (30/46) | 145 | 30 | 3,654,874 / 388,308 | 3418 s |
+| 4-S | Full system, current code, Claude Sonnet 5.5 | 16% (10/64) | 52% (24/46) | 94 | 30 | 1,234,105 / 99,745 | 693 s |
+| 4-H | Full system, current code, Claude Haiku 5.5 | 15% (10/66) | 52% (24/46) | 112 | 30 | 1,447,654 / 210,965 | 911 s |
 
 Primary metric (charter v1.4, locked): precision of verified findings against blind human labels on the real-protocol test set, with recall of labeled findings as the companion metric. Unverified findings are routed to a human and counted separately, not as claims.
 
@@ -67,6 +69,16 @@ Matching rule: a predicted finding matches a labeled one when the domain matches
 | Full system, reviewer and critic with tool use | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 12 | 1 | 31 | 7/9 | OTHER, OTHER | CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, OTHER, CONSENT_GAP, FORMAT_ISSUE, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, OTHER, RANDOMIZATION_METHOD_UNSPECIFIED, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 1,005,419 / 79,231 | 694.7 |
 | Full system, reviewer and critic with tool use | nct05698277 | RETURNED_ADMIN (RETURNED_ADMIN) | 16 | 1 | 27 | 5/10 | INTERNAL_CONTRADICTION, MISSING_REGISTRY_ID, OTHER, OTHER, OTHER | CONSENT_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, OTHER, REGISTRY_MISMATCH, CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES, OTHER, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 664,656 / 78,401 | 698.8 |
 | Full system, reviewer and critic with tool use | nct06846736 | RETURNED_ADMIN (RETURNED_ADMIN) | 22 | 6 | 27 | 6/9 | MISSING_REGISTRY_ID, OTHER, OTHER | CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DATE, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, OTHER, REGISTRY_MISMATCH, CONSENT_GAP, ETHICS_GAP, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, UNJUSTIFIED_SAMPLE_SIZE | 6 | 360,774 / 73,424 | 644.9 |
+| Full system, current code, Claude Sonnet 5.5 | nct01977547 | RETURNED_ADMIN (RETURNED_ADMIN) | 11 | 2 | 17 | 5/9 | OTHER, METHOD_UNSPECIFIED, OTHER, OTHER | INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, UNJUSTIFIED_SAMPLE_SIZE | 6 | 357,850 / 19,367 | 136.6 |
+| Full system, current code, Claude Sonnet 5.5 | nct04084990 | RETURNED_ADMIN (RETURNED_ADMIN) | 8 | 2 | 26 | 5/9 | MISSING_REGISTRY_ID, MISSING_VERSION, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, REGISTRY_MISMATCH, CONSENT_GAP, ETHICS_GAP, INTERNAL_CONTRADICTION, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 204,529 / 24,023 | 162.0 |
+| Full system, current code, Claude Sonnet 5.5 | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 9 | 0 | 19 | 5/9 | OTHER, OTHER, OTHER, OTHER | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, FORMAT_ISSUE, INCONSISTENT_SAMPLE_SIZE, METHOD_UNSPECIFIED, OTHER, RANDOMIZATION_METHOD_UNSPECIFIED, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 303,152 / 19,406 | 141.7 |
+| Full system, current code, Claude Sonnet 5.5 | nct05698277 | RETURNED_ADMIN (RETURNED_ADMIN) | 16 | 0 | 17 | 3/10 | INTERNAL_CONTRADICTION, MISSING_REGISTRY_ID, OTHER, OTHER, OTHER, OTHER, OTHER | CONSENT_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 231,916 / 19,020 | 129.4 |
+| Full system, current code, Claude Sonnet 5.5 | nct06846736 | RETURNED_ADMIN (RETURNED_ADMIN) | 20 | 6 | 15 | 6/9 | MISSING_REGISTRY_ID, OTHER, OTHER | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, REGISTRY_MISMATCH, ETHICS_GAP, METHOD_UNSPECIFIED, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH | 6 | 136,658 / 17,929 | 123.4 |
+| Full system, current code, Claude Haiku 5.5 | nct01977547 | RETURNED_ADMIN (RETURNED_ADMIN) | 14 | 1 | 21 | 2/9 | OTHER, METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_DOCUMENT, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, REGISTRY_MISMATCH, SAFETY_GAP | 6 | 441,196 / 40,113 | 180.9 |
+| Full system, current code, Claude Haiku 5.5 | nct04084990 | RETURNED_ADMIN (RETURNED_ADMIN) | 9 | 2 | 31 | 7/9 | MISSING_REGISTRY_ID, MISSING_VERSION | FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, REGISTRY_MISMATCH, CONSENT_GAP, ETHICS_GAP, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 261,256 / 48,672 | 200.6 |
+| Full system, current code, Claude Haiku 5.5 | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 8 | 0 | 12 | 5/9 | INTERNAL_CONTRADICTION, OTHER, OTHER, OTHER | FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, CONSENT_GAP, INCONSISTENT_SAMPLE_SIZE, METHOD_UNSPECIFIED, OTHER, RANDOMIZATION_METHOD_UNSPECIFIED | 6 | 287,980 / 15,557 | 71.5 |
+| Full system, current code, Claude Haiku 5.5 | nct05698277 | RETURNED_ADMIN (RETURNED_ADMIN) | 14 | 2 | 28 | 4/10 | MISSING_REGISTRY_ID, OTHER, OTHER, OTHER, OTHER, OTHER | CONSENT_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, REGISTRY_MISMATCH, SAFETY_GAP, CONSENT_GAP, ETHICS_GAP, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, METHOD_UNSPECIFIED, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, SAFETY_GAP | 6 | 313,792 / 66,694 | 284.8 |
+| Full system, current code, Claude Haiku 5.5 | nct06846736 | RETURNED_ADMIN (RETURNED_ADMIN) | 21 | 5 | 20 | 6/9 | MISSING_REGISTRY_ID, OTHER, OTHER | CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, OTHER, CONSENT_GAP, ETHICS_GAP, FORMAT_ISSUE, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, UNJUSTIFIED_SAMPLE_SIZE | 6 | 143,430 / 39,929 | 173.0 |
 
 ## Reading the rows
 
@@ -88,6 +100,8 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 | 2' | Single agent with tool use + code verification | 29% (7/24) | 49% (18/37) | 33 |
 | 3' | Full system without the critic, reviewer with tool use | 31% (9/29) | 65% (24/37) | 47 |
 | 4' | Full system, reviewer and critic with tool use | 36% (13/36) | 70% (26/37) | 113 |
+| 4-S | Full system, current code, Claude Sonnet 5.5 | 23% (7/30) | 57% (21/37) | 69 |
+| 4-H | Full system, current code, Claude Haiku 5.5 | 25% (6/24) | 54% (20/37) | 87 |
 
 | Configuration | Case | Verified | Matched verified | Unverified | Coverage | Missed labels |
 |---|---|---|---|---|---|---|
@@ -131,6 +145,16 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 | Full system, reviewer and critic with tool use | nct05199324 | 5 | 1 | 26 | 7/9 | OTHER, OTHER |
 | Full system, reviewer and critic with tool use | nct05698277 | 8 | 1 | 22 | 5/8 | OTHER, OTHER, OTHER |
 | Full system, reviewer and critic with tool use | nct06846736 | 7 | 3 | 21 | 3/5 | OTHER, OTHER |
+| Full system, current code, Claude Sonnet 5.5 | nct01977547 | 6 | 2 | 12 | 5/8 | METHOD_UNSPECIFIED, OTHER, OTHER |
+| Full system, current code, Claude Sonnet 5.5 | nct04084990 | 5 | 2 | 18 | 5/7 | INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED |
+| Full system, current code, Claude Sonnet 5.5 | nct05199324 | 4 | 0 | 15 | 5/9 | OTHER, OTHER, OTHER, OTHER |
+| Full system, current code, Claude Sonnet 5.5 | nct05698277 | 8 | 0 | 13 | 3/8 | OTHER, OTHER, OTHER, OTHER, OTHER |
+| Full system, current code, Claude Sonnet 5.5 | nct06846736 | 7 | 3 | 11 | 3/5 | OTHER, OTHER |
+| Full system, current code, Claude Haiku 5.5 | nct01977547 | 5 | 1 | 15 | 2/8 | METHOD_UNSPECIFIED, METHOD_UNSPECIFIED, OTHER, OTHER, OTHER, OTHER |
+| Full system, current code, Claude Haiku 5.5 | nct04084990 | 5 | 2 | 23 | 7/7 | - |
+| Full system, current code, Claude Haiku 5.5 | nct05199324 | 2 | 0 | 10 | 5/9 | INTERNAL_CONTRADICTION, OTHER, OTHER, OTHER |
+| Full system, current code, Claude Haiku 5.5 | nct05698277 | 6 | 1 | 23 | 3/8 | OTHER, OTHER, OTHER, OTHER, OTHER |
+| Full system, current code, Claude Haiku 5.5 | nct06846736 | 6 | 2 | 16 | 3/5 | OTHER, OTHER |
 
 
 ## Uncertainty: protocol-level bootstrap (B=2000, seed 20261108, 5 protocols)
@@ -147,6 +171,8 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 2' Single agent with tool use + code verification | 11% - 24% | 38% - 53% | 18% - 43% | 33% - 63% |
 | 3' Full system without the critic, reviewer with tool use | 10% - 24% | 44% - 73% | 17% - 48% | 49% - 83% |
 | 4' Full system, reviewer and critic with tool use | 12% - 29% | 55% - 76% | 21% - 49% | 55% - 85% |
+| 4-S Full system, current code, Claude Sonnet 5.5 | 3% - 27% | 40% - 62% | 7% - 40% | 46% - 66% |
+| 4-H Full system, current code, Claude Haiku 5.5 | 7% - 21% | 35% - 69% | 15% - 34% | 34% - 79% |
 
 | Gap | View | Precision gap: mean (95% CI), P(gap <= 0) | Recall gap: mean (95% CI), P(gap <= 0) |
 |---|---|---|---|
@@ -168,6 +194,13 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 2' vs 2 | all | 0% (-10% to 7%), P=0.44 | 0% (-8% to 9%), P=0.58 |
 | 2' vs 3 | all | -2% (-10% to 4%), P=0.68 | -9% (-20% to 7%), P=0.92 |
 | 2' vs 4 | all | -6% (-17% to 4%), P=0.84 | -28% (-33% to -24%), P=1.00 |
+| 4-S vs 2 | all | -2% (-16% to 11%), P=0.60 | 7% (-6% to 20%), P=0.22 |
+| 4-S vs 4 | all | -8% (-23% to 7%), P=0.83 | -22% (-30% to -11%), P=1.00 |
+| 4-S vs 4' | all | -6% (-11% to 0%), P=0.97 | -13% (-22% to -4%), P=1.00 |
+| 4-H vs 2 | all | -3% (-10% to 5%), P=0.72 | 6% (-9% to 20%), P=0.24 |
+| 4-H vs 4 | all | -9% (-19% to 2%), P=0.93 | -22% (-44% to -4%), P=1.00 |
+| 4-H vs 4' | all | -6% (-15% to 1%), P=0.94 | -13% (-24% to -2%), P=1.00 |
+| 4-S vs 4-H | all | 1% (-8% to 9%), P=0.42 | 0% (-15% to 20%), P=0.57 |
 | 4 vs 1 | scientific | 5% (-1% to 12%), P=0.07 | 21% (3% to 33%), P=0.01 |
 | 4 vs 2 | scientific | 9% (6% to 13%), P=0.00 | 32% (22% to 41%), P=0.00 |
 | 4 vs 3 | scientific | 1% (-6% to 8%), P=0.38 | 21% (3% to 42%), P=0.01 |
@@ -186,6 +219,13 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 2' vs 2 | scientific | 5% (-7% to 13%), P=0.24 | 3% (-6% to 10%), P=0.38 |
 | 2' vs 3 | scientific | -3% (-13% to 8%), P=0.70 | -9% (-27% to 10%), P=0.87 |
 | 2' vs 4 | scientific | -4% (-19% to 5%), P=0.66 | -30% (-34% to -26%), P=1.00 |
+| 4-S vs 2 | scientific | -1% (-21% to 20%), P=0.55 | 11% (-3% to 25%), P=0.10 |
+| 4-S vs 4 | scientific | -10% (-32% to 12%), P=0.80 | -21% (-26% to -12%), P=1.00 |
+| 4-S vs 4' | scientific | -12% (-20% to -5%), P=1.00 | -13% (-26% to 3%), P=0.96 |
+| 4-H vs 2 | scientific | -0% (-14% to 14%), P=0.53 | 8% (-11% to 26%), P=0.24 |
+| 4-H vs 4 | scientific | -9% (-27% to 8%), P=0.82 | -24% (-46% to -6%), P=1.00 |
+| 4-H vs 4' | scientific | -11% (-19% to -3%), P=1.00 | -16% (-24% to -6%), P=1.00 |
+| 4-S vs 4-H | scientific | -1% (-12% to 10%), P=0.59 | 3% (-16% to 24%), P=0.44 |
 
 
 ## Critic contribution (full system, scientific findings)
