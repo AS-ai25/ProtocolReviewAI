@@ -67,7 +67,27 @@ CSS = """
 #hero h1{color:white!important;font-size:22px!important;margin:2px 0 0!important}
 #hero p{color:#d7e4ec!important;margin:3px 0 0!important;font-size:13.5px}
 #hero .disclaimer{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9cddb}
-/* connection: a small status pill and a small button on one line */
+/* one visual language: quiet labels instead of filled chips, fine buttons of one size, soft corners */
+.gradio-container{--block-title-background-fill:transparent!important;--block-title-text-color:var(--body-text-color-subdued)!important;--block-label-background-fill:transparent!important;--block-label-text-color:var(--body-text-color-subdued)!important;--block-label-border-width:0px!important;--block-label-shadow:none!important;--block-radius:10px!important;--input-radius:8px!important;--button-large-radius:8px!important;--button-medium-radius:8px!important;--button-small-radius:8px!important}
+span[data-testid="block-info"]{padding:0!important;font-weight:600!important;font-size:12.5px!important}
+label[data-testid="block-label"]{font-weight:600!important;font-size:12.5px!important;box-shadow:none!important;border:0!important}
+.gradio-container button.primary,.gradio-container button.secondary{font-size:13px!important;font-weight:600!important;padding:6px 16px!important;min-height:0!important;line-height:1.35!important}
+/* compact upload: one fine line instead of a tall drop area */
+#upload button.upload-container{min-height:0!important;padding:6px 12px!important}
+#upload [data-testid="upload-text"]{flex-direction:row!important;gap:8px!important;font-size:13.5px!important;line-height:1.3!important;padding:0!important;min-height:0!important;align-items:center!important;flex-wrap:wrap;justify-content:center}
+#upload [data-testid="upload-icon"]{width:20px!important;margin:0!important}
+#upload .or{margin:0 2px!important}
+/* label on the left, field on the right */
+#nctrow{align-items:center!important;gap:12px!important}
+#nctlab{flex:0 0 auto!important;min-width:0!important;width:auto!important}
+.pr-lab{font-weight:600;font-size:12.5px;color:var(--body-text-color-subdued);white-space:nowrap}
+/* side card: the stages with their colours */
+.pr-side{border:1px solid var(--border-color-primary,#cbd5e1);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--body-text-color)}
+.pr-side b{font-size:13.5px}
+.pr-side ol{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.pr-side li i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:8px}
+.pr-side p{margin:8px 0 0;font-size:12.5px;color:var(--body-text-color-subdued)}
+/* connection: a small button and a small status pill on one line */
 #topbar{align-items:center!important;gap:10px!important;margin:2px 0 4px}
 #topbar>div{min-width:0!important}
 .pr-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:4px 14px;font-size:12.5px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--body-text-color)}
@@ -276,7 +296,8 @@ def _results_bundle(run_id):
     """Everything the results tab shows for one review: card, summary text, findings, warning, states, PDFs, filters reset."""
     summary, findings, card, narrative, warning = _read_summary(run_id)
     reset = gr.update(value="All")
-    return (card, narrative, render_findings(findings), warning, summary, findings, _pdf_reports(run_id, summary),
+    pdfs = _pdf_reports(run_id, summary)
+    return (card, narrative, render_findings(findings), warning, summary, findings, gr.update(value=pdfs, visible=bool(pdfs)),
             reset, reset, reset)
 
 
@@ -305,9 +326,9 @@ def start_review(pdf_path, nct_id, confirmation):
         data = _request("POST", "/webhook/protocol", protected=True,
                         files={"file":(p.name,f,"application/pdf")},
                         data={"nct_id":nct_id,"source":"gradio_product","config":"agents_full","force_scientific":"false"}).json()
-    return data["run_id"],(f"Review started. Run ID: {data['run_id']}. This page follows the review live; the results open "
-                           "automatically when it finishes (about one minute if the submission is returned at the administrative "
-                           "gate, up to about eight minutes for a full review).")
+    return data["run_id"],note(f"Review started. Run ID: {data['run_id']}. This page follows the review live; the results open "
+                               "automatically when it finishes (about one minute if the submission is returned at the administrative "
+                               "gate, up to about eight minutes for a full review).")
 
 
 # ------------------------------------------------------------------ live progress: stage chips + coloured agent log
@@ -387,6 +408,18 @@ def progress_html(events, started_at=0.0, finished=False):
     return head + f'<div class="pr-steps">{"".join(chips)}</div><div class="pr-log">{log}</div>'
 
 
+SIDE_CARD = ('<div class="pr-side"><b>What happens next</b><ol>'
+             + "".join(f'<li style="--c:{STAGE_COLORS[k]}"><i></i>{esc(t)}</li>' for k, t in (
+                 ("intake", "Intake and document checks"), ("administrative", "Administrative screening (the gate)"),
+                 ("scientific_reviewer", "Scientific review, when the gate is passed"), ("scientific_critic", "Critic and evidence checks"),
+                 ("revision", "One focused revision round, if the critic asks"), ("final", "Decision support report")))
+             + '</ol><p>A failed agent always sends the review to a person. A technical failure never means PASS.</p></div>')
+
+
+def note(text) -> str:
+    return f'<div class="note">{esc(text)}</div>' if text else ""
+
+
 IDLE_PROGRESS = ('<div class="pr-steps">' + "".join(
     f'<div class="pr-step todo" style="--c:{STAGE_COLORS[k]}"><small>STEP {n}</small>{esc(label)}</div>' for n, (k, label) in enumerate(STATIONS, 1))
     + '</div><div class="pr-empty">The stages light up here, in each agent\'s colour, once a review is started.</div>')
@@ -409,8 +442,8 @@ def poll_review(run_id, started_at):
     if not finished:
         return (keep, progress) + idle + (keep, keep)
     bundle = _results_bundle(run_id)
-    done = (f"Review finished: {summary.get('decision') or summary.get('status')}. {summary.get('n_findings', 0)} findings. "
-            "The results are open in the Review Results tab.")
+    done = note(f"Review finished: {summary.get('decision') or summary.get('status')}. {summary.get('n_findings', 0)} findings. "
+                "The results are open in the Review Results tab.")
     return (done, progress) + bundle + (gr.Tabs(selected="results"), gr.Timer(active=False))
 
 
@@ -486,8 +519,8 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             "<div class='disclaimer'>Decision support only. Not an IRB approval, clinical validation or substitute for expert judgment. "
             "Do not upload confidential hospital protocols without organizational authorization.</div></div>")
     with gr.Row(elem_id="topbar"):
-        connected=gr.HTML('<span class="pr-pill" style="--c:#7b8794"><i></i>Checking the connection ...</span>')
         check=gr.Button("Check connection",variant="secondary",size="sm",scale=0,min_width=150)
+        connected=gr.HTML('<span class="pr-pill" style="--c:#7b8794"><i></i>Checking the connection ...</span>')
     check.click(ping,outputs=connected)
     demo.load(ping,outputs=connected)      # checked on every page load, not once at import time
     run_state=gr.State("")
@@ -500,13 +533,16 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("Only the full review workflow is available here. Experimental configurations and administrative gate bypass are intentionally hidden.")
             with gr.Row():
                 with gr.Column(scale=2):
-                    uploaded=gr.File(label="Clinical study protocol (PDF)",file_types=[".pdf"],type="filepath")
-                    nct=gr.Textbox(label="ClinicalTrials.gov ID (optional)",placeholder="NCT12345678")
+                    uploaded=gr.File(label="Clinical study protocol (PDF)",file_types=[".pdf"],type="filepath",height=96,elem_id="upload")
+                    with gr.Row(elem_id="nctrow"):
+                        gr.HTML("<span class='pr-lab'>ClinicalTrials.gov ID (optional)</span>",elem_id="nctlab")
+                        nct=gr.Textbox(show_label=False,container=False,placeholder="NCT12345678",max_lines=1,scale=1)
                     authorized=gr.Checkbox(label="I confirm I am authorized to process this document and understand this starts a paid LLM review.")
-                    start=gr.Button("Start full protocol review",variant="primary")
-                    start_feedback=gr.Textbox(label="Run status",interactive=False)
+                    with gr.Row():
+                        start=gr.Button("Start full protocol review",variant="primary",size="sm",scale=0,min_width=230)
+                    start_feedback=gr.HTML("")
                 with gr.Column(scale=1):
-                    gr.Markdown("### What happens next?\n1. Intake and document checks\n2. Administrative screening\n3. Scientific review, when applicable\n4. Critic and evidence checks\n5. Decision support report\n\n**Important:** a failed agent requires human review. A technical failure must never mean PASS.")
+                    gr.HTML(SIDE_CARD)
             gr.Markdown("### Live progress\nThe stages and the agents' steps appear here while the review runs; the page refreshes by itself every few seconds.")
             progress=gr.HTML(IDLE_PROGRESS)
             timer=gr.Timer(POLL_SECONDS,active=False)
@@ -523,7 +559,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
                 load=gr.Button("Load review results",variant="primary",size="sm",scale=0,min_width=190)
             overview=gr.HTML('<div class="note">Choose a saved review or enter a Run ID.</div>')
             warning=gr.Markdown()
-            pdf_reports=gr.File(label="Reports (PDF): final, administrative, scientific",file_count="multiple",interactive=False)
+            pdf_reports=gr.File(label="Reports (PDF): final, administrative, scientific",file_count="multiple",interactive=False,visible=False)
             narrative=gr.Textbox(label="Executive summary",lines=9,max_lines=80,interactive=False)   # grows with the text, never cut
             gr.Markdown("### Evidence-linked findings")
             with gr.Row():
@@ -541,7 +577,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("Reports are **never emailed automatically** by this product. To share one, select a recipient, preview the message, review the report, confirm, and click **Send email**. Sending requires approved SMTP configuration.")
             with gr.Row():
                 export=gr.Button("Prepare final report for download",size="sm",scale=0,min_width=270)
-            report_file=gr.File(label="Download final report",interactive=False)
+            report_file=gr.File(label="Download final report",interactive=False,height=84)
             export_status=gr.Textbox(label="Report status",interactive=False)
             export.click(get_report,inputs=run_state,outputs=[report_file,export_status])
             gr.Markdown("### Email preview")
