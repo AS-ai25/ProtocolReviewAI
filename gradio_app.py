@@ -433,7 +433,7 @@ def note(text) -> str:
 
 IDLE_PROGRESS = ('<div class="pr-steps">' + "".join(
     f'<div class="pr-step todo" style="--c:{STAGE_COLORS[k]}"><small>STEP {n}</small>{esc(label)}</div>' for n, (k, label) in enumerate(STATIONS, 1))
-    + '</div><div class="pr-empty">The stages light up here, in each agent\'s colour, once a review is started.</div>')
+    + '</div>')
 
 
 def poll_review(run_id, started_at):
@@ -541,7 +541,6 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
     with gr.Tabs() as tabs:
         with gr.Tab("New Review",id="new"):
             gr.Markdown("### Start a protocol review")
-            gr.Markdown("Only the full review workflow is available here. Experimental configurations and administrative gate bypass are intentionally hidden.")
             with gr.Row():
                 with gr.Column(scale=2):
                     uploaded=gr.File(label="Clinical study protocol (PDF)",file_types=[".pdf"],type="filepath",height=96,elem_id="upload")
@@ -554,7 +553,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
                     start_feedback=gr.HTML("")
                 with gr.Column(scale=1):
                     gr.HTML(SIDE_CARD)
-            gr.Markdown("### Live progress\nThe stages and the agents' steps appear here while the review runs; the page refreshes by itself every few seconds.")
+            gr.Markdown("### Live progress")
             progress=gr.HTML(IDLE_PROGRESS)
             timer=gr.Timer(POLL_SECONDS,active=False)
         with gr.Tab("Review Results",id="results"):
