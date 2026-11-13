@@ -85,6 +85,7 @@ label[data-testid="block-label"]{font-weight:600!important;font-size:12.5px!impo
 .pr-side{border:1px solid var(--border-color-primary,#cbd5e1);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--body-text-color)}
 .pr-side b{font-size:13.5px}
 .pr-side ol{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.pr-side li{color:var(--ct)}
 .pr-side li i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:8px}
 .pr-side p{margin:8px 0 0;font-size:12.5px;color:var(--body-text-color-subdued)}
 /* connection: a small button and a small status pill on one line */
@@ -100,19 +101,27 @@ label[data-testid="block-label"]{font-weight:600!important;font-size:12.5px!impo
 /* live progress: stage chips and the coloured agent log (colours of the research dashboard) */
 .pr-head{font-size:14px;margin:2px 0 8px;color:var(--body-text-color)}
 .pr-steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
-.pr-step{flex:1;min-width:118px;text-align:center;padding:9px 6px;border-radius:10px;font-size:13px;line-height:1.25;
-  border:1px solid var(--border-color-primary,#cbd5e1);color:var(--body-text-color-subdued,#64748b);background:transparent}
-.pr-step small{display:block;font-size:10.5px;letter-spacing:.5px;opacity:.85}
-.pr-step.done{border-color:var(--c);background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--body-text-color)}
-.pr-step.now{border-color:var(--c);background:var(--c);color:#0e1420;font-weight:700;animation:pr-pulse 1.4s infinite}
-.pr-step.skip{opacity:.5;border-style:dashed}
+/* every stage keeps its own colour, in the border and in the text, as on the research dashboard;
+   --ct is that colour as text: the pure colour on the dark theme, a darker shade of it on the light theme */
+.pr-step,.pr-ev,.pr-side li{--ct:color-mix(in srgb,var(--c) 52%,#0f172a)}
+/* one selector per rule: Gradio's CSS prefixer breaks a comma list that starts with .dark */
+.dark .pr-step{--ct:var(--c)}
+.dark .pr-ev{--ct:var(--c)}
+.dark .pr-side li{--ct:var(--c)}
+.pr-step{flex:1;min-width:118px;text-align:center;padding:9px 6px;border-radius:10px;font-size:13.5px;line-height:1.25;font-weight:600;
+  border:1.5px solid var(--c);color:var(--ct);background:transparent}
+.pr-step small{display:block;font-size:10.5px;letter-spacing:.5px;opacity:.85;font-weight:500}
+.pr-step.todo{opacity:.8}
+.pr-step.done{background:color-mix(in srgb,var(--c) 18%,transparent)}
+.pr-step.now{background:var(--c);color:#0e1420;font-weight:700;animation:pr-pulse 1.4s infinite}
+.pr-step.skip{opacity:.42;border-style:dashed}
 @keyframes pr-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 70%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
 .pr-log{display:flex;flex-direction:column;gap:4px}
 .pr-ev{border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 11%,transparent);border-radius:0 7px 7px 0;
   padding:5px 10px;font-size:13px;color:var(--body-text-color);display:flex;gap:9px;align-items:baseline}
 .pr-ev .t{font-family:Consolas,monospace;font-size:12px;opacity:.7;white-space:nowrap}
 .pr-ev .a{background:var(--c);color:#0e1420;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
-.pr-ev .x{flex:1;word-break:break-word}
+.pr-ev .x{flex:1;word-break:break-word;color:var(--ct)}
 .pr-empty{padding:14px;border:1px dashed var(--border-color-primary,#cbd5e1);border-radius:10px;color:var(--body-text-color-subdued,#64748b);font-size:13px}
 
 /* results: decision card, numbers, findings */
