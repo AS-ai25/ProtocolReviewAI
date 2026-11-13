@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "eval"))
 
-from ablation import CONFIGS, ROW_NUM, load_cases, render_markdown  # noqa: E402
+from ablation import ALL_CONFIGS, CONFIGS, ROW_NUM, load_cases, render_markdown  # noqa: E402
 from matching import score_findings  # noqa: E402
 from protocol_review.config import settings  # noqa: E402
 
@@ -100,7 +100,7 @@ def rescore(summary: dict, cases: list[dict], stamp: str, *, domain: str | None 
     rows = []
     present = {r["key"] for r in summary["rows"]}
     if rules_row and present:
-        src_cfg = next(c for c in CONFIGS if c["key"] in present)
+        src_cfg = next(c for c in ALL_CONFIGS if c["key"] in present)
         per_case, totals = [], {"labels": 0, "tp": 0, "n_verified": 0, "matched_verified": 0, "n_unverified": 0,
                                 "llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "runtime_s": 0.0}
         for c in cases:
@@ -118,7 +118,7 @@ def rescore(summary: dict, cases: list[dict], stamp: str, *, domain: str | None 
         rows.append({"key": "rules_only", "label": "Rules only (29 deterministic checks, no LLM)", "kind": "rules", "kwargs": {},
                      "verified_precision": round(totals["matched_verified"] / totals["n_verified"], 3) if totals["n_verified"] else 0.0,
                      "coverage": round(totals["tp"] / totals["labels"], 3) if totals["labels"] else 1.0, **totals, "per_case": per_case})
-    for cfg in CONFIGS:
+    for cfg in ALL_CONFIGS:
         if cfg["key"] not in present:
             continue
         row_stamp = stamp_by_key.get(cfg["key"], stamp)
@@ -174,7 +174,12 @@ FROZEN_BASES = ("single_no_verification", "single_verified", "agents_no_critic")
 GAP_PAIRS = ([("agents_full", b) for b in FROZEN_BASES]
              + [("agents_full_tools", b) for b in FROZEN_BASES + ("agents_full", "single_tools", "agents_no_critic_tools")]
              + [("agents_no_critic_tools", b) for b in FROZEN_BASES + ("agents_full", "single_tools")]
-             + [("single_tools", b) for b in FROZEN_BASES + ("agents_full",)])
+             + [("single_tools", b) for b in FROZEN_BASES + ("agents_full",)]
+             # model comparison (mentor M8): another model in the full system against Opus (frozen row 4 and the tool-use row 4')
+             + [(m, b) for m in ("agents_full_v17", "agents_full_sonnet", "agents_full_haiku")
+                for b in ("single_verified", "agents_full", "agents_full_tools")]
+             + [("agents_full_sonnet", "agents_full_v17"), ("agents_full_haiku", "agents_full_v17"),
+                ("agents_full_sonnet", "agents_full_haiku")])
 
 
 def bootstrap(rows: list[dict], B: int = 2000, seed: int = 20261108) -> dict:

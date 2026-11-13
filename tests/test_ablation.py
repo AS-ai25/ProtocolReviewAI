@@ -121,3 +121,15 @@ def test_ablation_dry_run_writes_the_configuration_table(tmp_path, registry_fetc
     assert ablation.main(["--no-llm", "--no-registry", "--out", str(tmp_path / "cli.md"), "--results-dir", str(tmp_path / "r2"),
                           "--only", "single_verified", "--cases-glob", "synthetic_*.json"]) == 0
     assert (tmp_path / "cli.md").exists()
+
+
+def test_model_comparison_rows_are_opt_in_and_restore_the_model(tmp_path, registry_fetch):
+    """Mentor M8: the Sonnet / Haiku rows run only when named, record their model and leave the settings untouched."""
+    from protocol_review.config import settings
+    before = (settings.llm_model, settings.llm_fallbacks)
+    summary = ablation.run_ablation(ROOT / "eval" / "labeled_cases", tmp_path / "results.md", no_llm=True, registry_fetch=registry_fetch,
+                                    results_dir=tmp_path / "results", pattern="synthetic_*.json", only=["agents_full_haiku"])
+    assert [r["key"] for r in summary["rows"]] == ["agents_full_haiku"] and summary["rows"][0]["model"] == "mock"
+    assert (settings.llm_model, settings.llm_fallbacks) == before
+    assert {c["key"] for c in ablation.MODEL_CONFIGS} == {"agents_full_v17", "agents_full_sonnet", "agents_full_haiku"}
+    assert ablation.ROW_NUM["agents_full_sonnet"] == "4-S"

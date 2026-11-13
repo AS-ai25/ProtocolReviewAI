@@ -52,8 +52,21 @@ CONFIGS: list[dict] = [
     {"key": "agents_full_tools", "label": "Full system, reviewer and critic with tool use",
      "kind": "agents", "kwargs": {"force_scientific": True, "tool_use": True}},
 ]
+# Model comparison (mentor M8, "why Opus?"): the full system, same code and settings, with another model. Opt-in: these
+# rows run only when named with --only, so the default run and the frozen table keep their seven configurations.
+# `agents_full_v17` is the full system with the default model on the current code (rows 1-4 are frozen on the v1.6 code).
+MODEL_CONFIGS: list[dict] = [
+    {"key": "agents_full_v17", "label": "Full system, current code, Claude Opus 5.5",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5"},
+    {"key": "agents_full_sonnet", "label": "Full system, current code, Claude Sonnet 5.5",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-sonnet-5-5"},
+    {"key": "agents_full_haiku", "label": "Full system, current code, Claude Haiku 5.5",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-haiku-5-5", "fallbacks": False},   # no server-side fallback on Haiku 5.5
+]
+ALL_CONFIGS: list[dict] = CONFIGS + MODEL_CONFIGS
 ROW_NUM = {"rules_only": "0", "single_no_verification": "1", "single_verified": "2", "agents_no_critic": "3", "agents_full": "4",
-           "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'"}
+           "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'",
+           "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H"}
 
 
 def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
@@ -163,12 +176,21 @@ def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registr
     if not cases:
         raise SystemExit("no labeled cases with an existing PDF")
     rows = []
-    for cfg in CONFIGS:
-        if only and cfg["key"] not in only:
+    for cfg in ALL_CONFIGS:
+        if (only and cfg["key"] not in only) or (not only and cfg.get("model")):     # model rows are opt-in
             continue
         print(f"[{cfg['key']}] {cfg['label']}")
         llm = llm_factory() if llm_factory else None
-        rows.append(run_config(cfg, cases, no_llm=no_llm, registry_fetch=registry_fetch, llm=llm, stamp=stamp))
+        saved = (settings.llm_model, settings.llm_fallbacks)
+        try:
+            if cfg.get("model"):                       # same code and settings, another model for this row only
+                settings.llm_model = cfg["model"]
+                settings.llm_fallbacks = cfg.get("fallbacks", saved[1])
+            row = run_config(cfg, cases, no_llm=no_llm, registry_fetch=registry_fetch, llm=llm, stamp=stamp)
+            row["model"] = "mock" if no_llm else settings.llm_model
+        finally:
+            settings.llm_model, settings.llm_fallbacks = saved
+        rows.append(row)
     model = "mock" if no_llm else settings.llm_model
     md = render_markdown(rows, cases, no_llm=no_llm, started=started, model=model)
     out_md = Path(out_md); out_md.parent.mkdir(parents=True, exist_ok=True)
@@ -191,7 +213,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--results-dir", default=str(ROOT / "eval" / "results"))
     ap.add_argument("--no-llm", action="store_true", help="dry run with the MockLLM (no API calls)")
     ap.add_argument("--no-registry", action="store_true", help="do not call ClinicalTrials.gov (registry record = not available)")
-    ap.add_argument("--only", nargs="*", choices=[c["key"] for c in CONFIGS], help="run a subset of the configurations")
+    ap.add_argument("--only", nargs="*", choices=[c["key"] for c in ALL_CONFIGS],
+                    help="run a subset of the configurations; the model-comparison rows (agents_full_sonnet, agents_full_haiku, "
+                         "agents_full_v17) run only when named here")
     ap.add_argument("--cases-glob", default="*.json",
                     help="case files to load, e.g. 'nct*.json' for the real-protocol set only (default: all)")
     a = ap.parse_args(argv)
