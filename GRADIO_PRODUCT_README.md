@@ -39,6 +39,10 @@ When the review finishes, the *Review Results* tab opens automatically with: a d
 
 On Windows, `start_demo.bat` starts the service and this product together and opens both pages. The version before this redesign is tagged `gradio-before-redesign`.
 
+## Replay of a saved review
+
+In *Review Results*, **Replay saved review** shows the saved pipeline steps of a finished review in order, about ten times faster than they happened (a full review of about eight minutes plays in about 45 seconds), with the same stage chips and agent lines as a live run, and then opens its results. It reads the saved trace only: no model call, no cost. The page labels it as a replay (run id, speed, real duration) for its whole length, so it cannot be mistaken for a live run. Reviews made before 1 November 2026 have no saved steps and cannot be replayed.
+
 ## Safe demo
 
 Opening the product, refreshing history, loading a saved run, and downloading its report do not trigger LLM calls. Only clicking **Start full protocol review** triggers a new paid review. You must tick a confirmation checkbox first. This interface deliberately excludes force-scientific evaluation bypass, experimental model configurations and developer statistics.

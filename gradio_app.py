@@ -124,6 +124,9 @@ label[data-testid="block-label"]{font-weight:600!important;font-size:12.5px!impo
 .pr-ev .t{font-family:Consolas,monospace;font-size:12px;opacity:.7;white-space:nowrap}
 .pr-ev .a{background:var(--c);color:#0e1420;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
 .pr-ev .x{flex:1;word-break:break-word;color:var(--ct)}
+.pr-replay{display:inline-flex;gap:8px;align-items:center;border:1px dashed var(--body-text-color-subdued,#64748b);border-radius:999px;
+  padding:3px 14px;font-size:12px;letter-spacing:.4px;margin:0 0 8px;color:var(--body-text-color)}
+.pr-replay b{letter-spacing:1px}
 .pr-empty{padding:14px;border:1px dashed var(--border-color-primary,#cbd5e1);border-radius:10px;color:var(--body-text-color-subdued,#64748b);font-size:13px}
 
 /* results: decision card, numbers, findings */
@@ -381,7 +384,7 @@ def _elapsed(events, started_at, finished) -> int:
     return int(time.time() - started_at) if started_at else 0
 
 
-def progress_html(events, started_at=0.0, finished=False):
+def progress_html(events, started_at=0.0, finished=False, elapsed=None, banner=""):
     """Stage chips (pending / running / done / not run) and the latest pipeline lines, each in its agent's colour."""
     steps = [e for e in (events or []) if e.get("kind") in ("step", "llm_call")]
     seen, current, in_revision = [], "intake", False
@@ -406,7 +409,7 @@ def progress_html(events, started_at=0.0, finished=False):
         else:
             state, note = "todo", "waiting"
         chips.append(f'<div class="pr-step {state}" style="--c:{STAGE_COLORS[key]}"><small>STEP {n} · {note.upper()}</small>{esc(label)}</div>')
-    secs = _elapsed(steps, started_at, finished)
+    secs = int(elapsed) if elapsed is not None else _elapsed(steps, started_at, finished)
     label = "finished" if finished else dict(STATIONS).get(current, current)
     head = f'<div class="pr-head">Current stage: <b>{esc(label)}</b> &nbsp;·&nbsp; elapsed {secs // 60}:{secs % 60:02d}</div>'
     lines = []
@@ -416,7 +419,7 @@ def progress_html(events, started_at=0.0, finished=False):
         lines.append(f'<div class="pr-ev" style="--c:{color}"><span class="t">{esc((e.get("t") or "")[11:19])}</span>'
                      f'<span class="a">{esc(agent)}</span><span class="x">{esc(_event_text(e))}</span></div>')
     log = "".join(lines) or '<div class="pr-empty">Waiting for the first step ...</div>'
-    return head + f'<div class="pr-steps">{"".join(chips)}</div><div class="pr-log">{log}</div>'
+    return banner + head + f'<div class="pr-steps">{"".join(chips)}</div><div class="pr-log">{log}</div>'
 
 
 SIDE_CARD = ('<div class="pr-side"><b>What happens next</b><ol>'
@@ -456,6 +459,55 @@ def poll_review(run_id, started_at):
     done = note(f"Review finished: {summary.get('decision') or summary.get('status')}. {summary.get('n_findings', 0)} findings. "
                 "The results are open in the Review Results tab.")
     return (done, progress) + bundle + (gr.Tabs(selected="results"), gr.Timer(active=False))
+
+
+# ------------------------------------------------------------------ replay of a saved review (no model call)
+REPLAY_TICK_SECONDS = 1.0
+
+
+def _replay_banner(state) -> str:
+    return (f'<div class="pr-replay"><b>REPLAY</b> saved review {esc(state["run_id"])} · {state["speed"]:.0f}x speed · '
+            f'real duration {int(state["total"]) // 60}:{int(state["total"]) % 60:02d} · no model call</div>')
+
+
+def start_replay(run_id):
+    """Load the saved pipeline steps of a finished review and start showing them in order, accelerated."""
+    if not run_id:
+        raise gr.Error("Select a saved review or enter a Run ID first.")
+    summary = _request("GET", f"/runs/{run_id}/summary").json()
+    if summary.get("status") not in ("done", "failed"):
+        raise gr.Error("This review is still running: follow it live instead of replaying it.")
+    events = [e for e in _request("GET", f"/stats/trace/{run_id}").json() if e.get("kind") in ("step", "llm_call") and e.get("t")]
+    if not events:
+        raise gr.Error("This review has no saved pipeline steps to replay (reviews made before 1 November 2026 have none).")
+    t0 = datetime.fromisoformat(events[0]["t"])
+    for e in events:
+        e["offset"] = (datetime.fromisoformat(e["t"]) - t0).total_seconds()
+    total = max(events[-1]["offset"], 1.0)
+    ticks = max(12, min(45, round(total / 10)))             # a full review (about 8 minutes) plays in about 45 seconds
+    state = {"run_id": run_id, "events": events, "total": total, "ticks": ticks, "tick": 0,
+             "speed": total / (ticks * REPLAY_TICK_SECONDS)}
+    msg = note(f"Replaying the saved review {run_id}: the saved steps are shown in order, faster than they happened. "
+               "Nothing is sent to the model. The results open when the replay ends.")
+    first = progress_html([], finished=False, elapsed=0, banner=_replay_banner(state))
+    return state, msg, first, gr.Tabs(selected="new"), gr.Timer(active=True), gr.Timer(active=False)
+
+
+def replay_tick(state):
+    """One step of the replay: show the saved steps up to the current point; at the end, open the results."""
+    keep = gr.update()
+    idle = (keep,) * 10
+    if not state or not state.get("events"):
+        return (state, keep, keep) + idle + (keep, gr.Timer(active=False))
+    state = {**state, "tick": state["tick"] + 1}
+    virtual = min(state["total"], state["total"] * state["tick"] / state["ticks"])
+    shown = [e for e in state["events"] if e["offset"] <= virtual + 1e-6]
+    banner = _replay_banner(state)
+    if state["tick"] < state["ticks"]:
+        return (state, keep, progress_html(shown, finished=False, elapsed=virtual, banner=banner)) + idle + (keep, keep)
+    done = note(f"Replay finished: saved review {state['run_id']}. The results are open in the Review Results tab.")
+    final = progress_html(state["events"], finished=True, elapsed=state["total"], banner=banner)
+    return ({}, done, final) + _results_bundle(state["run_id"]) + (gr.Tabs(selected="results"), gr.Timer(active=False))
 
 
 def history():
@@ -538,6 +590,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
     summary_state=gr.State({})
     findings_state=gr.State([])
     started_state=gr.State(0.0)
+    replay_state=gr.State({})
     with gr.Tabs() as tabs:
         with gr.Tab("New Review",id="new"):
             gr.Markdown("### Start a protocol review")
@@ -556,6 +609,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("### Live progress")
             progress=gr.HTML(IDLE_PROGRESS)
             timer=gr.Timer(POLL_SECONDS,active=False)
+            replay_timer=gr.Timer(REPLAY_TICK_SECONDS,active=False)
         with gr.Tab("Review Results",id="results"):
             gr.Markdown("### Review outcome and findings")
             with gr.Row():
@@ -567,6 +621,7 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             with gr.Row():
                 manual_id=gr.Textbox(label="Or enter an existing Run ID",placeholder="run-id",scale=4)
                 load=gr.Button("Load review results",variant="primary",size="sm",scale=0,min_width=190)
+                replay=gr.Button("Replay saved review",variant="secondary",size="sm",scale=0,min_width=190)
             overview=gr.HTML('<div class="note">Choose a saved review or enter a Run ID.</div>')
             warning=gr.Markdown()
             pdf_reports=gr.File(label="Reports (PDF): final, administrative, scientific",file_count="multiple",interactive=False,visible=False)
@@ -610,7 +665,12 @@ with gr.Blocks(title="Clinical Protocol Review") as demo:
             gr.Markdown("### Designed for clinical research teams\nThis product is a user-facing layer over the project's existing FastAPI and Multi-Agent review engine. It does not expose evaluation configurations or model costs to end users.\n\n**What the output means**\n- PASS means screening criteria were met, not that the study is approved.\n- RETURNED_ADMIN flags administrative issues.\n- NEEDS_HUMAN_REVIEW requires human assessment.\n- MAJOR_CONCERNS flags substantial issues.\n- 'Verified' is a technical system status. It does not guarantee that the finding is correct or that the quote supports it.\n\n**Deployment**\nUse on localhost for demonstration. Organizational authentication, access controls, data retention policies, and approved email integration are required before real hospital deployment.")
     # Live follow-up of a review started from this page: the timer runs only between the click and the end of the review.
     start.click(start_review,inputs=[uploaded,nct,authorized],outputs=[run_state,start_feedback]).success(
-        lambda: (time.time(),progress_html([],time.time()),gr.Timer(active=True)),outputs=[started_state,progress,timer])
+        lambda: (time.time(),progress_html([],time.time()),gr.Timer(active=True),gr.Timer(active=False),{}),
+        outputs=[started_state,progress,timer,replay_timer,replay_state])
+    # Replay of a saved review: the saved steps, in order and accelerated, clearly labelled; read-only, no model call.
+    replay.click(get_run,inputs=[run_state,manual_id],outputs=run_state).then(
+        start_replay,inputs=run_state,outputs=[replay_state,start_feedback,progress,tabs,replay_timer,timer])
+    replay_timer.tick(replay_tick,inputs=replay_state,outputs=[replay_state,start_feedback,progress]+results_out+[tabs,replay_timer])
     timer.tick(poll_review,inputs=[run_state,started_state],outputs=[start_feedback,progress]+results_out+[tabs,timer])
     gr.HTML("<div id='footer'>Clinical Protocol Review · Research prototype · Decision support only · No model calls until Start full protocol review is clicked.</div>")
 
