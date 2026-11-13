@@ -67,6 +67,8 @@ CSS = """
 #hero h1{color:white!important;font-size:22px!important;margin:2px 0 0!important}
 #hero p{color:#d7e4ec!important;margin:3px 0 0!important;font-size:13.5px}
 #hero .disclaimer{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9cddb}
+/* one left and right edge for everything: custom HTML blocks start and end where the buttons, tabs and fields do */
+.gradio-container .html-container{padding-left:0!important;padding-right:0!important}
 /* one visual language: quiet labels instead of filled chips, fine buttons of one size, soft corners */
 .gradio-container{--block-title-background-fill:transparent!important;--block-title-text-color:var(--body-text-color-subdued)!important;--block-label-background-fill:transparent!important;--block-label-text-color:var(--body-text-color-subdued)!important;--block-label-border-width:0px!important;--block-label-shadow:none!important;--block-radius:10px!important;--input-radius:8px!important;--button-large-radius:8px!important;--button-medium-radius:8px!important;--button-small-radius:8px!important}
 span[data-testid="block-info"]{padding:0!important;font-weight:600!important;font-size:12.5px!important}
