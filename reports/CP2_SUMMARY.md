@@ -13,6 +13,7 @@ Updated 4 November 2026 after Ron's deliverables (knowledge base kb-v2, filled 3
 `reports/EVALUATION_AND_LIMITATIONS.md`, `reports/ABLATION_ANALYSIS.md`, `docs/CHARTER_CONSISTENCY_AUDIT.md`).
 Updated 8 November 2026 after the mentoring session: section 8 (row 0, bootstrap uncertainty, and the v1.7 tool-use rows
 2', 3', 4' run the same day). Sections 1-6 describe the frozen rows 1-4 and are unchanged.
+Updated 13 November 2026: section 10, the model comparison (full system with Sonnet 5.5 and Haiku 5.5, mentor M8).
 Updated 12 November 2026: section 9, Ron's second round of human evaluation (finding correctness on the 30 findings of
 4 November, 30 findings of row 4', 40 unmatched verified findings) and the business value hypothesis.
 
@@ -429,4 +430,76 @@ first-pass review with unsupported findings can add work instead of removing it.
 ### 9.7 Still open
 
 M2c (repeat runs of the same protocol), M3 (the unlabeled protocols), M4 (rule audit: the rule findings fail in every
-human sample so far), M8 (Sonnet comparison), expert adjudication of the flagged findings, a second annotator.
+human sample so far), expert adjudication of the flagged findings, a second annotator. M8 (model comparison) was run on
+13 November: section 10.
+
+## 10. Model comparison: the full system with Sonnet 5.5 and Haiku 5.5 (13 November 2026, mentor M8)
+
+The mentor's question: why Opus? Until this run every row used `claude-opus-5-5`, so the table said nothing about the
+model. Run of 13 November (stamp `20261113-115645`): the full system (four agents, critic, one revision round, no tool
+calling) on the current code and kb-v2, on the same five labeled protocols, with `claude-sonnet-5-5` (row 4-S) and
+`claude-haiku-5-5` (row 4-H). Same prompts, same effort setting (medium), same output cap, same matching rule; only the
+model changes. `eval/ablation.py --only agents_full_sonnet agents_full_haiku --cases-glob "nct*.json"`, merged into
+`reports/results.md` by `eval/rescore.py --stamp 20261029-205913,20261108-154153,20261113-115645`.
+
+### 10.1 Result (scientific view, 37 labels)
+
+| Row | Model | Precision of verified | Recall of labels | Unverified | Cost per protocol | Time per protocol |
+|---|---|---|---|---|---|---|
+| 2 Single LLM call + code verification | Opus 5.5 | 25% (17/68) | 46% (17/37) | 0 | USD 0.43 | 114 s |
+| 4 Full system (frozen, v1.6 code) | Opus 5.5 | 34% (38/112) | 78% (29/37) | 50 | USD 2.11 | 474 s |
+| 4' Full system with tool use (current code) | Opus 5.5 | 36% (13/36) | 70% (26/37) | 113 | USD 4.48 | 684 s |
+| 4-S Full system (current code) | Sonnet 5.5 | 23% (7/30) | 57% (21/37) | 69 | USD 0.69 | 139 s |
+| 4-H Full system (current code) | Haiku 5.5 | 25% (6/24) | 54% (20/37) | 87 | USD 0.09 | 182 s |
+
+Costs are list prices applied to the recorded tokens (Opus 4 / 20, Sonnet 2 / 10, Haiku 0.10 / 0.50 USD per million
+input / output tokens). Protocol-level bootstrap (B = 2000), scientific view:
+
+| Gap | Precision: mean (95% CI), P(gap <= 0) | Recall: mean (95% CI), P(gap <= 0) |
+|---|---|---|
+| 4-S vs 4 (Opus, frozen) | -10 pp (-32 to +12), P = 0.80 | **-21 pp (-26 to -12), P = 1.00** |
+| 4-H vs 4 (Opus, frozen) | -9 pp (-27 to +8), P = 0.82 | **-24 pp (-46 to -6), P = 1.00** |
+| 4-S vs 4' (Opus, same code) | **-12 pp (-20 to -5), P = 1.00** | -13 pp (-26 to +3), P = 0.96 |
+| 4-H vs 4' (Opus, same code) | **-11 pp (-19 to -3), P = 1.00** | **-16 pp (-24 to -6), P = 1.00** |
+| 4-S vs 2 (one Opus call) | -1 pp (-21 to +20), P = 0.55 | +11 pp (-3 to +25), P = 0.10 |
+| 4-H vs 2 (one Opus call) | 0 pp (-14 to +14), P = 0.53 | +8 pp (-11 to +26), P = 0.24 |
+| 4-S vs 4-H | -1 pp (-12 to +10), P = 0.59 | +3 pp (-16 to +24), P = 0.44 |
+
+### 10.2 Reading
+
+1. **The model matters for the scientific review.** With Sonnet or Haiku in all four agents the system finds 20-21 of
+   the 37 labeled scientific findings instead of 29 with Opus: 21 to 24 points less recall, below zero in every resample.
+   Against the Opus row on the same code (4'), precision is also lower by 11-12 points, again in every resample.
+2. **Four agents on a smaller model are about one call of the larger one.** Rows 4-S and 4-H cannot be distinguished
+   from row 2, the single Opus call with code verification (25% / 46%), on precision or on recall. The multi-agent
+   structure does not compensate for the model.
+3. **Sonnet and Haiku cannot be told apart on this set** (57% vs 54% recall, 23% vs 25% precision, intervals wide).
+   Haiku's recall swings more between protocols (2 of 8 on ABC PICU, 7 of 7 on SAFER; interval 34% to 79%).
+4. **Cost.** The full system costs USD 2.11 per protocol with Opus, 0.69 with Sonnet, 0.09 with Haiku. The scientific
+   reviewer and the critic are 80% of the Opus cost (section 3), and they are where the recall is lost.
+5. **Administrative labels: no visible difference, and too few to tell.** Of the nine administrative labels, Opus finds
+   5 (row 4) and 4 (row 4'), Sonnet 3, Haiku 4. A smoke run before the comparison showed a qualitative difference:
+   on the synthetic complete protocol Opus and Sonnet both noticed that the cited NCT number belongs to another trial
+   and returned the submission; Haiku did not notice and let it through the gate.
+6. **Reliability.** No agent failed in either run. Three scientific-reviewer answers were cut at the 16,000-token output
+   cap and succeeded on the automatic retry.
+
+### 10.3 What it means for the product
+
+* Keep Opus for the scientific reviewer and the critic. That is where the model earns its price: the recall gap is the
+   largest and the most stable difference in the whole table.
+* The coordinator's model call only writes the final summary, and the administrative gate rests on the 29 rules; a
+  cheaper model there (Sonnet, not Haiku, given the gate observation) would save about 10% of the cost. This hybrid was
+  **not run**: the comparison replaced the model in all four agents at once, so the saving is computed, the quality is
+  inferred.
+* If cost is the constraint, the choice on this evidence is not "the full system on a cheaper model": it is the single
+  Opus call (row 2) at USD 0.43, or the full system on Haiku at USD 0.09, which measure the same on this set.
+
+### 10.4 Limits
+
+One run per model, five protocols, the label set of section 5. Rows 4-S and 4-H run on the current code (deterministic
+evidence floor, kb-v2); the frozen Opus row 4 does not, so the precision comparison uses row 4' (same code, but with
+tool calling). The matching Opus row without tool calling on the current code (`agents_full_v17`, row 4* in the runner)
+was not run (about USD 10.5); recall is barely affected by the evidence floor, so the recall comparison against row 4
+stands without it. Effort was left at `medium` for all three models; Sonnet 5.5 and Haiku 5.5 calibrate effort levels
+differently from Opus, and a higher effort setting for them was not tried.

@@ -1,5 +1,10 @@
 # Plan v1.7: real tools for the agents, and the mentor's findings of 8 November
 
+**Status (13 November 2026):** M8 done: full system with Sonnet 5.5 and Haiku 5.5 on the five labeled protocols
+(`reports/CP2_SUMMARY.md` section 10). Scientific recall 57% / 54% against 78% for Opus (lower in every resample); both
+indistinguishable from the single Opus call; cost per protocol 0.69 / 0.09 USD against 2.11. Opus stays for the scientific
+agents. Open: M2c, M3, M4, the hybrid model assignment.
+
 **Status (12 November 2026):** M5, M6 and M7 done by Ron (`reports/CP2_SUMMARY.md` section 9): 40 unmatched verified
 findings classified (31 true but unlabeled / 5 wrong / 4 cannot tell), finding-correctness column filled, business value
 hypothesis written. Second human check of row 4': evidence 1 yes / 12 partly / 17 no against 1 / 5 / 24 for row 4; the gain

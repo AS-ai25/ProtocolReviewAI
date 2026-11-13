@@ -286,6 +286,8 @@ drops in a revision round stay as `withdrawn`; every round's reports are kept in
 - 8 Nov (mentoring session, charter v1.7): agent failure never ends in PASS (M1); row 0 and protocol-level bootstrap in the
   evaluation (M2, M9); deterministic evidence tools and LLM tool calling (`tools/evidence_tools.py`, `tools/agent_tools.py`)
   run live as rows 2' 3' 4' (`reports/results.md`, `reports/CP2_SUMMARY.md` section 8) - **done**.
+- 13 Nov (charter v1.9): model comparison, the full system with Sonnet 5.5 and Haiku 5.5 (`eval/ablation.py --only agents_full_sonnet
+  agents_full_haiku`, rows 4-S and 4-H in `reports/results.md`, reading in `reports/CP2_SUMMARY.md` section 10) - **done**.
 - Final (12 Nov, charter v1.8): second round of human evaluation by Ron (`eval/human_check/HUMAN_CHECK_ROUND2_SUMMARY.md`,
   `reports/CP2_SUMMARY.md` section 9), business value hypothesis (`reports/BUSINESS_VALUE_HYPOTHESIS.md`), end-user Gradio
   product (`gradio_app.py`, see `GRADIO_PRODUCT_README.md`); row 4 stays the headline result - **done**. Presentation 15 / 18 Nov.
