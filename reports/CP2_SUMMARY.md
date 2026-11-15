@@ -413,6 +413,22 @@ both; one true but unlabeled and partly correct) and two do not (`nct01977547 / 
 by side and pool nothing. Neither is a precision figure; the locked primary metric stays the label-matching precision
 of section 1.
 
+**The labeler's clarification of the two findings (Ron, 14 November 2026).** The two answers differ because the two
+questions had a different scope, not because one of them is a mistake; both classifications stay as recorded.
+
+* `nct01977547 / SCI-L004` (safety-review triggers). In the 30-finding sheet the claim as written is "no": the protocol
+  does have safety monitoring, a DSMB and adverse-event reporting. In the 40-finding sheet the point classified as a real
+  gap is narrower: how the comparative monitoring thresholds between the arms are defined. Having a monitoring mechanism
+  does not settle whether those thresholds need clarification. It is a methodological question to examine, not a proven
+  safety defect.
+* `nct01977547 / SCI-L015` (reporting gaps). In the 40-finding sheet the reporting gaps are real *in the protocol
+  document itself*, hence "true but unlabeled". In the 30-finding sheet the same finding is "cannot tell", because part of
+  the information may be in the Manual of Operations or other accompanying documents that were not available. A detail
+  missing from the PDF does not show that it is missing from the full submission package.
+
+So neither finding is presented as a fully verified defect: "true but unlabeled" in the 40-finding sheet means a gap in
+the protocol text as read, within the scope of that question.
+
 ### 9.5 Decision on the headline (charter open decision 10)
 
 Row 4 stays the headline result. Row 4' is presented as the improvement built after the mentor's comments, with what
