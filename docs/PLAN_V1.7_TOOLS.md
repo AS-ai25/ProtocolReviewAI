@@ -5,7 +5,7 @@
 indistinguishable from the single Opus call; cost per protocol 0.69 / 0.09 USD against 2.11. Opus stays for the scientific
 agents. The hybrid assignment was then run (row 4-M: Opus scientific agents, Sonnet coordinator and administrative, no tool
 calling): scientific recall 89% (33/37), all domains 80%, 7% cheaper than Opus alone; the recall target is reached for the first
-time, within noise of row 4, above the tool-use row 4'. Open: M2c, M3, M4, a repeat of row 4-M, the Opus-only row on the current code.
+time, within noise of row 4, above the tool-use row 4'. Open: M2c, M3, M4, a repeat of row 4-M, the Opus-only row on the current code. (19 November: row 4-M repeated as row 4-M2, 73% scientific recall against 89%; with it M2c has a first direct measurement of run-to-run variation, `reports/CP2_SUMMARY.md` section 11.3.)
 
 **Status (12 November 2026):** M5, M6 and M7 done by Ron (`reports/CP2_SUMMARY.md` section 9): 40 unmatched verified
 findings classified (31 true but unlabeled / 5 wrong / 4 cannot tell), finding-correctness column filled, business value

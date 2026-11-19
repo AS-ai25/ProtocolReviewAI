@@ -522,6 +522,9 @@ differently from Opus, and a higher effort setting for them was not tried.
 
 ### 10.5 The hybrid assignment, measured (row 4-M, run of 13 November, stamp `20261113-125723`)
 
+> **Note of 19 November 2026.** The 89% scientific recall of this run did not repeat: the same assignment with the same
+> prompts gave 73% on a second run (row 4-M2, section 11.3). Read this section as the report of one run.
+
 Section 10.3 computed a hybrid and did not measure it. It was run the same day: `claude-opus-5-5` for the scientific
 reviewer and the critic, `claude-sonnet-5-5` for the coordinator and the administrative agent, current code, kb-v2, no
 tool calling (`eval/ablation.py --only agents_full_hybrid`; the model per agent is the optional setting
@@ -721,9 +724,70 @@ Labels found per protocol, all domains:
    any summary, and no finding about one was written: the "write nothing" clause works for the critic as well, and the
    rule produced no false alarm on real protocols.
 
-**What would settle point 2.** Row 4-M run again with the old prompts (about USD 10; the prompt rule would first need a
-switch so that both versions can be run from the same code). If that run is near 89%, the prompt rule costs recall and
-should be reworded or switched off by default; if it is near 68%, the first run of 4-M was a high draw and the rule is
-not the cause. Until then the prompt rule stays on, by the decision of 19 November to add it for security, and this
-section is the record of what is and is not known about its cost.
+**What settles point 2.** Row 4-M run again with the old prompts: done the same day, section 11.3.
+
+### 11.3 Row 4-M run a second time with the prompts of 13 November: row 4-M2 (stamp `20261119-120419`)
+
+The prompt rule got a switch (`PROMPT_DATA_RULE`, on in the product). With the switch off every system prompt is byte for
+byte the one of 13 November (hashes pinned in `tests/test_security.py`) and the protocol text is bare; the knowledge base,
+the labels and the matching rule have not changed since 13 November, and the intake scan gives no finding on these
+protocols. The evaluation runner now sets the switch per row, so every row runs with the prompts it was measured with and
+only row 4-MP names the prompt rule. Row 4-M2 is therefore the experiment of row 4-M repeated: same models, same prompts,
+same code path. Run: `eval/ablation.py --only agents_full_hybrid_r2 --cases-glob "nct*.json"`, 30 model calls, no agent
+failure, 36 minutes, USD 10.12 (USD 2.02 per protocol). The stored prompts confirm it: none of its 30 calls carries the
+prompt rule.
+
+| Row | Prompts | Precision of verified (scientific) | Recall (scientific) | Recall (all domains) | Unverified (scientific) |
+|---|---|---|---|---|---|
+| 4-M (13 November) | old | 32% (12/37) | **89% (33/37)** | 80% (37/46) | 123 |
+| 4-M2 (19 November) | old | 29% (9/31) | **73% (27/37)** | 67% (31/46) | 133 |
+| 4-MP (19 November) | with the prompt rule | 33% (10/30) | **68% (25/37)** | 63% (29/46) | 124 |
+| 4 (frozen headline, Opus in all agents) | old | 34% (38/112) | 78% (29/37) | 74% (34/46) | 50 |
+
+Labels found per protocol, all domains:
+
+| Protocol | Row 4 | 4-M | 4-M2 | 4-MP |
+|---|---|---|---|---|
+| nct01977547 | 8/9 | 7/9 | 7/9 | 7/9 |
+| nct04084990 | 7/9 | 7/9 | 7/9 | 7/9 |
+| nct05199324 | 7/9 | 6/9 | 7/9 | 7/9 |
+| nct05698277 | 6/10 | **9/10** | 4/10 | 4/10 |
+| nct06846736 | 6/9 | **8/9** | 6/9 | 4/9 |
+
+Bootstrap (five protocols resampled, B = 2000), scientific recall: 4-M2 against 4-M -16 points (-42 to +5, P = 0.93);
+4-MP against 4-M2 -6 (-19 to 0); 4-M2 against row 4 -5 (-16 to 0); 4-M2 against the single-call baseline (row 2) +27
+(11 to 41, P = 0.00). Interval of row 4-M2 itself: 53% to 91%.
+
+**Reading.**
+
+1. **The 89% of 13 November was a high draw.** The same models with the same prompts give 73% on a second run, 16 points
+   lower, and the drop is in the same two protocols as in row 4-MP (9 of 10 then 4 of 10; 8 of 9 then 6 of 9). The
+   statement of section 10.5 that the hybrid assignment reaches the charter's recall target is withdrawn: one run of
+   three reached it.
+2. **No sign that the prompt rule costs recall.** With and without the rule, on the same day, the runs differ by two
+   labels in one protocol (`nct06846736`, 4 against 6 of 9) and are identical in the other four. That protocol gave 6 of
+   9 with the rule in the check of 11.1, and 6 and 8 without it, so two labels there is inside what one protocol moves
+   between runs. The interval of the gap (-19 to 0) has zero at its edge only because a resample of five protocols either
+   contains that one protocol or shows no difference at all; it is not evidence of an effect. The prompt rule stays on.
+3. **Run-to-run variation is now measured, and it is large** (mentor M2c, open since 8 November). Three runs of the
+   same models on the same five protocols: 89%, 73% and 68% scientific recall (80%, 67%, 63% over all domains); the two
+   runs with identical prompts are 16 points apart. Pooled over the three runs the product default finds 85 of 111
+   scientific labels (77%) and 97 of 138 labels over all domains (70%). All of the variation is in two protocols; the
+   other three give 7 of 9 (once 6) in every run. The labels that come and go are scientific labels of the generic
+   category OTHER, which match only when a finding cites a page within one of the labeled page.
+4. **What this does to the other rows.** Every other row of the table is one run. Differences between full-system rows of
+   the size seen here (row 4 against 4', 4-M against 4, 4-M against 4': 8 to 19 points of scientific recall) are inside the spread of one
+   configuration run three times, so they are not established; sections 8 and 10 already said so for most of them, and
+   the gap "4-M against 4'" (P = 0.04) should now be read the same way. What still stands in all three runs is the gap to
+   the single-call baseline: +27, +21 and +43 points of scientific recall against row 2, each with an interval above
+   zero. The model comparison is less sharp than it looked: Sonnet in all agents had 57% and Haiku 54% in one run each,
+   against 68% to 89% for the product default.
+5. **What we say about the product default.** Scientific recall between 68% and 89% in three runs, 77% pooled; precision
+   of verified findings 29% to 33%; USD 1.91 to 2.09 per protocol. Row 4 (78%, one run) stays the headline of the frozen
+   experiment; the two are not distinguishable.
+
+**Cost of 19 November:** USD 2.33 (check of 11.1) + 9.54 (row 4-MP) + 10.12 (row 4-M2) = USD 21.99.
+
+**Not done.** A second run of row 4 and of the baselines (their run-to-run variation is assumed, not measured); more
+than five labeled protocols, which is what would narrow every interval in this report.
 

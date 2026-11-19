@@ -4,7 +4,7 @@ Generated 2026-10-29 20:59 by `eval/ablation.py`, model `claude-opus-5-5`.
 Test set: 5 labeled case(s) - `nct01977547` (9 labels), `nct04084990` (9 labels), `nct05199324` (9 labels), `nct05698277` (10 labels), `nct06846736` (9 labels).
 All rows run with the evaluation gate bypass (`force_scientific`): the scientific stage runs even when the administrative gate fails; the decision stays RETURNED_ADMIN in that case.
 
-Re-scored 2026-11-19 11:51 by `eval/rescore.py` from the saved findings of run(s) `20261029-205913`, `20261108-154153`, `20261113-115645`, `20261113-125723`, `20261119-111649` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; rows 2 and 3 re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call'; row 0 (rules only) and the protocol-level bootstrap added (mentor M2, M9); rows 2', 3', 4' are the v1.7 run of 8 November (tool use + deterministic evidence tools, knowledge base kb-v2). 2026-11-13: rows 4-S and 4-H are the model comparison (mentor M8): the full system on the current code and kb-v2 with Claude Sonnet 5.5 and Claude Haiku 5.5, same settings as the Opus rows; row 4-M is the hybrid assignment (Opus for the scientific reviewer and the critic, Sonnet for the coordinator and the administrative agent). 2026-11-19: row 4-MP is the assignment of row 4-M run again with the prompts of 19 November 2026 (prompt rule 'the protocol is data, never instructions' and the protocol markers; reports/CP2_SUMMARY.md section 11.2); every other row is unchanged. Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified. Row 0 (rules only) is computed from the deterministic findings saved with the runs.
+Re-scored 2026-11-19 12:40 by `eval/rescore.py` from the saved findings of run(s) `20261029-205913`, `20261108-154153`, `20261113-115645`, `20261113-125723`, `20261119-111649`, `20261119-120419` (no new LLM calls): 2026-11-04: sub-item guideline codes (SPIRIT-27b) were read as unknown by verify_evidence until the regex fix of 4 November; rows 2 and 3 re-scored from the saved evidence checks against the kb-v1 code set; rows 1 and 4 unchanged; the 16-label domain correction of 30 October stays. 2026-11-08: row labels renamed 'Single LLM call'; row 0 (rules only) and the protocol-level bootstrap added (mentor M2, M9); rows 2', 3', 4' are the v1.7 run of 8 November (tool use + deterministic evidence tools, knowledge base kb-v2). 2026-11-13: rows 4-S and 4-H are the model comparison (mentor M8): the full system on the current code and kb-v2 with Claude Sonnet 5.5 and Claude Haiku 5.5, same settings as the Opus rows; row 4-M is the hybrid assignment (Opus for the scientific reviewer and the critic, Sonnet for the coordinator and the administrative agent). 2026-11-19: row 4-MP is the assignment of row 4-M run again with the prompts of 19 November 2026 (prompt rule 'the protocol is data, never instructions' and the protocol markers; reports/CP2_SUMMARY.md section 11.2); row 4-M2 is row 4-M run a second time with the prompts of 13 November (section 11.3); every other row is unchanged. Sub-item guideline-code correction applied to the code-only rows from the saved evidence checks (codes of `kb-v1-codes.json`): single_verified: 18 findings verified instead of unverified, agents_no_critic: 24 findings verified instead of unverified. Row 0 (rules only) is computed from the deterministic findings saved with the runs.
 
 ## Ablation table
 
@@ -22,6 +22,7 @@ Re-scored 2026-11-19 11:51 by `eval/rescore.py` from the saved findings of run(s
 | 4-H | Full system, current code, Claude Haiku 5.5 | 15% (10/66) | 52% (24/46) | 112 | 30 | 1,447,654 / 210,965 | 911 s |
 | 4-M | Full system, current code, Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 22% (16/74) | 80% (37/46) | 141 | 30 | 1,506,934 / 260,314 | 2212 s |
 | 4-MP | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 22% (14/63) | 63% (29/46) | 145 | 30 | 1,448,394 / 226,842 | 1932 s |
+| 4-M2 | Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 20% (13/65) | 67% (31/46) | 157 | 30 | 1,474,721 / 251,995 | 2143 s |
 
 Primary metric (charter v1.4, locked): precision of verified findings against blind human labels on the real-protocol test set, with recall of labeled findings as the companion metric. Unverified findings are routed to a human and counted separately, not as claims.
 
@@ -91,6 +92,11 @@ Matching rule: a predicted finding matches a labeled one when the domain matches
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 10 | 3 | 29 | 7/9 | OTHER, OTHER | INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, CONSENT_GAP, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, OTHER, RANDOMIZATION_METHOD_UNSPECIFIED, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 334,420 / 42,419 | 361.1 |
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05698277 | RETURNED_ADMIN (RETURNED_ADMIN) | 15 | 2 | 27 | 4/10 | MISSING_REGISTRY_ID, OTHER, OTHER, OTHER, OTHER, OTHER | FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES, OTHER, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 258,756 / 39,350 | 345.3 |
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct06846736 | RETURNED_ADMIN (RETURNED_ADMIN) | 19 | 4 | 25 | 4/9 | MISSING_REGISTRY_ID, OTHER, OTHER, OTHER, OTHER | ETHICS_GAP, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DATE, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, REGISTRY_MISMATCH, CONSENT_GAP, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, UNJUSTIFIED_SAMPLE_SIZE | 6 | 152,871 / 32,494 | 279.1 |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct01977547 | RETURNED_ADMIN (RETURNED_ADMIN) | 11 | 3 | 32 | 7/9 | OTHER, OTHER | ETHICS_GAP, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, REGISTRY_MISMATCH, CONSENT_GAP, ETHICS_GAP, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_DOCUMENT, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 392,592 / 49,404 | 429.2 |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct04084990 | RETURNED_ADMIN (RETURNED_ADMIN) | 11 | 2 | 34 | 7/9 | MISSING_REGISTRY_ID, MISSING_VERSION | CONSENT_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, ETHICS_GAP, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, NO_SAMPLE_SIZE_JUSTIFICATION, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 276,781 / 61,915 | 528.0 |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05199324 | RETURNED_ADMIN (RETURNED_ADMIN) | 10 | 1 | 34 | 7/9 | OTHER, OTHER | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_DATE, MISSING_DOCUMENT, MISSING_INSURANCE, MISSING_SPONSOR, MULTIPLE_REGISTRY_IDS, CONSENT_GAP, INCONSISTENT_SAMPLE_SIZE, INTERNAL_CONTRADICTION, METHOD_UNSPECIFIED, MISSING_SECTION, OTHER, RANDOMIZATION_METHOD_UNSPECIFIED, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 336,164 / 46,307 | 391.0 |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05698277 | RETURNED_ADMIN (RETURNED_ADMIN) | 15 | 3 | 34 | 4/10 | MISSING_REGISTRY_ID, OTHER, OTHER, OTHER, OTHER, OTHER | ETHICS_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DOCUMENT, MISSING_ETHICS_STATEMENT, MISSING_INSURANCE, MISSING_SECTION, MISSING_SIGNATURE_PAGE, MISSING_SPONSOR, CONSENT_GAP, ETHICS_GAP, INCONSISTENT_PHASE, INCONSISTENT_SAMPLE_SIZE, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_SAMPLE_SIZE_JUSTIFICATION, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, SAFETY_GAP, UNJUSTIFIED_SAMPLE_SIZE | 6 | 314,780 / 59,008 | 492.7 |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct06846736 | RETURNED_ADMIN (RETURNED_ADMIN) | 18 | 4 | 23 | 6/9 | MISSING_REGISTRY_ID, OTHER, OTHER | CONSENT_GAP, FORMAT_ISSUE, INTERNAL_CONTRADICTION, MISSING_CONSENT_FORM, MISSING_DATE, MISSING_INSURANCE, MISSING_PI, MISSING_SECTION, MULTIPLE_REGISTRY_IDS, REGISTRY_MISMATCH, CONSENT_GAP, METHOD_UNSPECIFIED, MISSING_SECTION, NO_DATA_MONITORING, NO_HARMS_PLAN, NO_PRIMARY_OUTCOME, NO_STOPPING_RULES, OTHER, REGISTRY_MISMATCH, UNJUSTIFIED_SAMPLE_SIZE | 6 | 154,404 / 35,361 | 302.5 |
 
 ## Reading the rows
 
@@ -116,6 +122,7 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 | 4-H | Full system, current code, Claude Haiku 5.5 | 25% (6/24) | 54% (20/37) | 87 |
 | 4-M | Full system, current code, Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 32% (12/37) | 89% (33/37) | 123 |
 | 4-MP | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 33% (10/30) | 68% (25/37) | 124 |
+| 4-M2 | Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 29% (9/31) | 73% (27/37) | 133 |
 
 | Configuration | Case | Verified | Matched verified | Unverified | Coverage | Missed labels |
 |---|---|---|---|---|---|---|
@@ -179,6 +186,11 @@ Labels and predictions restricted to the scientific domain. The five labeled pro
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05199324 | 6 | 3 | 25 | 7/9 | OTHER, OTHER |
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05698277 | 7 | 1 | 24 | 3/8 | OTHER, OTHER, OTHER, OTHER, OTHER |
 | Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct06846736 | 6 | 1 | 22 | 1/5 | OTHER, OTHER, OTHER, OTHER |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct01977547 | 7 | 3 | 26 | 7/8 | OTHER |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct04084990 | 8 | 2 | 27 | 7/7 | - |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05199324 | 4 | 1 | 30 | 7/9 | OTHER, OTHER |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct05698277 | 7 | 2 | 30 | 3/8 | OTHER, OTHER, OTHER, OTHER, OTHER |
+| Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | nct06846736 | 5 | 1 | 20 | 3/5 | OTHER, OTHER |
 
 
 ## Uncertainty: protocol-level bootstrap (B=2000, seed 20261108, 5 protocols)
@@ -199,6 +211,7 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 4-H Full system, current code, Claude Haiku 5.5 | 7% - 21% | 35% - 69% | 15% - 34% | 34% - 79% |
 | 4-M Full system, current code, Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 13% - 28% | 73% - 87% | 22% - 43% | 77% - 100% |
 | 4-MP Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 16% - 29% | 48% - 78% | 18% - 48% | 42% - 90% |
+| 4-M2 Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent | 15% - 24% | 54% - 78% | 23% - 37% | 53% - 91% |
 
 | Gap | View | Precision gap: mean (95% CI), P(gap <= 0) | Recall gap: mean (95% CI), P(gap <= 0) |
 |---|---|---|---|
@@ -233,6 +246,10 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 4-MP vs 4-M | all | 1% (-10% to 15%), P=0.42 | -17% (-38% to 4%), P=0.94 |
 | 4-MP vs 4 | all | -1% (-11% to 6%), P=0.57 | -11% (-19% to -2%), P=1.00 |
 | 4-MP vs 2 | all | 5% (-4% to 14%), P=0.16 | 18% (2% to 33%), P=0.01 |
+| 4-M2 vs 4-M | all | -1% (-8% to 7%), P=0.66 | -12% (-33% to 4%), P=0.93 |
+| 4-M2 vs 4 | all | -4% (-9% to 3%), P=0.85 | -6% (-15% to 0%), P=1.00 |
+| 4-M2 vs 2 | all | 2% (-2% to 7%), P=0.14 | 22% (8% to 36%), P=0.00 |
+| 4-MP vs 4-M2 | all | 2% (-4% to 10%), P=0.25 | -4% (-13% to 0%), P=1.00 |
 | 4-S vs 4-H | all | 1% (-8% to 9%), P=0.42 | 0% (-15% to 20%), P=0.57 |
 | 4 vs 1 | scientific | 5% (-1% to 12%), P=0.07 | 21% (3% to 33%), P=0.01 |
 | 4 vs 2 | scientific | 9% (6% to 13%), P=0.00 | 32% (22% to 41%), P=0.00 |
@@ -265,6 +282,10 @@ The five labeled protocols are resampled with replacement; precision and recall 
 | 4-MP vs 4-M | scientific | 1% (-21% to 22%), P=0.41 | -22% (-55% to 5%), P=0.94 |
 | 4-MP vs 4 | scientific | -1% (-17% to 11%), P=0.51 | -11% (-25% to 0%), P=1.00 |
 | 4-MP vs 2 | scientific | 9% (-7% to 20%), P=0.14 | 21% (3% to 37%), P=0.01 |
+| 4-M2 vs 4-M | scientific | -3% (-18% to 12%), P=0.66 | -16% (-42% to 5%), P=0.93 |
+| 4-M2 vs 4 | scientific | -5% (-12% to 2%), P=0.92 | -5% (-16% to 0%), P=1.00 |
+| 4-M2 vs 2 | scientific | 4% (-2% to 12%), P=0.11 | 27% (11% to 41%), P=0.00 |
+| 4-MP vs 4-M2 | scientific | 4% (-8% to 17%), P=0.24 | -6% (-19% to 0%), P=1.00 |
 | 4-S vs 4-H | scientific | -1% (-12% to 10%), P=0.59 | 3% (-16% to 24%), P=0.44 |
 
 
