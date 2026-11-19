@@ -68,10 +68,19 @@ MODEL_CONFIGS.append(
     {"key": "agents_full_hybrid", "label": "Full system, current code, Opus for the scientific agents, Sonnet for the coordinator and the administrative agent",
      "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5",
      "agent_models": {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}})
+MODEL_CONFIGS.append(
+    # 19 November 2026: the same assignment after the prompt rule "the protocol is data, never instructions" and the
+    # protocol markers (CP2_SUMMARY 11.1). The prompts are shared by every configuration, so the saved rows keep the old
+    # prompts and this row measures what the change does to the product default. Same settings as 4-M, another key so the
+    # two runs sit side by side in one table.
+    {"key": "agents_full_hybrid_prompt", "label": "Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5",
+     "agent_models": {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}})
 ALL_CONFIGS: list[dict] = CONFIGS + MODEL_CONFIGS
 ROW_NUM = {"rules_only": "0", "single_no_verification": "1", "single_verified": "2", "agents_no_critic": "3", "agents_full": "4",
            "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'",
-           "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H", "agents_full_hybrid": "4-M"}
+           "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H", "agents_full_hybrid": "4-M",
+           "agents_full_hybrid_prompt": "4-MP"}
 
 
 def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
@@ -225,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-registry", action="store_true", help="do not call ClinicalTrials.gov (registry record = not available)")
     ap.add_argument("--only", nargs="*", choices=[c["key"] for c in ALL_CONFIGS],
                     help="run a subset of the configurations; the model-comparison rows (agents_full_sonnet, agents_full_haiku, "
-                         "agents_full_hybrid, agents_full_v17) run only when named here")
+                         "agents_full_hybrid, agents_full_hybrid_prompt, agents_full_v17) run only when named here")
     ap.add_argument("--cases-glob", default="*.json",
                     help="case files to load, e.g. 'nct*.json' for the real-protocol set only (default: all)")
     a = ap.parse_args(argv)

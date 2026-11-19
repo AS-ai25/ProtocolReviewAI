@@ -66,6 +66,14 @@ def test_hybrid_row_is_opt_in_and_names_its_models():
     assert "agents_full_hybrid" not in [c["key"] for c in ablation.CONFIGS] and ablation.ROW_NUM["agents_full_hybrid"] == "4-M"
 
 
+def test_prompt_row_has_the_settings_of_the_hybrid_row():
+    """Row 4-MP (prompts of 19 November 2026) differs from row 4-M only by its key and label: same models, same switches."""
+    rows = {c["key"]: c for c in ablation.MODEL_CONFIGS}
+    a, b = rows["agents_full_hybrid"], rows["agents_full_hybrid_prompt"]
+    assert {k: v for k, v in a.items() if k not in ("key", "label")} == {k: v for k, v in b.items() if k not in ("key", "label")}
+    assert ablation.ROW_NUM["agents_full_hybrid_prompt"] == "4-MP"
+
+
 def test_evaluation_rows_do_not_inherit_the_product_default(tmp_path, registry_fetch, monkeypatch):
     """While a single-model row runs, no agent model is set, whatever the product default is; afterwards it is restored."""
     monkeypatch.setattr(settings, "llm_agent_models", dict(HYBRID))

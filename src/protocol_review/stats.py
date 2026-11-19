@@ -15,7 +15,8 @@ CONFIG_LABELS = {"single_no_verification": "1 single LLM call, no verification",
                  "agents_full_v17": "4* full system, current code, Opus 5.5",
                  "agents_full_sonnet": "4-S full system, current code, Sonnet 5.5",
                  "agents_full_haiku": "4-H full system, current code, Haiku 5.5",
-                 "agents_full_hybrid": "4-M full system, current code, Opus scientific agents + Sonnet coordinator and administrative"}
+                 "agents_full_hybrid": "4-M full system, current code, Opus scientific agents + Sonnet coordinator and administrative",
+                 "agents_full_hybrid_prompt": "4-MP full system, prompts of 19 Nov (protocol is data), Opus scientific agents + Sonnet coordinator and administrative"}
 
 
 def _pattern(prefix: str, contains: str) -> str:
