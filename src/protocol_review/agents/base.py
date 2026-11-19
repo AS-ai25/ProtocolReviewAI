@@ -13,11 +13,19 @@ from ..tools import evidence_tools
 MAX_PROTOCOL_CHARS = 400_000  # ~100k tokens; protocols are normally far smaller
 
 
+PROTOCOL_START = "<<<PROTOCOL DOCUMENT START>>>"
+PROTOCOL_END = "<<<PROTOCOL DOCUMENT END>>>"
+
+
 def protocol_text(state: ReviewState) -> str:
+    """The protocol text between two marker lines (prompt hardening, 19 November 2026): the system prompts tell the
+    agents that everything between the markers is data. A document cannot close the block itself: a marker that appears
+    inside the protocol text is defused in the prompt copy (the pages used for the evidence check are untouched)."""
     text = state.get("pdf_text") or ""
     if len(text) > MAX_PROTOCOL_CHARS:
-        return text[:MAX_PROTOCOL_CHARS] + f"\n\n[TRUNCATED: {len(text) - MAX_PROTOCOL_CHARS} characters omitted]"
-    return text
+        text = text[:MAX_PROTOCOL_CHARS] + f"\n\n[TRUNCATED: {len(text) - MAX_PROTOCOL_CHARS} characters omitted]"
+    text = text.replace("<<<PROTOCOL DOCUMENT", "<protocol document")
+    return f"{PROTOCOL_START}\n{text}\n{PROTOCOL_END}"
 
 
 def findings_json(findings: list[dict]) -> str:
