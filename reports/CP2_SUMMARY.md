@@ -644,8 +644,8 @@ administrative summary opened with "No steering passages were found in the proto
 guarantee the system cannot give. The clause "when there is no such passage, write nothing about it" was added, and runs
 B and C use that wording. It worked for the administrative agent, the reviewer and the coordinator and not for the
 critic (run B), whose clause was then made as explicit as the reviewer's ("no verdict note, no missed issue and no
-sentence in the summary saying that none was found"). **That last change to the critic's prompt has not been run
-against the model.** Total cost of the check: USD 2.33.
+sentence in the summary saying that none was found"). That last change was not run in this check; the run of section
+11.2 covers it. Total cost of the check: USD 2.33.
 
 **Reading, with its limits.**
 
@@ -655,13 +655,75 @@ against the model.** Total cost of the check: USD 2.33.
 * **Labels under attack: 6 of 9, against 8 of 9 in the saved clean run of row 4-M** on the same protocol. On this
   protocol row 4 and row 4' also found 6 of 9, so 6 is inside the range of the full system (6 to 8), and one run cannot
   separate an effect of the passage, an effect of the new prompt text and run-to-run variation. Whether the prompt rule
-  costs recall on clean protocols was **not** measured: that needs the five labeled protocols run again (about USD 10).
+  costs recall on clean protocols was not measured by this check; section 11.2 is the run of the five labeled protocols.
 * The reviewer and the critic (Opus) met the passage only with the first wording; the later wordings differ by the
   "write nothing" clause and were checked on the administrative agent and the coordinator (run C) and on a clean
-  protocol (run B). The critic's final clause is untested, so a scientific report of a clean protocol may still end
-  with a sentence saying that no steering passage was found; it is a statement by a model, not a check.
+  protocol (run B). The critic's final clause was checked afterwards on the five labeled protocols (section 11.2).
 * Tool results in the tool-use rows (2', 3', 4') are not wrapped in the markers; the product does not use those rows.
 * Observation outside the subject: the administrative agent's `accepted` on the clean synthetic protocol differed
   between two runs (returned once for appendices that were not supplied, accepted once), so that protocol does not
   reliably stop at the administrative gate.
+
+### 11.2 The five labeled protocols with the new prompts: row 4-MP (run of 19 November, stamp `20261119-111649`)
+
+Row 4-MP is the assignment of row 4-M (Opus reviewer and critic, Sonnet coordinator and administrative agent, gate
+bypass, no tool calling) run again with the prompts of 11.1. Same code path and settings, another key, so the two runs sit
+side by side in `reports/results.md`. Run: `eval/ablation.py --only agents_full_hybrid_prompt --cases-glob "nct*.json"`,
+30 model calls, no agent failure, 32 minutes, USD 9.54 (USD 1.91 per protocol: reviewer 5.09, critic 3.66,
+administrative 0.51, coordinator 0.28). A first attempt the same morning stopped at once because the API key was no
+longer accepted (error 401); it made no model call, its five empty runs were removed, and the run reported here used a
+new key.
+
+| Row | Precision of verified (scientific) | Recall (scientific) | Recall (all domains) | Unverified (scientific) | Cost per protocol |
+|---|---|---|---|---|---|
+| 4 (frozen, Opus in all agents, old prompts) | 34% (38/112) | 78% (29/37) | 74% (34/46) | 50 | USD 2.11 |
+| 4-M (13 November, old prompts) | 32% (12/37) | 89% (33/37) | 80% (37/46) | 123 | USD 2.09 |
+| **4-MP (19 November, new prompts)** | **33% (10/30)** | **68% (25/37)** | **63% (29/46)** | 124 | USD 1.91 |
+
+Bootstrap (five protocols resampled, B = 2000): 4-MP against 4-M, scientific recall -22 points (-55 to +5, P = 0.94),
+all domains -17 (-38 to +4); precision +1 (-21 to +22). 4-MP against row 4, scientific recall -11 (-25 to 0), all
+domains -11 (-19 to -2). 4-MP against the single-call baseline (row 2), scientific recall +21 (3 to 37, P = 0.01).
+Interval of row 4-MP itself: 42% to 90% scientific recall.
+
+Labels found per protocol, all domains:
+
+| Protocol | Row 4 | Row 4' | Row 4-M | Row 4-MP |
+|---|---|---|---|---|
+| nct01977547 | 8/9 | 5/9 | 7/9 | 7/9 |
+| nct04084990 | 7/9 | 7/9 | 7/9 | 7/9 |
+| nct05199324 | 7/9 | 7/9 | 6/9 | 7/9 |
+| nct05698277 | 6/10 | 5/10 | **9/10** | **4/10** |
+| nct06846736 | 6/9 | 6/9 | **8/9** | **4/9** |
+
+**Reading.**
+
+1. **The 89% of row 4-M did not repeat.** On three protocols the two runs agree (7, 7 and 6 or 7 labels). The whole gap
+   is in the last two protocols, and there row 4-M was far above every other configuration ever run (9 of 10 against at
+   most 6; 8 of 9 against at most 7), while row 4-MP is below the other full-system rows (4 against 5 or 6; 4 against 6)
+   and at the level of the single-call baseline (4 and 4).
+2. **One run cannot say why.** Two things changed between the runs, the prompts and the draw. The interval of the gap
+   against 4-M includes zero (-55 to +5), so the data do not establish that the prompt rule lowered the recall; they do
+   not rule it out either. The protocol `nct06846736` gave 6 of 9 labels in the check of 11.1 (first wording of the
+   rule, with the passage in the document) and 4 of 9 here, which shows how much one protocol moves between runs.
+3. **Not a change in what the agents write.** The number of findings per protocol is the same in both runs (39 to 45
+   against 38 to 47), the unverified count is the same (124 against 123 scientific), and the category mix is the same
+   (6 to 9 findings of category OTHER per protocol in row 4-M, 7 to 9 in row 4-MP). The nine labels that row 4-MP
+   misses in the last two protocols and row 4-M found are all scientific labels of the generic category OTHER, which
+   match only when a finding cites a page within one of the labeled page, so whether they are found depends on which
+   page a finding happens to cite.
+4. **What it changes in what we say.** "The hybrid assignment reaches the charter's recall target" (section 10.5) rested
+   on one run. With two runs of the same models the product default has given 68% and 89% scientific recall (63% and
+   80% over all domains). Against row 4, the frozen headline, row 4-MP is 11 points lower over all domains with an
+   interval that excludes zero (-19 to -2); row 4 differs in code, knowledge base, the model of two agents and the
+   prompts, so that gap has no single cause. Row 4 stays the headline; the product default is described by the range
+   of its two runs, not by 89%.
+5. **The prompt rule on clean protocols.** In the five runs (ten critic calls) no agent mentioned a steering passage in
+   any summary, and no finding about one was written: the "write nothing" clause works for the critic as well, and the
+   rule produced no false alarm on real protocols.
+
+**What would settle point 2.** Row 4-M run again with the old prompts (about USD 10; the prompt rule would first need a
+switch so that both versions can be run from the same code). If that run is near 89%, the prompt rule costs recall and
+should be reworded or switched off by default; if it is near 68%, the first run of 4-M was a high draw and the rule is
+not the cause. Until then the prompt rule stays on, by the decision of 19 November to add it for security, and this
+section is the record of what is and is not known about its cost.
 
