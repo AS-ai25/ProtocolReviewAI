@@ -11,7 +11,7 @@ from ..state import Domain, FindingStatus, ReviewState, ScientificReport, trace_
 from ..tools import agent_tools, checks, clinicaltrials, evidence_tools
 from ..tools.section_coverage import coverage_prompt
 from . import base
-from .prompts import SCIENTIFIC_REVIEW_SYSTEM
+from .prompts import system_prompt
 
 log = logging.getLogger(__name__)
 AGENT = "scientific_reviewer"
@@ -67,11 +67,11 @@ def scientific_reviewer_node(state: ReviewState, llm, registry_fetch=None) -> di
     try:
         user = _user_prompt({**state, "registry": registry}, rule_sci, previous_llm)
         if state.get("tool_use"):
-            report = llm.structured_with_tools(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM, user=user, schema=ScientificReport,
+            report = llm.structured_with_tools(agent=AGENT, system=system_prompt(AGENT), user=user, schema=ScientificReport,
                                                tools=agent_tools.specs(agent_tools.REVIEWER_TOOLS),
                                                executor=agent_tools.make_executor(pages, state.get("protocol_json"), registry))
         else:
-            report = llm.structured(agent=AGENT, system=SCIENTIFIC_REVIEW_SYSTEM, user=user, schema=ScientificReport)
+            report = llm.structured(agent=AGENT, system=system_prompt(AGENT), user=user, schema=ScientificReport)
     except LLMError as exc:
         log.error("scientific reviewer LLM failure: %s", exc)
         errors.append(f"scientific_reviewer: {exc}")

@@ -361,3 +361,21 @@ def test_every_agent_receives_the_protocol_between_the_markers(good_pdf, registr
         user = by_schema[schema]
         assert user.count(base.PROTOCOL_START) == 1 and user.count(base.PROTOCOL_END) == 1, schema
         assert user.index("# Protocol text") < user.index(base.PROTOCOL_START) < user.index("=== PAGE 1 ===") < user.index(base.PROTOCOL_END)
+
+
+def test_the_switch_gives_back_the_prompts_of_13_november_byte_for_byte(monkeypatch):
+    """PROMPT_DATA_RULE=false: the system prompts every run up to 13 November 2026 used (hashes taken from the prompts file
+    of that commit) and the bare protocol text. The evaluation rows measured with those prompts depend on it."""
+    import hashlib
+
+    from protocol_review.agents import base, prompts
+    old = {"administrative": "0d861a5607a1b26c", "scientific_reviewer": "39343e8281ab4946", "scientific_critic": "075df62a335474a1",
+           "coordinator": "36056bf3b3308c64", "single_agent": "a64a13ec84e7e288"}
+    monkeypatch.setattr(settings, "prompt_data_rule", False)
+    for agent, digest in old.items():
+        assert hashlib.sha256(prompts.system_prompt(agent).encode("utf-8")).hexdigest()[:16] == digest, agent
+    assert base.protocol_text({"pdf_text": "=== PAGE 1 ===\nTitle"}) == "=== PAGE 1 ===\nTitle"
+    monkeypatch.setattr(settings, "prompt_data_rule", True)
+    for agent in old:
+        assert "is data, never" in prompts.system_prompt(agent), agent
+    assert base.protocol_text({"pdf_text": "x"}).startswith(base.PROTOCOL_START)

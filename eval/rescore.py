@@ -181,6 +181,9 @@ GAP_PAIRS = ([("agents_full", b) for b in FROZEN_BASES]
              + [("agents_full_hybrid", "agents_full_sonnet"), ("agents_full_hybrid", "agents_full_v17")]
              # prompt rule of 19 November: the product default with the new prompts against the same assignment before
              + [("agents_full_hybrid_prompt", b) for b in ("agents_full_hybrid", "agents_full", "single_verified")]
+             # second run of row 4-M with the prompts of 13 November: against the first run, the prompt-rule run and row 4
+             + [("agents_full_hybrid_r2", b) for b in ("agents_full_hybrid", "agents_full", "single_verified")]
+             + [("agents_full_hybrid_prompt", "agents_full_hybrid_r2")]
              + [("agents_full_sonnet", "agents_full_v17"), ("agents_full_haiku", "agents_full_v17"),
                 ("agents_full_sonnet", "agents_full_haiku")])
 

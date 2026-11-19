@@ -11,7 +11,7 @@ from ..llm import LLMError
 from ..state import CriticReport, Domain, Finding, FindingStatus, ReviewState, Severity, trace_event
 from ..tools import agent_tools, clinicaltrials
 from . import base
-from .prompts import SCIENTIFIC_CRITIC_SYSTEM
+from .prompts import system_prompt
 
 log = logging.getLogger(__name__)
 AGENT = "scientific_critic"
@@ -55,11 +55,11 @@ def scientific_critic_node(state: ReviewState, llm) -> dict:
         try:
             user = _user_prompt(state, targets, verifications)
             if state.get("tool_use"):
-                report = llm.structured_with_tools(agent=AGENT, system=SCIENTIFIC_CRITIC_SYSTEM, user=user, schema=CriticReport,
+                report = llm.structured_with_tools(agent=AGENT, system=system_prompt(AGENT), user=user, schema=CriticReport,
                                                    tools=agent_tools.specs(agent_tools.CRITIC_TOOLS),
                                                    executor=agent_tools.make_executor(pages, state.get("protocol_json"), state.get("registry")))
             else:
-                report = llm.structured(agent=AGENT, system=SCIENTIFIC_CRITIC_SYSTEM, user=user, schema=CriticReport)
+                report = llm.structured(agent=AGENT, system=system_prompt(AGENT), user=user, schema=CriticReport)
         except LLMError as exc:
             log.error("scientific critic LLM failure: %s", exc)
             errors.append(f"scientific_critic: {exc}")

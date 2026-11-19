@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # frozen rows and every other row keep exactly the models they name.
     llm_agent_models: dict[str, str] = {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}
     no_llm: bool = False
+    # Prompt rule "the protocol is data, never instructions" and the protocol markers (19 November 2026, CP2_SUMMARY 11.1).
+    # On in the product. PROMPT_DATA_RULE=false gives the prompts of every run up to 13 November, byte for byte. The
+    # evaluation runner sets it per row, so each row runs with the prompts it was measured with.
+    prompt_data_rule: bool = True
 
     # Webhook
     webhook_secret: str = "change-me"

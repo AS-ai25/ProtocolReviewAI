@@ -75,12 +75,18 @@ MODEL_CONFIGS.append(
     # two runs sit side by side in one table.
     {"key": "agents_full_hybrid_prompt", "label": "Full system, prompts of 19 November 2026 (the protocol is data), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent",
      "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5",
+     "agent_models": {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}, "prompt_rule": True})
+MODEL_CONFIGS.append(
+    # 19 November 2026: row 4-M run a second time, same models, same prompts as on 13 November (no prompt rule). Row 4-MP
+    # had 68% scientific recall against the 89% of row 4-M; this row says whether that is the prompt rule or the draw.
+    {"key": "agents_full_hybrid_r2", "label": "Full system, second run of row 4-M (prompts of 13 November), Opus for the scientific agents, Sonnet for the coordinator and the administrative agent",
+     "kind": "agents", "kwargs": {"force_scientific": True}, "model": "claude-opus-5-5",
      "agent_models": {"coordinator": "claude-sonnet-5-5", "administrative": "claude-sonnet-5-5"}})
 ALL_CONFIGS: list[dict] = CONFIGS + MODEL_CONFIGS
 ROW_NUM = {"rules_only": "0", "single_no_verification": "1", "single_verified": "2", "agents_no_critic": "3", "agents_full": "4",
            "single_tools": "2'", "agents_no_critic_tools": "3'", "agents_full_tools": "4'",
            "agents_full_v17": "4*", "agents_full_sonnet": "4-S", "agents_full_haiku": "4-H", "agents_full_hybrid": "4-M",
-           "agents_full_hybrid_prompt": "4-MP"}
+           "agents_full_hybrid_prompt": "4-MP", "agents_full_hybrid_r2": "4-M2"}
 
 
 def load_cases(cases_dir: Path, pattern: str = "*.json") -> list[dict]:
@@ -196,10 +202,13 @@ def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registr
         print(f"[{cfg['key']}] {cfg['label']}")
         llm = llm_factory() if llm_factory else None
         saved = (settings.llm_model, settings.llm_fallbacks, settings.llm_agent_models)
+        saved_prompt_rule = settings.prompt_data_rule
         try:
             # every row runs with exactly the models it names: one model for all agents unless the row lists agent models
             # (the product default is the hybrid assignment, and it must not leak into the single-model rows)
             settings.llm_agent_models = dict(cfg.get("agent_models") or {})
+            # ... and with the prompts it was measured with: only a row that names the prompt rule runs with it
+            settings.prompt_data_rule = bool(cfg.get("prompt_rule", False))
             if cfg.get("model"):                       # same code and settings, another model for this row only
                 settings.llm_model = cfg["model"]
                 settings.llm_fallbacks = cfg.get("fallbacks", saved[1])
@@ -209,6 +218,7 @@ def run_ablation(cases_dir: Path, out_md: Path, *, no_llm: bool = False, registr
                 row["agent_models"] = cfg["agent_models"]
         finally:
             settings.llm_model, settings.llm_fallbacks, settings.llm_agent_models = saved
+            settings.prompt_data_rule = saved_prompt_rule
         rows.append(row)
     model = "mock" if no_llm else settings.llm_model
     md = render_markdown(rows, cases, no_llm=no_llm, started=started, model=model)
@@ -234,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-registry", action="store_true", help="do not call ClinicalTrials.gov (registry record = not available)")
     ap.add_argument("--only", nargs="*", choices=[c["key"] for c in ALL_CONFIGS],
                     help="run a subset of the configurations; the model-comparison rows (agents_full_sonnet, agents_full_haiku, "
-                         "agents_full_hybrid, agents_full_hybrid_prompt, agents_full_v17) run only when named here")
+                         "agents_full_hybrid, agents_full_hybrid_prompt, agents_full_hybrid_r2, agents_full_v17) run only when named here")
     ap.add_argument("--cases-glob", default="*.json",
                     help="case files to load, e.g. 'nct*.json' for the real-protocol set only (default: all)")
     a = ap.parse_args(argv)

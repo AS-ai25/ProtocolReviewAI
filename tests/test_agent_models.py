@@ -66,12 +66,31 @@ def test_hybrid_row_is_opt_in_and_names_its_models():
     assert "agents_full_hybrid" not in [c["key"] for c in ablation.CONFIGS] and ablation.ROW_NUM["agents_full_hybrid"] == "4-M"
 
 
-def test_prompt_row_has_the_settings_of_the_hybrid_row():
-    """Row 4-MP (prompts of 19 November 2026) differs from row 4-M only by its key and label: same models, same switches."""
+def test_the_three_hybrid_rows_differ_only_by_the_prompt_rule():
+    """Row 4-M2 is row 4-M again (same models, same switches, prompts of 13 November); row 4-MP adds the prompt rule."""
     rows = {c["key"]: c for c in ablation.MODEL_CONFIGS}
-    a, b = rows["agents_full_hybrid"], rows["agents_full_hybrid_prompt"]
-    assert {k: v for k, v in a.items() if k not in ("key", "label")} == {k: v for k, v in b.items() if k not in ("key", "label")}
-    assert ablation.ROW_NUM["agents_full_hybrid_prompt"] == "4-MP"
+    a, b, c = rows["agents_full_hybrid"], rows["agents_full_hybrid_r2"], rows["agents_full_hybrid_prompt"]
+    strip = lambda cfg, *more: {k: v for k, v in cfg.items() if k not in ("key", "label", *more)}  # noqa: E731
+    assert strip(a) == strip(b) and "prompt_rule" not in a and "prompt_rule" not in b
+    assert strip(c, "prompt_rule") == strip(a) and c["prompt_rule"] is True
+    assert ablation.ROW_NUM["agents_full_hybrid_prompt"] == "4-MP" and ablation.ROW_NUM["agents_full_hybrid_r2"] == "4-M2"
+
+
+def test_every_row_runs_with_the_prompts_it_was_measured_with(tmp_path, registry_fetch, monkeypatch):
+    """Only the row that names the prompt rule runs with it, whatever the product default; afterwards the default is back."""
+    assert settings.prompt_data_rule is True                       # product default
+    seen = []
+    real = ablation.run_config
+
+    def spy(cfg, cases, **kw):
+        seen.append((cfg["key"], settings.prompt_data_rule))
+        return real(cfg, cases, **kw)
+    monkeypatch.setattr(ablation, "run_config", spy)
+    ablation.run_ablation(ROOT / "eval" / "labeled_cases", tmp_path / "results.md", no_llm=True, registry_fetch=registry_fetch,
+                          results_dir=tmp_path / "results", pattern="synthetic_*.json",
+                          only=["agents_full", "agents_full_hybrid_r2", "agents_full_hybrid_prompt"])
+    assert seen == [("agents_full", False), ("agents_full_hybrid_prompt", True), ("agents_full_hybrid_r2", False)]
+    assert settings.prompt_data_rule is True
 
 
 def test_evaluation_rows_do_not_inherit_the_product_default(tmp_path, registry_fetch, monkeypatch):

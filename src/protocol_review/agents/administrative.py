@@ -9,7 +9,7 @@ from ..knowledge_base import kb_text, rule_codes
 from ..llm import LLMError
 from ..state import AdminReport, Domain, FindingStatus, ReviewState, Severity, trace_event
 from . import base
-from .prompts import ADMIN_SYSTEM
+from .prompts import system_prompt
 
 log = logging.getLogger(__name__)
 AGENT = "administrative"
@@ -42,7 +42,7 @@ def administrative_node(state: ReviewState, llm) -> dict:
     errors = list(state.get("errors") or [])
     report: AdminReport | None = None
     try:
-        report = llm.structured(agent=AGENT, system=ADMIN_SYSTEM, user=_user_prompt(state, rule_findings), schema=AdminReport)
+        report = llm.structured(agent=AGENT, system=system_prompt(AGENT), user=_user_prompt(state, rule_findings), schema=AdminReport)
     except LLMError as exc:
         log.error("administrative agent LLM failure: %s", exc)
         errors.append(f"administrative: {exc}")

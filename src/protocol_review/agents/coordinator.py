@@ -18,7 +18,7 @@ from ..scoring import compute_score, hybrid_decision, score_line
 from ..state import Decision, Domain, Finding, FinalSummary, FindingStatus, ReviewState, Severity, trace_event
 from ..tools import checks, evidence_tools, injection_scan
 from . import base
-from .prompts import COORDINATOR_SYSTEM
+from .prompts import system_prompt
 
 log = logging.getLogger(__name__)
 AGENT = "coordinator"
@@ -202,7 +202,7 @@ def finalize_node(state: ReviewState, llm) -> dict:
                 "agents_that_did_not_run": agent_failures,
             }
             summary = llm.structured(
-                agent=AGENT, system=COORDINATOR_SYSTEM, schema=FinalSummary,
+                agent=AGENT, system=system_prompt(AGENT), schema=FinalSummary,
                 user="# Review outcome (decided by code - do not change it)\n" + json.dumps(payload, indent=1, ensure_ascii=False)
                      + "\n\n# All findings\n" + base.findings_json(findings) + "\n\nReturn the FinalSummary JSON now.")
         except LLMError as exc:

@@ -29,7 +29,7 @@ from . import memory
 from .logs import current_run_id
 from .agents import base
 from .agents.coordinator import decide
-from .agents.prompts import SINGLE_AGENT_SYSTEM
+from .agents.prompts import system_prompt
 from .knowledge_base import kb_text, rule_codes
 from .llm import LLMError, make_llm
 from .pdf_parser import parse_pdf
@@ -157,11 +157,11 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
     try:
         user = build_user_prompt(parsed["pdf_text"], meta, rule_findings, registry, pages=pages, tools=tools)
         if tools:
-            report = llm.structured_with_tools(agent=AGENT, system=SINGLE_AGENT_SYSTEM, user=user, schema=SingleAgentReport,
+            report = llm.structured_with_tools(agent=AGENT, system=system_prompt(AGENT), user=user, schema=SingleAgentReport,
                                                tools=agent_tools.specs(agent_tools.SINGLE_AGENT_TOOLS),
                                                executor=agent_tools.make_executor(pages, build_protocol_json(pages, meta, pdf_path), registry))
         else:
-            report = llm.structured(agent=AGENT, system=SINGLE_AGENT_SYSTEM, user=user, schema=SingleAgentReport)
+            report = llm.structured(agent=AGENT, system=system_prompt(AGENT), user=user, schema=SingleAgentReport)
     except LLMError as exc:
         log.error("single agent LLM failure: %s", exc)
         errors.append(f"single_agent: {exc}")

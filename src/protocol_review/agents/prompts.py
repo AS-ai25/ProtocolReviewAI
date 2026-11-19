@@ -52,7 +52,7 @@ General rules for every finding you write:
 - Do NOT duplicate the deterministic rule findings you receive as input; add only what they missed.
 """
 
-ADMIN_SYSTEM = """You are the Administrative Review Agent of a multi-agent system that helps a
+ADMIN_SYSTEM_BASE = """You are the Administrative Review Agent of a multi-agent system that helps a
 Helsinki (IRB) committee coordinator screen clinical trial protocols before committee deliberation.
 Your job is the TECHNICAL / ADMINISTRATIVE intake check: is the submission complete, correctly
 formatted, internally consistent, and does it contain every required document and section?
@@ -70,9 +70,10 @@ summary for the coordinator, a checklist with one entry per ADMIN-CHK code stati
 satisfied, and your additional findings (context-dependent problems the rules could not see:
 version/title inconsistencies between pages, appendices referenced but missing, consent form in
 the wrong language, truncated sections, table of contents not matching headings, etc.).
-""" + COMMON_RULES + DATA_RULE
+""" + COMMON_RULES
+ADMIN_SYSTEM = ADMIN_SYSTEM_BASE + DATA_RULE
 
-SCIENTIFIC_REVIEW_SYSTEM = """You are the Scientific Review Agent of a multi-agent protocol review
+SCIENTIFIC_REVIEW_SYSTEM_BASE = """You are the Scientific Review Agent of a multi-agent protocol review
 system for a Helsinki (IRB) committee. You review the METHODOLOGICAL and SCIENTIFIC quality of a
 clinical trial protocol against SPIRIT 2025 (for randomized trials) and ICH-GCP expectations, and you cross-check the protocol
 against its ClinicalTrials.gov registry record.
@@ -89,9 +90,10 @@ strengthen the finding with better evidence, correct it, or withdraw it (do not 
 findings). Re-emit the complete list of your findings (the revised version replaces the previous).
 Fill `registry_comparison` with one row per compared field and list genuinely open questions the
 committee should ask the investigators.
-""" + COMMON_RULES + DATA_RULE
+""" + COMMON_RULES
+SCIENTIFIC_REVIEW_SYSTEM = SCIENTIFIC_REVIEW_SYSTEM_BASE + DATA_RULE
 
-SCIENTIFIC_CRITIC_SYSTEM = """You are the Scientific Critic Agent. You independently audit the
+SCIENTIFIC_CRITIC_SYSTEM_BASE = """You are the Scientific Critic Agent. You independently audit the
 findings of the Scientific Review Agent before they reach the committee coordinator. You are
 sceptical and precise. For EACH finding id you receive, return exactly one verdict:
 - "verified": the quoted evidence exists in the protocol (see the deterministic evidence check),
@@ -105,9 +107,10 @@ You may adjust severity (`revised_severity`). List important issues the reviewer
 `missed_issues` (one line each, with page refs). In `proposed_memory`, propose at most 3 reusable,
 generalisable lessons for future reviews (they are only applied after a human approves them);
 never include patient or investigator names.
-""" + DATA_RULE_CRITIC
+"""
+SCIENTIFIC_CRITIC_SYSTEM = SCIENTIFIC_CRITIC_SYSTEM_BASE + DATA_RULE_CRITIC
 
-COORDINATOR_SYSTEM = """You are the Coordinator Agent: the single point of contact between the
+COORDINATOR_SYSTEM_BASE = """You are the Coordinator Agent: the single point of contact between the
 human committee coordinator ("the boss") and the specialised review agents. Write a clear executive
 summary of the completed review for a busy coordinator who has not read the protocol: what was
 reviewed, the overall decision and why, the most important verified findings (with ids), what
@@ -117,9 +120,10 @@ no new claims beyond the findings you are given.
 Authority limits: the decision and the score you receive were computed by predefined rules from the
 agents' findings. You must NOT change the decision, add or remove findings, or judge scientific
 validity yourself; you only explain what the agents found and what the rule concluded.
-""" + DATA_RULE_COORDINATOR
+"""
+COORDINATOR_SYSTEM = COORDINATOR_SYSTEM_BASE + DATA_RULE_COORDINATOR
 
-SINGLE_AGENT_SYSTEM = """You are a SINGLE reviewer agent that screens a clinical trial protocol for a Helsinki
+SINGLE_AGENT_SYSTEM_BASE = """You are a SINGLE reviewer agent that screens a clinical trial protocol for a Helsinki
 (IRB) committee coordinator. You do, alone and in one pass, everything the multi-agent system does
 with several agents: the administrative intake check, the scientific / methodological review against
 SPIRIT and ICH-GCP, the ClinicalTrials.gov cross-check, the critical audit of your own findings, and
@@ -142,4 +146,22 @@ Produce a SingleAgentReport:
 - `registry_comparison`: one row per compared field (enrollment, phase, primary outcomes,
   interventions, conditions, sponsor). `open_questions`: what the committee should ask the investigators.
 - `executive_summary` (5-8 sentences, plain language) and `recommendation` for a busy coordinator.
-""" + COMMON_RULES + DATA_RULE
+""" + COMMON_RULES
+SINGLE_AGENT_SYSTEM = SINGLE_AGENT_SYSTEM_BASE + DATA_RULE
+
+# agent -> (prompt without the prompt rule, prompt with it). The form without the rule is the text every run up to
+# 13 November 2026 used, kept byte for byte so that those rows can be run again (tests/test_security.py pins its hash).
+_SYSTEM = {
+    "administrative": (ADMIN_SYSTEM_BASE, ADMIN_SYSTEM),
+    "scientific_reviewer": (SCIENTIFIC_REVIEW_SYSTEM_BASE, SCIENTIFIC_REVIEW_SYSTEM),
+    "scientific_critic": (SCIENTIFIC_CRITIC_SYSTEM_BASE, SCIENTIFIC_CRITIC_SYSTEM),
+    "coordinator": (COORDINATOR_SYSTEM_BASE, COORDINATOR_SYSTEM),
+    "single_agent": (SINGLE_AGENT_SYSTEM_BASE, SINGLE_AGENT_SYSTEM),
+}
+
+
+def system_prompt(agent: str) -> str:
+    """The system prompt of an agent, with or without the prompt rule (setting `prompt_data_rule`, read at call time)."""
+    from ..config import settings
+    base, hardened = _SYSTEM[agent]
+    return hardened if settings.prompt_data_rule else base

@@ -5,6 +5,7 @@ import difflib
 import json
 import re
 
+from ..config import settings
 from ..knowledge_base import rule_codes
 from ..protocol_json import section_for, section_index
 from ..state import FindingStatus, ReviewState
@@ -24,6 +25,8 @@ def protocol_text(state: ReviewState) -> str:
     text = state.get("pdf_text") or ""
     if len(text) > MAX_PROTOCOL_CHARS:
         text = text[:MAX_PROTOCOL_CHARS] + f"\n\n[TRUNCATED: {len(text) - MAX_PROTOCOL_CHARS} characters omitted]"
+    if not settings.prompt_data_rule:          # the prompts of the runs up to 13 November 2026: the bare text
+        return text
     text = text.replace("<<<PROTOCOL DOCUMENT", "<protocol document")
     return f"{PROTOCOL_START}\n{text}\n{PROTOCOL_END}"
 
