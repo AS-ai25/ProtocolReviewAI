@@ -37,7 +37,7 @@ from .protocol_json import build_protocol_json
 from .reports import run_dir
 from .scoring import compute_score
 from .state import Decision, Domain, FindingStatus, Severity, SingleAgentReport
-from .tools import agent_tools, checks, clinicaltrials, evidence_tools
+from .tools import agent_tools, checks, clinicaltrials, evidence_tools, injection_scan
 from .tools.section_coverage import coverage_prompt
 
 log = logging.getLogger(__name__)
@@ -146,7 +146,7 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
     nct = nct_id or meta.get("nct_id", "")
     meta["nct_id"] = nct
     registry = clinicaltrials.lookup(nct, fetch=registry_fetch).model_dump(mode="json") if nct else None
-    rule_findings = checks.all_rule_checks(pages, meta, registry)
+    rule_findings = checks.all_rule_checks(pages, meta, registry, pdf_path)
     for f in rule_findings:
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check (code), verified by construction."
@@ -187,6 +187,7 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
     agent_failures = [AGENT] if report is None else []
     if agent_failures and decision == Decision.PASS:          # M1: no LLM ran -> never an automated PASS
         decision = Decision.NEEDS_HUMAN_REVIEW
+    decision, _, suspect_ids = injection_scan.apply_cap(findings, decision)      # intake scan: never PASS either
 
     if report is not None:
         final_summary = (report.executive_summary + "\n\nKey findings:\n"
@@ -197,6 +198,9 @@ def _run_single_agent(pdf_path, nct_id, registry_fetch, run_id, llm, no_llm, wri
         final_summary = (f"WARNING: the LLM agent did not run ({'; '.join(errors)}); only the deterministic checks were applied and "
                          f"the review is incomplete. {len(findings)} deterministic findings, decision {decision.value} "
                          f"(automated PASS not allowed without the agent).")
+
+    if suspect_ids:
+        final_summary = injection_scan.WARNING.format(ids=", ".join(suspect_ids)) + final_summary
 
     result = {
         "run_id": run_id,

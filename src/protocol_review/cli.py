@@ -64,6 +64,13 @@ def main(argv: list[str] | None = None) -> int:
         print("\n" + res.get("final_summary", ""))
     elif a.cmd == "serve":
         import uvicorn
+
+        from . import security
+        problem = security.startup_problem(a.host)
+        if problem:                       # never a server on the network with an empty or default secret
+            raise SystemExit("Server not started. " + problem)
+        if security.secret_is_weak():
+            print("WARNING: WEBHOOK_SECRET is empty or a default value. Accepted on this machine only; set your own in .env.")
         uvicorn.run("protocol_review.api:app", host=a.host, port=a.port, reload=False)
     elif a.cmd == "poll-mail":
         from .ingest.imap_poller import poll_forever

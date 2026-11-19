@@ -16,7 +16,7 @@ from ..pdf_parser import parse_pdf
 from ..protocol_json import build_protocol_json, section_for, validate_protocol_json
 from ..scoring import compute_score, hybrid_decision, score_line
 from ..state import Decision, Domain, Finding, FinalSummary, FindingStatus, ReviewState, Severity, trace_event
-from ..tools import checks, evidence_tools
+from ..tools import checks, evidence_tools, injection_scan
 from . import base
 from .prompts import COORDINATOR_SYSTEM
 
@@ -32,7 +32,8 @@ def intake_node(state: ReviewState) -> dict:
     nct = state.get("nct_id") or meta.get("nct_id", "")
     meta["nct_id"] = nct
     protocol_json = build_protocol_json(parsed["pages"], meta, state["pdf_path"])
-    rule_findings = checks.administrative_checks(parsed["pages"], meta) + checks.scientific_checks(parsed["pages"], meta)
+    rule_findings = (checks.administrative_checks(parsed["pages"], meta, state["pdf_path"])
+                     + checks.scientific_checks(parsed["pages"], meta))
     base.attach_sections(rule_findings, protocol_json)
     memory.update_run(run_id, status="running", nct_id=nct)
     memory.post_message(run_id, AGENT, f"New protocol received from {state.get('source', 'unknown')} "
@@ -180,6 +181,8 @@ def finalize_node(state: ReviewState, llm) -> dict:
         rationale = f"agent(s) did not run ({', '.join(agent_failures)}); automated PASS not allowed"
     elif agent_failures:
         rationale += f"; agent(s) did not run: {', '.join(agent_failures)}"
+    # Intake scan (19 Nov 2026): a protocol with text that addresses an automated reviewer never ends in PASS either
+    decision, rationale, suspect_ids = injection_scan.apply_cap(findings + list(state.get("rule_findings") or []), decision, rationale)
     trace = trace_event(state, AGENT, "decision", f"{decision.value} [{rationale}]; {score_line(score)}")
 
     summary = None
@@ -213,6 +216,8 @@ def finalize_node(state: ReviewState, llm) -> dict:
     if agent_failures:
         text = (f"WARNING: the following agent(s) did not run (LLM error): {', '.join(agent_failures)}. Their part of the review "
                 f"is missing; the findings below are incomplete and the decision is capped at NEEDS_HUMAN_REVIEW.\n\n") + text
+    if suspect_ids:
+        text = injection_scan.WARNING.format(ids=", ".join(suspect_ids)) + text
     memory.post_message(run_id, AGENT, f"Final decision {decision.value} ({rationale}). Sending summary and reports to the coordinator.")
     return {"findings": findings, "decision": decision.value, "decision_rationale": rationale, "score": score,
             "final_summary": text, "trace": trace, "errors": errors, "agent_failures": agent_failures}

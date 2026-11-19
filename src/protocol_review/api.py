@@ -10,12 +10,12 @@ import logging
 import shutil
 from pathlib import Path
 
-import httpx
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, HttpUrl
 
-from . import logs, memory, stats
+from . import logs, memory, security, stats
 from .config import PROJECT_ROOT, settings
 from .pipeline import new_run_id, run_baseline, run_review, run_single_agent
 
@@ -60,16 +60,30 @@ UPLOAD_DIR = PROJECT_ROOT / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def require_secret(x_webhook_secret: str = Header(default="")):
-    if settings.webhook_secret and x_webhook_secret != settings.webhook_secret:
-        raise HTTPException(status_code=401, detail="invalid X-Webhook-Secret")
+def _client(request: Request) -> str:
+    return security.client_address(request.client.host if request.client else "", request.headers.get("x-forwarded-for", ""))
 
 
-def _save_upload(run_id: str, data: bytes, original_name: str) -> Path:
-    if not data[:5].startswith(b"%PDF"):
-        raise HTTPException(status_code=400, detail="file is not a PDF")
-    if len(data) > 60 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="PDF larger than 60 MB")
+def require_secret(request: Request, x_webhook_secret: str = Header(default="")):
+    """Constant-time comparison, default secret refused for clients on the network, wrong secrets counted (security.py)."""
+    security.check_secret(x_webhook_secret, _client(request))
+
+
+def rate_limit(request: Request):
+    """On the endpoints that start a review, after the secret check: every review costs model calls."""
+    security.check_rate(_client(request))
+
+
+STARTS_REVIEW = [Depends(require_secret), Depends(rate_limit)]
+
+
+async def _read_upload(file: UploadFile) -> bytes:
+    """At most one byte more than the size limit is read into memory."""
+    return await file.read(settings.max_pdf_mb * 1024 * 1024 + 1)
+
+
+async def _save_upload(run_id: str, data: bytes, original_name: str) -> Path:
+    await run_in_threadpool(security.inspect_pdf, data)     # PDF, size, pages, text length, reading time
     safe = "".join(c for c in Path(original_name).stem if c.isalnum() or c in "-_")[:60] or "protocol"
     target = UPLOAD_DIR / f"{run_id}_{safe}.pdf"
     target.write_bytes(data)
@@ -96,7 +110,7 @@ def _background_review(run_id: str, pdf_path: Path, source: str, submitter: str,
 
 
 # ----------------------------------------------------------------- webhooks
-@app.post("/webhook/protocol", dependencies=[Depends(require_secret)])
+@app.post("/webhook/protocol", dependencies=STARTS_REVIEW)
 async def webhook_protocol(background: BackgroundTasks, file: UploadFile = File(...), nct_id: str = Form(""),
                            submitter: str = Form(""), source: str = Form("webhook"),
                            force_scientific: bool = Form(False), config: str = Form("agents_full")):
@@ -109,7 +123,7 @@ async def webhook_protocol(background: BackgroundTasks, file: UploadFile = File(
     if config not in REVIEW_CONFIGS:
         raise HTTPException(status_code=400, detail=f"config must be one of {', '.join(REVIEW_CONFIGS)}")
     run_id = new_run_id()
-    path = _save_upload(run_id, await file.read(), file.filename or "protocol.pdf")
+    path = await _save_upload(run_id, await _read_upload(file), file.filename or "protocol.pdf")
     memory.create_run(run_id, source, submitter, str(path))
     background.add_task(_background_review, run_id, path, source, submitter, nct_id, force_scientific, config)
     return {"run_id": run_id, "status": "queued", "status_url": f"/runs/{run_id}", "config": config}
@@ -123,27 +137,23 @@ class UrlPayload(BaseModel):
     file_name: str = "protocol.pdf"
 
 
-@app.post("/webhook/protocol-url", dependencies=[Depends(require_secret)])
+@app.post("/webhook/protocol-url", dependencies=STARTS_REVIEW)
 async def webhook_protocol_url(payload: UrlPayload, background: BackgroundTasks):
-    """JSON payload with a download link (Google Drive 'webContentLink' / signed URL)."""
+    """JSON payload with a download link (Google Drive 'webContentLink' / signed URL). Only public internet hosts:
+    the address and every redirect are checked before the download (security.fetch_pdf)."""
     run_id = new_run_id()
-    try:
-        async with httpx.AsyncClient(timeout=60, follow_redirects=True) as c:
-            r = await c.get(str(payload.file_url))
-            r.raise_for_status()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=400, detail=f"could not download file: {exc}")
-    path = _save_upload(run_id, r.content, payload.file_name)
+    data = await security.fetch_pdf(str(payload.file_url))
+    path = await _save_upload(run_id, data, payload.file_name)
     memory.create_run(run_id, payload.source, payload.submitter, str(path))
     background.add_task(_background_review, run_id, path, payload.source, payload.submitter, payload.nct_id)
     return {"run_id": run_id, "status": "queued", "status_url": f"/runs/{run_id}"}
 
 
-@app.post("/baseline", dependencies=[Depends(require_secret)])
+@app.post("/baseline", dependencies=STARTS_REVIEW)
 async def baseline(file: UploadFile = File(...), nct_id: str = Form("")):
     """Synchronous rule-based baseline (no agents) - useful for Checkpoint 1 demos."""
     run_id = new_run_id()
-    path = _save_upload(run_id, await file.read(), file.filename or "protocol.pdf")
+    path = await _save_upload(run_id, await _read_upload(file), file.filename or "protocol.pdf")
     return run_baseline(path, nct_id=nct_id, run_id=run_id)
 
 

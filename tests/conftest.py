@@ -19,6 +19,10 @@ os.environ.update({
     "ANTHROPIC_API_KEY": "sk-test-not-used",
     "MAX_REVISE_ROUNDS": "1",
     "LOG_FILE": str(_TMP / "server.log"),
+    # The whole suite talks to the API from one address; the limits are tested in test_security.py with their own values.
+    "RATE_LIMIT_PER_MINUTE": "100000",
+    "RATE_LIMIT_PER_HOUR": "100000",
+    "AUTH_FAILURES_PER_5MIN": "100000",
 })
 
 import pytest  # noqa: E402

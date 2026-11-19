@@ -565,3 +565,49 @@ mixes two changes against row 4' (no tool calling, Sonnet in two agents); the Op
 the end-user product now run this assignment (`llm_agent_models` in `config.py`; `LLM_AGENT_MODELS={}` restores one model
 for every agent). The evaluation runner sets the models of every row explicitly, so the frozen rows and the other rows
 are not affected by the default. The product therefore runs the configuration that row 4-M measured.
+
+## 11. Security hardening (19 November 2026)
+
+Question at the presentation: does the system check for prompt injection? Answer on that day: no dedicated check; the
+structure limits the damage (the decision, the score and the evidence check are code, the agents have no tool that
+changes anything, structured output, the authority guard, an agent failure never ends in PASS). Built the next day,
+code only, no change to any prompt and no model call:
+
+| # | Protection | Where |
+|---|---|---|
+| 1 | **Intake scan.** A passage that addresses a reviewing model gives a rule finding (`SUSPECTED_INSTRUCTION_TEXT`) with page and sentence, and the review can never end in an automated PASS (same rule as M1). A visible passage is `info` and only the cap applies; a passage that is also hidden on the page (white, under 2 pt, invisible render mode) is `major`, so the submission is returned at the administrative stage | `tools/injection_scan.py`, all three paths (agents, single call, rules only) |
+| 2 | **Download guard.** `/webhook/protocol-url` accepts only public internet hosts; the first address and every redirect are checked, the body is cut at the size limit | `security.py` |
+| 3 | **Default secret.** Accepted from this machine only; refused for a client on the network or behind a local proxy, and the server does not start on a network address | `security.py`, `cli.py` |
+| 4 | **Constant-time comparison** of the secret, and wrong secrets counted per client address | `security.py` |
+| 5 | **PDF limits**: size, pages, extracted characters, reading time, password protection; checked before a run is created | `security.py` |
+| 6 | **Rate limits**: reviews per minute per client address and per hour in total | `security.py` |
+
+**Check on the project's protocols before building.** The candidate scan was run on the 19 public protocols and the two
+synthetic ones. Phrases: 0 hits in 21 documents. White text: 7 of 21 (table headers on a dark background, section bars,
+diagram labels); invisible render mode: 1 of 21. So hidden text alone is never a hit; only a phrase is, and the hidden
+check runs only on pages that already have one. One phrase of the first list ("approve this protocol") matched an
+ordinary sentence ("the sponsor will approve this protocol amendment") and was narrowed to imperative forms.
+
+**Effect on the reported numbers: none.** The built scan gives no finding on the 21 documents, so no finding, score or
+decision of any saved run changes, and the ids of the other rule findings are unchanged (the scan is the last
+administrative rule). The evaluated rule set stays the 29 rules of row 0; the scan is a 30th check added after the
+evaluation. The limits are far above the data: the largest protocol has 95 pages and 250,000 characters and is read in
+0.2 s (limits: 500 pages, 1.5 million characters, 30 s).
+
+**Tests.** 51 automated tests in `tests/test_security.py` (122 in total): phrases found and ordinary sentences
+not found, a passage split over lines or padded with zero-width characters, the visible and the hidden passage end to end
+(the clean synthetic protocol is PASS, the same protocol with a visible passage is NEEDS_HUMAN_REVIEW, with a hidden one
+RETURNED_ADMIN), 14 non-public download addresses, redirects, the limits, the secret rules. A live check against a real
+server process without a model confirmed the same behaviour.
+
+**Limits, stated plainly.**
+
+* The scan is a list of English phrases. It catches plain attacks and not a paraphrase that uses none of the phrases.
+  The agents still read the passage; the finding and the cap tell a person to check the review by hand.
+* The prompts are unchanged: they do not yet tell the agents that protocol text is data and never an instruction. That
+  is the next layer; it changes model behaviour, so it needs at least one live run before it becomes the default.
+* No live attack was run against the model, so how the agents react to an injected passage is not measured.
+* The read endpoints are open (runs, reports, logs, dashboard); the server is meant for this machine. The download
+  guard does not cover a host whose DNS answer changes between the check and the connection (the host list does). The
+  rate limits live in one process.
+

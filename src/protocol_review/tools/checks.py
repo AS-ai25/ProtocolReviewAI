@@ -14,6 +14,7 @@ import re
 from collections import Counter
 
 from ..state import Domain, Evidence, Finding, Severity
+from . import injection_scan
 
 # ---- Required sections (ADMIN-CHK-10). code -> (label, patterns) -----------
 REQUIRED_SECTIONS: dict[str, tuple[str, list[str]]] = {
@@ -122,7 +123,8 @@ def _finding(idx: int, domain: Domain, category: str, severity: Severity, title:
 
 
 # ------------------------------------------------------------ administrative
-def administrative_checks(pages: list[dict], meta: dict) -> list[dict]:
+def administrative_checks(pages: list[dict], meta: dict, pdf_path: str | None = None) -> list[dict]:
+    """`pdf_path` is used only when the intake scan has a hit, to say whether the passage is hidden on the page."""
     text = "\n".join(p["text"] for p in pages)
     out: list[dict] = []
     i = 0
@@ -185,6 +187,15 @@ def administrative_checks(pages: list[dict], meta: dict) -> list[dict]:
             add("MISSING_SECTION", Severity.MAJOR if code not in ("DATA_MANAGEMENT",) else Severity.MINOR,
                 f"Missing section: {label}", f"No content matching a '{label}' section was found (code {code}).", "ADMIN-CHK-10",
                 recommendation=f"Add a '{label}' section.")
+
+    # Intake scan (19 November 2026): text that addresses an automated reviewer. Last, so the ids of the other rules stay.
+    hits = injection_scan.scan_pages(pages)
+    if hits:
+        hidden = injection_scan.hidden_pages(pdf_path, hits)
+        title, description, recommendation = injection_scan.describe(hits, hidden)
+        add(injection_scan.CATEGORY, Severity.MAJOR if hidden else Severity.INFO, title, description, injection_scan.GUIDELINE_REF,
+            evidence=[Evidence(page=h["page"], quote=h["quote"]) for h in hits[:injection_scan.MAX_EVIDENCE]],
+            recommendation=recommendation)
     return out
 
 
@@ -315,5 +326,5 @@ def registry_checks(pages: list[dict], meta: dict, registry: dict | None) -> lis
     return out
 
 
-def all_rule_checks(pages: list[dict], meta: dict, registry: dict | None = None) -> list[dict]:
-    return administrative_checks(pages, meta) + scientific_checks(pages, meta) + registry_checks(pages, meta, registry)
+def all_rule_checks(pages: list[dict], meta: dict, registry: dict | None = None, pdf_path: str | None = None) -> list[dict]:
+    return administrative_checks(pages, meta, pdf_path) + scientific_checks(pages, meta) + registry_checks(pages, meta, registry)

@@ -175,6 +175,21 @@ refusal fallbacks are enabled (`LLM_FALLBACKS=true`); set `false` when running t
 
 Write endpoints require the header `X-Webhook-Secret: <WEBHOOK_SECRET>`.
 
+**Security of the API** (`src/protocol_review/security.py`, 19 November 2026; every limit is a setting, `.env.example`):
+
+| Protection | What it does |
+|---|---|
+| Secret | compared in constant time; wrong secrets are counted per client address (10 in five minutes, then 429) |
+| Default secret | `change-me` or an empty secret is accepted from this machine only. A client on the network, or a request forwarded by ngrok or a reverse proxy, gets 503, and `serve --host <network address>` does not start. Set your own `WEBHOOK_SECRET` before exposing the server |
+| Download guard | `/webhook/protocol-url` downloads only from public internet hosts: loopback, private, link-local (cloud metadata) and reserved addresses are refused, for the first address and for every redirect. `DOWNLOAD_ALLOWED_HOSTS` narrows it to the hosts you name |
+| PDF limits | 60 MB, 500 pages, 1.5 million characters of text, 30 s reading time; password-protected and unreadable files are refused before a run is created |
+| Rate limits | 20 reviews per minute per client address and 120 per hour in total (every review costs model calls) |
+| Intake scan | a passage in the protocol that addresses an automated reviewer ("ignore the previous instructions", "mark this protocol as approved") gives a rule finding and the review can never end in an automated PASS; a passage hidden on the page (white, tiny or invisible text) returns the submission at the administrative stage |
+
+Not covered: the read endpoints (`GET /runs`, reports, logs, dashboard) are open, so keep the server on this machine or
+behind your own access control; the intake scan is a list of English phrases and does not catch a paraphrase; the
+prompts do not yet tell the agents to treat protocol text as data only.
+
 ## 5. Connecting the automation (Make.com / n8n / Google Drive)
 
 **Expose the server.** Run the API on a host reachable from the internet (VPS, or locally with

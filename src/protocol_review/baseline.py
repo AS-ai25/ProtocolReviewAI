@@ -15,7 +15,7 @@ from .protocol_json import build_protocol_json
 from .reports import run_dir
 from .scoring import compute_score
 from .state import Decision, FindingStatus, Severity
-from .tools import checks, clinicaltrials
+from .tools import checks, clinicaltrials, injection_scan
 
 
 def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None, run_id: str | None = None,
@@ -25,7 +25,7 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
     nct = nct_id or meta.get("nct_id", "")
     meta["nct_id"] = nct
     registry = clinicaltrials.lookup(nct, fetch=registry_fetch).model_dump(mode="json") if nct else None
-    findings = checks.all_rule_checks(parsed["pages"], meta, registry)
+    findings = checks.all_rule_checks(parsed["pages"], meta, registry, str(pdf_path))
     for f in findings:
         f["status"] = FindingStatus.VERIFIED.value
         f["critic_notes"] = "Deterministic check."
@@ -33,6 +33,7 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
     attach_sections(findings, build_protocol_json(parsed["pages"], meta, pdf_path))
     blocking = [f for f in findings if f["domain"] == "administrative" and f["severity"] != Severity.INFO.value]
     decision = decide({"admin_ok": not blocking, "findings": findings})  # same hybrid rule as the agents
+    decision, _, suspect_ids = injection_scan.apply_cap(findings, decision)  # intake scan: never an automated PASS
 
     result = {
         "run_id": run_id or "baseline",
@@ -43,7 +44,8 @@ def run_baseline(pdf_path: str | Path, *, nct_id: str = "", registry_fetch=None,
         "findings": findings,
         "decision": decision.value,
         "score": compute_score(findings, admin_ok=not blocking),
-        "final_summary": f"Rule-based baseline: {len(findings)} findings, decision {decision.value}.",
+        "final_summary": (injection_scan.WARNING.format(ids=", ".join(suspect_ids)) if suspect_ids else "")
+                         + f"Rule-based baseline: {len(findings)} findings, decision {decision.value}.",
     }
     if write:
         d = run_dir(result["run_id"])

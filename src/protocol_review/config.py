@@ -29,6 +29,20 @@ class Settings(BaseSettings):
     # Webhook
     webhook_secret: str = "change-me"
 
+    # Security of the API (19 November 2026; see security.py). 0 switches a limit off.
+    # An empty or default secret is accepted from this machine only; a client on the network gets 503 and `serve` refuses
+    # to start on a network address. REQUIRE_STRONG_SECRET=true refuses it on this machine as well.
+    require_strong_secret: bool = False
+    auth_failures_per_5min: int = 10     # wrong secrets per client address before 429
+    rate_limit_per_minute: int = 20      # reviews started per client address
+    rate_limit_per_hour: int = 120       # reviews started by all clients together (every review costs model calls)
+    max_pdf_mb: int = 60
+    max_pdf_pages: int = 500
+    max_protocol_chars: int = 1_500_000  # extracted text; the largest of the 19 public protocols has 250,000
+    pdf_inspect_timeout_s: int = 30
+    download_allowed_hosts: list[str] = []   # /webhook/protocol-url: when set, only these hosts and their subdomains
+    download_max_redirects: int = 3
+
     # Notifications
     boss_email: str = "coordinator@example.org"
     smtp_host: str = ""
